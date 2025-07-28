@@ -25,9 +25,9 @@ spec:
     spec:
       containers:
       - name: web-app
-        image: nginx:1.21
+        image: web-server:latest
         ports:
-        - containerPort: 80
+        - containerPort: 8080
         resources:
           requests:
             cpu: 500m
@@ -43,8 +43,8 @@ spec:
 from k8s_gen import App
 
 web_app = (App("web-app")
-    .image("nginx:1.21")
-    .port(80)
+    .image("web-server:latest")
+    .port(8080)
     .resources(cpu="500m", memory="512Mi", cpu_limit="1000m", memory_limit="1Gi")
     .scale(replicas=3, auto_scale_on_cpu=70)
     .expose(external_access=True, domain="myapp.com"))
@@ -77,8 +77,8 @@ pip install k8s-gen
 from k8s_gen import App, StatefulApp, Secret
 
 # Database with automatic backups
-db = (StatefulApp("postgres")
-    .image("postgres:13")
+db = (StatefulApp("database")
+    .image("database-server:latest")
     .storage("20Gi")
     .backup_schedule("0 2 * * *"))
 
@@ -89,8 +89,8 @@ db_secret = (Secret("db-creds")
 
 # Web application
 app = (App("blog")
-    .image("wordpress:latest")
-    .port(80)
+    .image("webapp:latest")
+    .port(8080)
     .connect_to([db])
     .add_secrets([db_secret])
     .scale(replicas=3, auto_scale_on_cpu=70)
@@ -136,15 +136,15 @@ from k8s_gen import AppGroup, App, StatefulApp
 platform = AppGroup("ecommerce")
 
 # Shared infrastructure
-postgres = StatefulApp("postgres").image("postgres:13").storage("100Gi")
-redis = StatefulApp("redis").image("redis:alpine").storage("10Gi")
+database = StatefulApp("database").image("database-server:latest").storage("100Gi")
+cache = StatefulApp("cache").image("cache-server:latest").storage("10Gi")
 
 # Microservices
-user_service = App("users").image("myapp/users:v1.0").port(8080).connect_to([postgres])
-product_service = App("products").image("myapp/products:v1.0").port(8081).connect_to([postgres])
-order_service = App("orders").image("myapp/orders:v1.0").port(8082).connect_to([postgres, redis])
+user_service = App("users").image("myorg/users:v1.0").port(8080).connect_to([database])
+product_service = App("products").image("myorg/products:v1.0").port(8081).connect_to([database])
+order_service = App("orders").image("myorg/orders:v1.0").port(8082).connect_to([database, cache])
 
-platform.add_services([postgres, redis, user_service, product_service, order_service])
+platform.add_services([database, cache, user_service, product_service, order_service])
 platform.generate().to_yaml("./k8s/")
 ```
 
@@ -154,14 +154,14 @@ from k8s_gen import Job, CronJob
 
 # One-time training job
 training = (Job("model-training")
-    .image("tensorflow/tensorflow:latest-gpu")
+    .image("ml-framework:latest")
     .resources(cpu="4000m", memory="16Gi")
     .gpu_resources(2)
     .timeout("6h"))
 
 # Scheduled retraining
 retrain = (CronJob("model-retrain")
-    .image("tensorflow/tensorflow:latest-gpu")
+    .image("ml-framework:latest")
     .schedule("0 2 * * 0")  # Weekly
     .resources(cpu="8000m", memory="32Gi"))
 

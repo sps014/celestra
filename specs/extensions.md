@@ -1,637 +1,635 @@
-# Extensions and Customization
+# Extensions
 
-Guide to extending K8s-Gen with plugins, custom builders, and advanced customization options.
+Plugin system and customization guide for extending K8s-Gen functionality.
 
 ## Plugin System
 
-The K8s-Gen plugin system allows you to extend functionality without modifying the core codebase.
+K8s-Gen features a powerful plugin architecture that allows you to extend the DSL with custom functionality, integrations, and domain-specific abstractions.
 
 ### Plugin Architecture
 
-```python
-from k8s_gen.plugins import Plugin
+The plugin system is built around three core concepts:
 
-class BasePlugin(Plugin):
-    def __init__(self, config=None):
-        self.config = config or {}
-    
-    def apply(self, app):
-        """Apply plugin modifications to the application configuration"""
-        raise NotImplementedError("Plugins must implement apply method")
-    
-    def validate(self, app_config):
-        """Validate plugin-specific configuration"""
-        return []  # Return list of validation errors
-    
-    def generate_resources(self, app_config):
-        """Generate additional Kubernetes resources"""
-        return []  # Return list of additional resources
+1. **Custom Builders** - Extend the DSL with new resource types
+2. **Template Extensions** - Customize output generation
+3. **Validation Extensions** - Add custom validation rules
+
+```python
+from k8s_gen import PluginManager, Plugin
+
+# Initialize plugin manager
+plugins = PluginManager()
+
+# Register plugins
+plugins.register("database_cluster", "./plugins/database.py")
+plugins.register("monitoring_stack", "./plugins/monitoring.py")
+plugins.register("ml_pipeline", "./plugins/ml_workloads.py")
+
+# Load and use plugins
+plugins.load_all()
 ```
 
 ### Creating Custom Plugins
 
-#### Example: Custom Logging Plugin
-
 ```python
-from k8s_gen.plugins import Plugin
-from k8s_gen import Companion, ConfigMap
+# plugins/database_cluster.py
+from k8s_gen import Plugin, StatefulApp, ConfigMap, Secret
 
-class CustomLogPlugin(Plugin):
-    """Plugin to add standardized logging sidecar to all applications"""
+class DatabaseCluster(Plugin):
+    """Custom database cluster with automatic failover and backups."""
     
-    def __init__(self, config):
-        super().__init__(config)
-        self.log_level = config.get('log_level', 'INFO')
-        self.log_format = config.get('log_format', 'json')
-        self.output_destination = config.get('output', 'stdout')
-    
-    def apply(self, app):
-        # Add logging sidecar
-        log_collector = (Companion("log-collector")
-            .image("fluent/fluent-bit:latest")
-            .type("sidecar")
-            .mount_shared_volume("/var/log")
+    def __init__(self, name):
+        super().__init__(name)
+        self.cluster_size = 3
+        self.version = "latest"
+        self.backup_schedule = "0 2 * * *"
+        self.high_availability = True
+        
+    def cluster_size(self, size):
+        """Set the number of database replicas."""
+        self.cluster_size = size
+        return self
+        
+    def version(self, version):
+        """Set the database version."""
+        self.version = version
+        return self
+        
+    def backup_schedule(self, schedule):
+        """Set the backup cron schedule."""
+        self.backup_schedule = schedule
+        return self
+        
+    def generate_resources(self):
+        """Generate the Kubernetes resources for the database cluster."""
+        resources = []
+        
+        # Primary database
+        primary = (StatefulApp(f"{self.name}-primary")
+            .image(f"database-server:{self.version}")
+            .port(5432)
+            .storage("100Gi")
             .environment({
-                "LOG_LEVEL": self.log_level,
-                "LOG_FORMAT": self.log_format,
-                "OUTPUT": self.output_destination
+                "ROLE": "primary",
+                "CLUSTER_SIZE": str(self.cluster_size)
             }))
+        resources.append(primary)
         
-        app.add_companion(log_collector)
+        # Read replicas
+        for i in range(self.cluster_size - 1):
+            replica = (StatefulApp(f"{self.name}-replica-{i}")
+                .image(f"database-server:{self.version}")
+                .port(5432)
+                .storage("100Gi")
+                .environment({
+                    "ROLE": "replica",
+                    "PRIMARY_HOST": f"{self.name}-primary"
+                }))
+            resources.append(replica)
         
-        # Add logging configuration
-        log_config = (ConfigMap("logging-config")
-            .add("fluent-bit.conf", self._generate_fluent_bit_config())
-            .mount_path("/fluent-bit/etc"))
+        # Configuration
+        config = (ConfigMap(f"{self.name}-config")
+            .add("replication_mode", "streaming")
+            .add("max_connections", "200")
+            .add("shared_buffers", "256MB"))
+        resources.append(config)
         
-        app.add_config([log_config])
-    
-    def _generate_fluent_bit_config(self):
-        return f"""
-[SERVICE]
-    Flush         1
-    Log_Level     {self.log_level.lower()}
-    Daemon        off
-    Parsers_File  parsers.conf
-
-[INPUT]
-    Name              tail
-    Path              /var/log/*.log
-    Parser            {self.log_format}
-    Tag               app.*
-
-[OUTPUT]
-    Name              {self.output_destination}
-    Match             *
-    Format            {self.log_format}
-"""
+        # Secrets
+        secret = (Secret(f"{self.name}-credentials")
+            .generate_password("db_password", length=32)
+            .add("username", "admin"))
+        resources.append(secret)
+        
+        return resources
 
 # Usage
-app.use_plugin(
-    CustomLogPlugin(config={
-        "log_level": "INFO",
-        "log_format": "json",
-        "output": "elasticsearch"
-    })
-)
-```
+from plugins.database_cluster import DatabaseCluster
 
-#### Example: Monitoring Plugin
+db_cluster = (DatabaseCluster("app-database")
+    .cluster_size(5)
+    .version("13.7")
+    .backup_schedule("0 1 * * *"))
 
-```python
-class PrometheusPlugin(Plugin):
-    """Plugin to add Prometheus monitoring to applications"""
-    
-    def apply(self, app):
-        # Add Prometheus annotations
-        app._config.setdefault('annotations', {}).update({
-            'prometheus.io/scrape': 'true',
-            'prometheus.io/port': str(self.config.get('metrics_port', 8080)),
-            'prometheus.io/path': self.config.get('metrics_path', '/metrics')
-        })
-        
-        # Add metrics endpoint to health checks
-        if hasattr(app, 'health'):
-            app.health().add_metrics_endpoint(
-                path=self.config.get('metrics_path', '/metrics'),
-                port=self.config.get('metrics_port', 8080)
-            )
-    
-    def generate_resources(self, app_config):
-        # Generate ServiceMonitor for Prometheus Operator
-        service_monitor = {
-            'apiVersion': 'monitoring.coreos.com/v1',
-            'kind': 'ServiceMonitor',
-            'metadata': {
-                'name': f"{app_config['name']}-metrics",
-                'labels': {'app': app_config['name']}
-            },
-            'spec': {
-                'selector': {
-                    'matchLabels': {'app': app_config['name']}
-                },
-                'endpoints': [{
-                    'port': 'http',
-                    'path': self.config.get('metrics_path', '/metrics'),
-                    'interval': self.config.get('scrape_interval', '30s')
-                }]
-            }
-        }
-        return [service_monitor]
-```
-
-#### Example: Security Plugin
-
-```python
-class SecurityHardeningPlugin(Plugin):
-    """Plugin to apply security best practices"""
-    
-    def apply(self, app):
-        # Apply security context
-        security_context = {
-            'runAsNonRoot': True,
-            'runAsUser': 1000,
-            'fsGroup': 2000,
-            'readOnlyRootFilesystem': True,
-            'allowPrivilegeEscalation': False,
-            'capabilities': {
-                'drop': ['ALL']
-            }
-        }
-        
-        app._config['security_context'] = security_context
-        
-        # Add network policies
-        if self.config.get('network_isolation', True):
-            self._add_network_policy(app)
-        
-        # Add pod security policy
-        if self.config.get('pod_security_policy', True):
-            self._add_pod_security_policy(app)
-    
-    def _add_network_policy(self, app):
-        # Implementation for network policy
-        pass
-    
-    def _add_pod_security_policy(self, app):
-        # Implementation for pod security policy
-        pass
-```
-
-### Plugin Registration
-
-#### Auto-Discovery
-
-Plugins can be automatically discovered using entry points:
-
-```python
-# setup.py
-setup(
-    name="my-k8s-gen-plugin",
-    entry_points={
-        'k8s_gen.plugins': [
-            'logging = my_plugin.logging:CustomLogPlugin',
-            'monitoring = my_plugin.monitoring:PrometheusPlugin',
-        ]
-    }
-)
-```
-
-#### Manual Registration
-
-```python
-from k8s_gen import PluginManager
-
-plugin_manager = PluginManager()
-plugin_manager.register_plugin(CustomLogPlugin(config))
-plugin_manager.register_plugin(PrometheusPlugin(config))
-
-# Apply all registered plugins
-plugin_manager.apply_plugins(app)
+app.add_database(db_cluster)
 ```
 
 ## Custom Builders
 
-Extend the DSL with domain-specific builders for specialized workloads.
+Create domain-specific builders for specialized workloads.
 
-### Machine Learning Workload Builder
+### Machine Learning Workloads
 
 ```python
-class MLWorkloadBuilder(BaseBuilder):
-    """Builder for machine learning workloads with GPU support"""
+# plugins/ml_workloads.py
+from k8s_gen import Plugin, Job, StatefulApp
+
+class MLPipeline(Plugin):
+    """Machine Learning training and inference pipeline."""
     
-    def gpu_resources(self, gpu_count, gpu_type="nvidia.com/gpu"):
-        return self._set('gpu', {
-            'count': gpu_count, 
-            'type': gpu_type
-        })
-    
-    def model_storage(self, model_path, size="100Gi"):
-        return self._set('model_storage', {
-            'path': model_path, 
-            'size': size
-        })
-    
-    def training_dataset(self, dataset_config):
-        return self._set('dataset', dataset_config)
-    
-    def distributed_training(self, workers=1, parameter_servers=1):
-        return self._set('distributed', {
-            'workers': workers,
-            'parameter_servers': parameter_servers
-        })
-    
-    def tensorboard(self, enabled=True, port=6006):
-        if enabled:
-            return self._set('tensorboard', {
-                'enabled': True,
-                'port': port
-            })
+    def __init__(self, name):
+        super().__init__(name)
+        self.framework = "pytorch"
+        self.gpu_count = 1
+        self.distributed = False
+        
+    def framework(self, framework):
+        """Set ML framework (pytorch, tensorflow, sklearn)."""
+        self.framework = framework
         return self
+        
+    def gpu_resources(self, count):
+        """Set number of GPUs required."""
+        self.gpu_count = count
+        return self
+        
+    def distributed_training(self, enabled=True, workers=4):
+        """Enable distributed training across multiple nodes."""
+        self.distributed = enabled
+        self.worker_count = workers if enabled else 1
+        return self
+        
+    def data_source(self, type, config):
+        """Configure data source (s3, gcs, nfs, etc.)."""
+        self.data_source_type = type
+        self.data_config = config
+        return self
+        
+    def model_registry(self, registry_url):
+        """Set model registry for storing trained models."""
+        self.model_registry = registry_url
+        return self
+        
+    def generate_training_job(self):
+        """Generate training job resource."""
+        return (Job(f"{self.name}-training")
+            .image(f"ml-framework:{self.framework}")
+            .resources(
+                cpu="4000m",
+                memory="16Gi",
+                gpu=self.gpu_count
+            )
+            .command([
+                "python", "train.py",
+                f"--framework={self.framework}",
+                f"--data-source={self.data_source_type}",
+                f"--distributed={self.distributed}"
+            ])
+            .timeout("6h"))
     
-    def model_serving(self, serving_config):
-        return self._set('serving', serving_config)
+    def generate_inference_service(self):
+        """Generate inference service resource."""
+        return (StatefulApp(f"{self.name}-inference")
+            .image(f"ml-serving:{self.framework}")
+            .port(8080)
+            .resources(
+                cpu="2000m",
+                memory="8Gi",
+                gpu=1 if self.gpu_count > 0 else 0
+            )
+            .health_checks(
+                readiness_probe="/health",
+                liveness_probe="/health"
+            ))
 
 # Usage
-ml_app = (App("model-training")
-    .image("tensorflow/tensorflow:latest-gpu")
-    .extend_with(MLWorkloadBuilder())
+ml_pipeline = (MLPipeline("text-classification")
+    .framework("pytorch")
     .gpu_resources(2)
-    .model_storage("/models", "200Gi")
-    .training_dataset({
-        "source": "s3://my-bucket/training-data",
-        "format": "tfrecord"
-    })
-    .distributed_training(workers=4, parameter_servers=2)
-    .tensorboard(enabled=True)
-    .model_serving({
-        "framework": "tensorflow-serving",
-        "model_name": "my_model",
-        "version": "1"
-    }))
+    .distributed_training(enabled=True, workers=4)
+    .data_source("s3", {"bucket": "training-data", "path": "/datasets/"})
+    .model_registry("https://registry.company.com"))
+
+app.add_ml_pipeline(ml_pipeline)
 ```
 
-### Data Pipeline Builder
+### Data Processing Pipelines
 
 ```python
-class DataPipelineBuilder(BaseBuilder):
-    """Builder for data processing pipelines"""
+# plugins/data_pipeline.py
+from k8s_gen import Plugin, Job, CronJob, ConfigMap
+
+class DataPipeline(Plugin):
+    """Data processing pipeline with Apache Spark or similar."""
     
-    def data_source(self, source_type, config):
-        sources = self._config.get('data_sources', [])
-        sources.append({
-            'type': source_type,
-            'config': config
-        })
-        return self._set('data_sources', sources)
-    
-    def data_sink(self, sink_type, config):
-        sinks = self._config.get('data_sinks', [])
-        sinks.append({
-            'type': sink_type,
-            'config': config
-        })
-        return self._set('data_sinks', sinks)
-    
-    def processing_step(self, step_name, config):
-        steps = self._config.get('processing_steps', [])
-        steps.append({
-            'name': step_name,
-            'config': config
-        })
-        return self._set('processing_steps', steps)
-    
-    def batch_schedule(self, cron_expression):
-        return self._set('batch_schedule', cron_expression)
-    
-    def streaming_config(self, window_size, watermark):
-        return self._set('streaming', {
-            'window_size': window_size,
-            'watermark': watermark
-        })
-    
-    def retry_policy(self, max_retries=3, backoff_factor=2):
-        return self._set('retry_policy', {
-            'max_retries': max_retries,
-            'backoff_factor': backoff_factor
-        })
+    def __init__(self, name):
+        super().__init__(name)
+        self.engine = "spark"
+        self.driver_resources = {"cpu": "1000m", "memory": "2Gi"}
+        self.executor_resources = {"cpu": "500m", "memory": "1Gi"}
+        self.executor_count = 3
+        
+    def engine(self, engine):
+        """Set processing engine (spark, flink, airflow)."""
+        self.engine = engine
+        return self
+        
+    def driver_resources(self, cpu, memory):
+        """Set driver pod resources."""
+        self.driver_resources = {"cpu": cpu, "memory": memory}
+        return self
+        
+    def executor_resources(self, cpu, memory, count=3):
+        """Set executor pod resources and count."""
+        self.executor_resources = {"cpu": cpu, "memory": memory}
+        self.executor_count = count
+        return self
+        
+    def schedule(self, cron_schedule):
+        """Make this a scheduled pipeline."""
+        self.schedule = cron_schedule
+        return self
+        
+    def input_source(self, type, config):
+        """Configure input data source."""
+        self.input_type = type
+        self.input_config = config
+        return self
+        
+    def output_destination(self, type, config):
+        """Configure output destination."""
+        self.output_type = type
+        self.output_config = config
+        return self
 
 # Usage
-pipeline = (App("data-pipeline")
-    .image("apache/spark:latest")
-    .extend_with(DataPipelineBuilder())
-    .data_source("kafka", {
-        "brokers": ["kafka1:9092", "kafka2:9092"],
-        "topic": "raw-events"
-    })
-    .processing_step("cleansing", {
-        "remove_duplicates": True,
-        "validate_schema": True
-    })
-    .processing_step("enrichment", {
-        "lookup_table": "user_profiles",
-        "join_key": "user_id"
-    })
-    .data_sink("s3", {
-        "bucket": "processed-data",
-        "format": "parquet",
-        "partition_by": ["date", "region"]
-    })
-    .streaming_config(window_size="5m", watermark="1m")
-    .retry_policy(max_retries=5))
+etl_pipeline = (DataPipeline("user-analytics")
+    .engine("spark")
+    .driver_resources("2000m", "4Gi")
+    .executor_resources("1000m", "2Gi", count=5)
+    .schedule("0 2 * * *")
+    .input_source("database", {"table": "user_events"})
+    .output_destination("warehouse", {"table": "user_metrics"}))
+
+app.add_data_pipeline(etl_pipeline)
 ```
 
-### IoT Workload Builder
+### IoT and Edge Computing
 
 ```python
-class IoTWorkloadBuilder(BaseBuilder):
-    """Builder for IoT applications"""
+# plugins/iot_edge.py
+from k8s_gen import Plugin, App, ConfigMap
+
+class EdgeDevice(Plugin):
+    """IoT edge computing device configuration."""
     
-    def device_gateway(self, protocol, port):
-        gateways = self._config.get('device_gateways', [])
-        gateways.append({
-            'protocol': protocol,
-            'port': port
-        })
-        return self._set('device_gateways', gateways)
-    
-    def device_registry(self, registry_type, config):
-        return self._set('device_registry', {
-            'type': registry_type,
-            'config': config
-        })
-    
-    def telemetry_processing(self, processing_config):
-        return self._set('telemetry_processing', processing_config)
-    
-    def edge_deployment(self, edge_config):
-        return self._set('edge_deployment', edge_config)
-    
-    def device_authentication(self, auth_config):
-        return self._set('device_auth', auth_config)
+    def __init__(self, name):
+        super().__init__(name)
+        self.device_type = "generic"
+        self.sensors = []
+        self.processing_mode = "local"
+        
+    def device_type(self, device_type):
+        """Set device type (raspberry-pi, nvidia-jetson, generic)."""
+        self.device_type = device_type
+        return self
+        
+    def add_sensor(self, sensor_type, config):
+        """Add sensor configuration."""
+        self.sensors.append({"type": sensor_type, "config": config})
+        return self
+        
+    def processing_mode(self, mode):
+        """Set processing mode (local, cloud, hybrid)."""
+        self.processing_mode = mode
+        return self
+        
+    def data_sync(self, interval, destination):
+        """Configure data synchronization."""
+        self.sync_interval = interval
+        self.sync_destination = destination
+        return self
 
 # Usage
-iot_app = (App("iot-platform")
-    .image("iot-platform:latest")
-    .extend_with(IoTWorkloadBuilder())
-    .device_gateway("mqtt", 1883)
-    .device_gateway("coap", 5683)
-    .device_registry("aws-iot", {
-        "region": "us-east-1",
-        "thing_type": "sensor"
-    })
-    .telemetry_processing({
-        "aggregation_window": "1m",
-        "metrics": ["temperature", "humidity", "pressure"]
-    })
-    .edge_deployment({
-        "enabled": True,
-        "edge_locations": ["factory-1", "warehouse-2"]
-    }))
+edge_device = (EdgeDevice("factory-sensor-01")
+    .device_type("raspberry-pi")
+    .add_sensor("temperature", {"pin": 18, "interval": "10s"})
+    .add_sensor("humidity", {"pin": 19, "interval": "10s"})
+    .processing_mode("hybrid")
+    .data_sync("5m", "cloud-analytics"))
+
+app.add_edge_device(edge_device)
 ```
 
 ## Template Customization
 
-### Custom Templates
+Customize the generated output templates for specific requirements.
 
-Create custom templates for specific use cases:
+### Custom Kubernetes Templates
 
 ```python
-# Custom template for ML workloads
-# templates/ml/training-job.yaml.j2
-apiVersion: batch/v1
-kind: Job
+# templates/custom_deployment.yaml.j2
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: {{ name }}-training
+  name: {{ name }}
   labels:
     app: {{ name }}
-    component: training
+    version: {{ version | default('v1.0.0') }}
+    environment: {{ environment }}
+    team: {{ team | default('platform') }}
+  annotations:
+    deployment.kubernetes.io/revision: "{{ revision | default('1') }}"
+    company.com/cost-center: {{ cost_center | default('engineering') }}
 spec:
+  replicas: {{ replicas | default(3) }}
+  selector:
+    matchLabels:
+      app: {{ name }}
   template:
+    metadata:
+      labels:
+        app: {{ name }}
+        version: {{ version | default('v1.0.0') }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ metrics_port | default('9090') }}"
+        prometheus.io/path: "{{ metrics_path | default('/metrics') }}"
     spec:
-      restartPolicy: Never
+      serviceAccountName: {{ service_account | default(name + '-sa') }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
       containers:
-      - name: trainer
+      - name: {{ name }}
         image: {{ image }}
-        {% if gpu.count > 0 %}
-        resources:
-          limits:
-            {{ gpu.type }}: {{ gpu.count }}
+        ports:
+        - containerPort: {{ port }}
+          name: http
+        {% if metrics_port %}
+        - containerPort: {{ metrics_port }}
+          name: metrics
         {% endif %}
         env:
-        - name: MODEL_DIR
-          value: {{ model_storage.path }}
-        - name: DATASET_PATH
-          value: {{ dataset.source }}
-        volumeMounts:
-        - name: model-storage
-          mountPath: {{ model_storage.path }}
-      volumes:
-      - name: model-storage
-        persistentVolumeClaim:
-          claimName: {{ name }}-model-storage
+        {% for key, value in environment.items() %}
+        - name: {{ key }}
+          value: "{{ value }}"
+        {% endfor %}
+        resources:
+          requests:
+            cpu: {{ resources.cpu | default('100m') }}
+            memory: {{ resources.memory | default('128Mi') }}
+          limits:
+            cpu: {{ resources.cpu_limit | default('500m') }}
+            memory: {{ resources.memory_limit | default('512Mi') }}
+        livenessProbe:
+          httpGet:
+            path: {{ health.liveness_path | default('/health') }}
+            port: http
+          initialDelaySeconds: {{ health.liveness_delay | default(30) }}
+          periodSeconds: {{ health.liveness_period | default(10) }}
+        readinessProbe:
+          httpGet:
+            path: {{ health.readiness_path | default('/ready') }}
+            port: http
+          initialDelaySeconds: {{ health.readiness_delay | default(5) }}
+          periodSeconds: {{ health.readiness_period | default(5) }}
 ```
 
-### Template Hooks
-
-Add custom processing before and after template rendering:
+### Custom Docker Compose Templates
 
 ```python
-class TemplateProcessor:
-    def __init__(self):
-        self.pre_render_hooks = []
-        self.post_render_hooks = []
-    
-    def add_pre_render_hook(self, hook_func):
-        self.pre_render_hooks.append(hook_func)
-    
-    def add_post_render_hook(self, hook_func):
-        self.post_render_hooks.append(hook_func)
-    
-    def render(self, template, context):
-        # Apply pre-render hooks
-        for hook in self.pre_render_hooks:
-            context = hook(context)
-        
-        # Render template
-        result = template.render(context)
-        
-        # Apply post-render hooks
-        for hook in self.post_render_hooks:
-            result = hook(result)
-        
-        return result
+# templates/custom_docker_compose.yaml.j2
+version: '3.8'
 
-# Custom hooks
-def add_company_labels(context):
-    """Add company-specific labels to all resources"""
-    context.setdefault('labels', {}).update({
-        'company': 'acme-corp',
-        'cost-center': 'engineering',
-        'environment': context.get('environment', 'development')
-    })
-    return context
+services:
+  {{ name }}:
+    image: {{ image }}
+    container_name: {{ container_name | default(name) }}
+    restart: {{ restart_policy | default('unless-stopped') }}
+    {% if ports %}
+    ports:
+    {% for port_mapping in ports %}
+      - "{{ port_mapping }}"
+    {% endfor %}
+    {% endif %}
+    environment:
+    {% for key, value in environment.items() %}
+      {{ key }}: {{ value }}
+    {% endfor %}
+    {% if volumes %}
+    volumes:
+    {% for volume in volumes %}
+      - {{ volume }}
+    {% endfor %}
+    {% endif %}
+    {% if depends_on %}
+    depends_on:
+    {% for dep in depends_on %}
+      {{ dep.name }}:
+        condition: {{ dep.condition | default('service_started') }}
+    {% endfor %}
+    {% endif %}
+    {% if networks %}
+    networks:
+    {% for network in networks %}
+      - {{ network }}
+    {% endfor %}
+    {% endif %}
+    {% if healthcheck %}
+    healthcheck:
+      test: {{ healthcheck.test }}
+      interval: {{ healthcheck.interval | default('30s') }}
+      timeout: {{ healthcheck.timeout | default('10s') }}
+      retries: {{ healthcheck.retries | default(3) }}
+      start_period: {{ healthcheck.start_period | default('40s') }}
+    {% endif %}
+    {% if deploy %}
+    deploy:
+      {% if deploy.replicas %}
+      replicas: {{ deploy.replicas }}
+      {% endif %}
+      {% if deploy.resources %}
+      resources:
+        limits:
+          memory: {{ deploy.resources.memory_limit }}
+          cpus: '{{ deploy.resources.cpu_limit }}'
+        reservations:
+          memory: {{ deploy.resources.memory_request }}
+          cpus: '{{ deploy.resources.cpu_request }}'
+      {% endif %}
+      {% if deploy.restart_policy %}
+      restart_policy:
+        condition: {{ deploy.restart_policy.condition }}
+        delay: {{ deploy.restart_policy.delay }}
+        max_attempts: {{ deploy.restart_policy.max_attempts }}
+      {% endif %}
+    {% endif %}
 
-def optimize_resources(context):
-    """Optimize resource requests based on environment"""
-    if context.get('environment') == 'development':
-        # Reduce resources for development
-        if 'resources' in context:
-            if 'requests' in context['resources']:
-                context['resources']['requests']['cpu'] = '100m'
-                context['resources']['requests']['memory'] = '128Mi'
-    return context
+{% if volumes_section %}
+volumes:
+{% for volume_name, volume_config in volumes_section.items() %}
+  {{ volume_name }}:
+    {% if volume_config.driver %}
+    driver: {{ volume_config.driver }}
+    {% endif %}
+    {% if volume_config.driver_opts %}
+    driver_opts:
+    {% for key, value in volume_config.driver_opts.items() %}
+      {{ key }}: {{ value }}
+    {% endfor %}
+    {% endif %}
+{% endfor %}
+{% endif %}
 
-# Register hooks
-processor = TemplateProcessor()
-processor.add_pre_render_hook(add_company_labels)
-processor.add_pre_render_hook(optimize_resources)
+{% if networks_section %}
+networks:
+{% for network_name, network_config in networks_section.items() %}
+  {{ network_name }}:
+    driver: {{ network_config.driver | default('bridge') }}
+    {% if network_config.ipam %}
+    ipam:
+      config:
+      {% for subnet in network_config.ipam.config %}
+        - subnet: {{ subnet.subnet }}
+      {% endfor %}
+    {% endif %}
+{% endfor %}
+{% endif %}
 ```
 
-## Configuration Extensions
-
-### Environment-Specific Configurations
+### Template Registration
 
 ```python
-class EnvironmentConfig:
-    def __init__(self, base_config):
-        self.base_config = base_config
-        self.environment_overrides = {}
-    
-    def add_environment(self, env_name, overrides):
-        self.environment_overrides[env_name] = overrides
-    
-    def get_config_for_environment(self, env_name):
-        config = self.base_config.copy()
-        if env_name in self.environment_overrides:
-            config.update(self.environment_overrides[env_name])
-        return config
+from k8s_gen import TemplateManager
 
-# Usage
-env_config = EnvironmentConfig({
-    'replicas': 1,
-    'resources': {'cpu': '100m', 'memory': '256Mi'}
-})
+# Register custom templates
+templates = TemplateManager()
+templates.register("custom_deployment", "./templates/custom_deployment.yaml.j2")
+templates.register("custom_compose", "./templates/custom_docker_compose.yaml.j2")
 
-env_config.add_environment('staging', {
-    'replicas': 2,
-    'resources': {'cpu': '500m', 'memory': '512Mi'}
-})
-
-env_config.add_environment('production', {
-    'replicas': 5,
-    'resources': {'cpu': '1000m', 'memory': '1Gi'},
-    'auto_scaling': True
-})
-```
-
-### Feature Flags Integration
-
-```python
-class FeatureFlagExtension:
-    def __init__(self, provider, config):
-        self.provider = provider
-        self.config = config
-    
-    def is_enabled(self, flag_name, context=None):
-        # Integration with feature flag providers
-        if self.provider == 'launchdarkly':
-            return self._check_launchdarkly(flag_name, context)
-        elif self.provider == 'split':
-            return self._check_split(flag_name, context)
-        return False
-    
-    def apply_feature_flags(self, app_config):
-        # Apply feature flags to configuration
-        if self.is_enabled('new_monitoring_stack'):
-            app_config['monitoring']['provider'] = 'prometheus'
-        
-        if self.is_enabled('enhanced_security'):
-            app_config['security']['strict_mode'] = True
-        
-        return app_config
+# Use custom templates
+app.use_template("custom_deployment")
+app.generate().to_yaml("./k8s/")
 ```
 
 ## Validation Extensions
 
+Add custom validation rules and policies.
+
 ### Custom Validators
 
 ```python
-class CustomValidator:
-    def __init__(self):
-        self.rules = []
-    
-    def add_rule(self, rule_func, severity='error'):
-        self.rules.append({
-            'func': rule_func,
-            'severity': severity
-        })
-    
-    def validate(self, config):
-        results = []
-        for rule in self.rules:
-            try:
-                result = rule['func'](config)
-                if result:
-                    results.append({
-                        'severity': rule['severity'],
-                        'message': result
-                    })
-            except Exception as e:
-                results.append({
-                    'severity': 'error',
-                    'message': f"Validation rule failed: {str(e)}"
-                })
-        return results
+# validators/security_validator.py
+from k8s_gen import Validator, ValidationError
 
-# Custom validation rules
-def check_resource_limits(config):
-    """Ensure all containers have resource limits"""
-    if 'resources' not in config:
-        return "Resources must be specified for all containers"
+class SecurityValidator(Validator):
+    """Custom security validation rules."""
     
-    if 'limits' not in config['resources']:
-        return "Resource limits must be specified"
+    def validate_image_registry(self, app):
+        """Ensure images come from approved registries."""
+        approved_registries = [
+            "company-registry.com",
+            "docker.io",
+            "gcr.io"
+        ]
+        
+        image = app.image
+        registry = image.split('/')[0] if '/' in image else 'docker.io'
+        
+        if registry not in approved_registries:
+            raise ValidationError(
+                f"Image registry '{registry}' not approved. "
+                f"Use one of: {', '.join(approved_registries)}"
+            )
     
-    return None
+    def validate_resource_limits(self, app):
+        """Ensure resource limits are set."""
+        if not hasattr(app, 'resources') or not app.resources:
+            raise ValidationError("Resource limits must be specified")
+        
+        required_limits = ['cpu_limit', 'memory_limit']
+        for limit in required_limits:
+            if limit not in app.resources:
+                raise ValidationError(f"Missing required resource limit: {limit}")
+    
+    def validate_security_context(self, app):
+        """Ensure security context is configured."""
+        if not hasattr(app, 'security_context'):
+            raise ValidationError("Security context must be configured")
+        
+        required_settings = ['run_as_non_root', 'read_only_root_filesystem']
+        for setting in required_settings:
+            if not getattr(app.security_context, setting, False):
+                raise ValidationError(f"Security setting required: {setting}")
 
-def check_security_context(config):
-    """Ensure security context is properly configured"""
-    if 'security_context' not in config:
-        return "Security context must be specified"
-    
-    security = config['security_context']
-    if not security.get('runAsNonRoot', False):
-        return "Containers should run as non-root user"
-    
-    return None
+# Register and use validator
+from validators.security_validator import SecurityValidator
 
-def check_image_tags(config):
-    """Ensure container images have specific tags (not latest)"""
-    image = config.get('image', '')
-    if image.endswith(':latest') or ':' not in image:
-        return "Container images should use specific tags, not 'latest'"
-    
-    return None
+app.add_validator(SecurityValidator())
+```
 
-# Register validation rules
-validator = CustomValidator()
-validator.add_rule(check_resource_limits, 'error')
-validator.add_rule(check_security_context, 'warning')
-validator.add_rule(check_image_tags, 'warning')
+### Policy Validators
+
+```python
+# validators/policy_validator.py
+from k8s_gen import Validator, ValidationError
+
+class PolicyValidator(Validator):
+    """Organizational policy validation."""
+    
+    def __init__(self, policy_config):
+        self.policy_config = policy_config
+    
+    def validate_naming_convention(self, app):
+        """Validate naming conventions."""
+        pattern = self.policy_config.get('naming_pattern', r'^[a-z][a-z0-9-]*[a-z0-9]$')
+        if not re.match(pattern, app.name):
+            raise ValidationError(
+                f"Application name '{app.name}' doesn't match naming convention"
+            )
+    
+    def validate_labels(self, app):
+        """Validate required labels."""
+        required_labels = self.policy_config.get('required_labels', [])
+        app_labels = getattr(app, 'labels', {})
+        
+        missing_labels = set(required_labels) - set(app_labels.keys())
+        if missing_labels:
+            raise ValidationError(
+                f"Missing required labels: {', '.join(missing_labels)}"
+            )
+    
+    def validate_resource_quotas(self, app):
+        """Validate resource usage against quotas."""
+        max_cpu = self.policy_config.get('max_cpu_per_app', '2000m')
+        max_memory = self.policy_config.get('max_memory_per_app', '4Gi')
+        
+        if app.resources.get('cpu_limit', '0') > max_cpu:
+            raise ValidationError(f"CPU limit exceeds maximum: {max_cpu}")
+        
+        if app.resources.get('memory_limit', '0') > max_memory:
+            raise ValidationError(f"Memory limit exceeds maximum: {max_memory}")
+
+# Usage
+policy_config = {
+    'naming_pattern': r'^[a-z][a-z0-9-]*[a-z0-9]$',
+    'required_labels': ['team', 'environment', 'version'],
+    'max_cpu_per_app': '2000m',
+    'max_memory_per_app': '4Gi'
+}
+
+app.add_validator(PolicyValidator(policy_config))
 ```
 
 ## Output Format Extensions
 
-### Custom Output Formats
+Add support for new output formats.
+
+### Terraform Output
 
 ```python
-class TerraformGenerator:
-    """Generate Terraform modules from DSL configuration"""
+# output_formats/terraform.py
+from k8s_gen import OutputFormat
+
+class TerraformOutput(OutputFormat):
+    """Generate Terraform modules from K8s-Gen DSL."""
     
-    def generate(self, app_config):
+    def generate(self, app, output_path):
+        """Generate Terraform configuration."""
         terraform_config = {
             'terraform': {
+                'required_version': '>= 1.0',
                 'required_providers': {
                     'kubernetes': {
                         'source': 'hashicorp/kubernetes',
@@ -639,260 +637,225 @@ class TerraformGenerator:
                     }
                 }
             },
-            'resource': self._generate_resources(app_config)
+            'resource': self._generate_resources(app)
         }
-        return self._format_terraform(terraform_config)
+        
+        self._write_terraform_file(terraform_config, output_path)
     
-    def _generate_resources(self, app_config):
+    def _generate_resources(self, app):
+        """Generate Terraform resources."""
         resources = {}
         
-        # Generate Kubernetes deployment resource
+        # Deployment resource
         resources['kubernetes_deployment'] = {
-            app_config['name']: {
+            app.name: {
                 'metadata': {
-                    'name': app_config['name'],
-                    'labels': {'app': app_config['name']}
+                    'name': app.name,
+                    'labels': app.labels or {}
                 },
                 'spec': {
-                    'replicas': app_config.get('replicas', 1),
+                    'replicas': app.replicas or 1,
                     'selector': {
-                        'match_labels': {'app': app_config['name']}
+                        'match_labels': {'app': app.name}
                     },
-                    'template': self._generate_pod_template(app_config)
+                    'template': {
+                        'metadata': {
+                            'labels': {'app': app.name}
+                        },
+                        'spec': {
+                            'container': [{
+                                'name': app.name,
+                                'image': app.image,
+                                'port': [{'container_port': app.port}]
+                            }]
+                        }
+                    }
+                }
+            }
+        }
+        
+        # Service resource
+        resources['kubernetes_service'] = {
+            app.name: {
+                'metadata': {
+                    'name': app.name
+                },
+                'spec': {
+                    'selector': {'app': app.name},
+                    'port': [{
+                        'port': app.port,
+                        'target_port': app.port
+                    }]
                 }
             }
         }
         
         return resources
-    
-    def _format_terraform(self, config):
-        # Convert to HCL format
-        pass
 
-class ArgoWorkflowGenerator:
-    """Generate Argo Workflows for ML pipelines"""
+# Register the output format
+from output_formats.terraform import TerraformOutput
+
+app.register_output_format('terraform', TerraformOutput())
+app.generate().to_terraform('./terraform/')
+```
+
+### Argo Workflows Output
+
+```python
+# output_formats/argo_workflows.py
+from k8s_gen import OutputFormat
+
+class ArgoWorkflowsOutput(OutputFormat):
+    """Generate Argo Workflows from K8s-Gen DSL."""
     
-    def generate(self, pipeline_config):
+    def generate(self, jobs, output_path):
+        """Generate Argo Workflow templates."""
         workflow = {
             'apiVersion': 'argoproj.io/v1alpha1',
             'kind': 'Workflow',
             'metadata': {
-                'name': pipeline_config['name']
+                'generateName': 'k8s-gen-workflow-'
             },
             'spec': {
-                'entrypoint': 'pipeline',
-                'templates': self._generate_templates(pipeline_config)
+                'entrypoint': 'main',
+                'templates': self._generate_templates(jobs)
             }
         }
-        return workflow
-```
-
-## Integration Extensions
-
-### CI/CD Integration
-
-```python
-class GitHubActionsExtension:
-    """Generate GitHub Actions workflows"""
+        
+        self._write_yaml_file(workflow, output_path)
     
-    def generate_workflow(self, app_config):
-        workflow = {
-            'name': f"Deploy {app_config['name']}",
-            'on': {
-                'push': {
-                    'branches': ['main']
-                }
-            },
-            'jobs': {
-                'deploy': {
-                    'runs-on': 'ubuntu-latest',
-                    'steps': [
-                        {
-                            'uses': 'actions/checkout@v2'
-                        },
-                        {
-                            'name': 'Setup K8s-Gen',
-                            'run': 'pip install k8s-gen'
-                        },
-                        {
-                            'name': 'Generate manifests',
-                            'run': 'k8s-gen generate app.py --output ./k8s/'
-                        },
-                        {
-                            'name': 'Deploy to Kubernetes',
-                            'run': 'kubectl apply -f ./k8s/'
+    def _generate_templates(self, jobs):
+        """Generate workflow templates from jobs."""
+        templates = []
+        
+        # Main template
+        templates.append({
+            'name': 'main',
+            'dag': {
+                'tasks': [
+                    {
+                        'name': job.name,
+                        'template': job.name
+                    } for job in jobs
+                ]
+            }
+        })
+        
+        # Job templates
+        for job in jobs:
+            templates.append({
+                'name': job.name,
+                'container': {
+                    'image': job.image,
+                    'command': job.command,
+                    'resources': {
+                        'requests': {
+                            'cpu': job.resources.get('cpu', '100m'),
+                            'memory': job.resources.get('memory', '128Mi')
                         }
-                    ]
+                    }
                 }
-            }
-        }
-        return workflow
-
-class JenkinsExtension:
-    """Generate Jenkins pipeline"""
-    
-    def generate_pipeline(self, app_config):
-        pipeline = f"""
-pipeline {{
-    agent any
-    
-    stages {{
-        stage('Generate') {{
-            steps {{
-                sh 'k8s-gen generate app.py --output ./k8s/'
-            }}
-        }}
+            })
         
-        stage('Validate') {{
-            steps {{
-                sh 'k8s-gen validate app.py'
-            }}
-        }}
-        
-        stage('Deploy') {{
-            steps {{
-                sh 'kubectl apply -f ./k8s/'
-            }}
-        }}
-    }}
-}}
-"""
-        return pipeline
-```
-
-## Advanced Customization
-
-### Dynamic Configuration
-
-```python
-class DynamicConfigBuilder:
-    """Build configuration dynamically based on runtime conditions"""
-    
-    def __init__(self):
-        self.conditions = []
-        self.actions = []
-    
-    def when(self, condition_func):
-        self.conditions.append(condition_func)
-        return self
-    
-    def then(self, action_func):
-        self.actions.append(action_func)
-        return self
-    
-    def apply(self, app_config, context):
-        for condition, action in zip(self.conditions, self.actions):
-            if condition(context):
-                app_config = action(app_config)
-        return app_config
+        return templates
 
 # Usage
-dynamic_config = (DynamicConfigBuilder()
-    .when(lambda ctx: ctx['environment'] == 'production')
-    .then(lambda cfg: cfg.update({'replicas': 5}) or cfg)
-    .when(lambda ctx: ctx['region'] == 'us-east-1')
-    .then(lambda cfg: cfg.update({'availability_zones': ['us-east-1a', 'us-east-1b']}) or cfg))
+from output_formats.argo_workflows import ArgoWorkflowsOutput
+
+workflow_output = ArgoWorkflowsOutput()
+jobs = [migration_job, processing_job, cleanup_job]
+workflow_output.generate(jobs, './workflows/pipeline.yaml')
 ```
 
-### Resource Optimization
+## Plugin Registry
+
+### Community Plugins
+
+K8s-Gen maintains a registry of community-contributed plugins:
 
 ```python
-class ResourceOptimizer:
-    """Optimize resource allocation based on historical usage"""
-    
-    def __init__(self, metrics_source):
-        self.metrics_source = metrics_source
-    
-    def optimize(self, app_config):
-        # Get historical resource usage
-        usage_data = self.metrics_source.get_usage_data(
-            app_name=app_config['name'],
-            period='30d'
-        )
-        
-        # Calculate optimal resource requests
-        optimal_cpu = self._calculate_optimal_cpu(usage_data)
-        optimal_memory = self._calculate_optimal_memory(usage_data)
-        
-        # Update configuration
-        app_config['resources'] = {
-            'requests': {
-                'cpu': optimal_cpu,
-                'memory': optimal_memory
-            },
-            'limits': {
-                'cpu': optimal_cpu * 1.5,  # 50% headroom
-                'memory': optimal_memory * 1.2  # 20% headroom
-            }
-        }
-        
-        return app_config
+# Install community plugins
+from k8s_gen import PluginRegistry
+
+registry = PluginRegistry()
+
+# Database plugins
+registry.install("database-cluster")     # Multi-node database clusters
+registry.install("database-backup")      # Automated backup solutions
+registry.install("database-migration")   # Schema migration tools
+
+# Monitoring plugins  
+registry.install("prometheus-stack")     # Complete Prometheus monitoring
+registry.install("grafana-dashboards")   # Pre-built Grafana dashboards
+registry.install("alerting-rules")       # Common alerting rules
+
+# Security plugins
+registry.install("rbac-generator")       # RBAC policy generator
+registry.install("network-policies")     # Network security policies
+registry.install("pod-security")         # Pod security standards
+
+# CI/CD plugins
+registry.install("gitops-integration")   # ArgoCD/Flux integration
+registry.install("pipeline-generator")   # CI/CD pipeline generation
+registry.install("deployment-strategies") # Advanced deployment patterns
+
+# Cloud provider plugins
+registry.install("cloud-integration")    # Multi-cloud resource integration
+registry.install("service-mesh")         # Istio/Linkerd integration
+registry.install("ingress-controllers")  # Various ingress implementations
 ```
 
-## Plugin Distribution
-
-### Plugin Packaging
-
-```python
-# setup.py for a plugin package
-from setuptools import setup, find_packages
-
-setup(
-    name="k8s-gen-monitoring-plugin",
-    version="1.0.0",
-    packages=find_packages(),
-    install_requires=[
-        "k8s-gen>=1.0.0",
-    ],
-    entry_points={
-        'k8s_gen.plugins': [
-            'prometheus = k8s_gen_monitoring.prometheus:PrometheusPlugin',
-            'grafana = k8s_gen_monitoring.grafana:GrafanaPlugin',
-            'jaeger = k8s_gen_monitoring.jaeger:JaegerPlugin',
-        ]
-    },
-    author="Your Name",
-    author_email="your.email@example.com",
-    description="Monitoring plugins for K8s-Gen",
-    long_description=open("README.md").read(),
-    long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/k8s-gen-monitoring-plugin",
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",
-    ],
-    python_requires='>=3.7',
-)
-```
-
-### Plugin Registry
-
-Create a centralized plugin registry for easy discovery:
+### Plugin Metadata
 
 ```yaml
-# plugin-registry.yaml
-plugins:
-  monitoring:
-    prometheus:
-      name: "k8s-gen-prometheus-plugin"
-      version: "1.0.0"
-      description: "Prometheus monitoring integration"
-      repository: "https://github.com/k8s-gen/prometheus-plugin"
-    
-  security:
-    falco:
-      name: "k8s-gen-falco-plugin"
-      version: "1.2.0"
-      description: "Falco security monitoring"
-      repository: "https://github.com/k8s-gen/falco-plugin"
+# Plugin metadata example (plugin.yaml)
+name: database-cluster
+version: 1.2.0
+description: "Automated database clustering with failover and backups"
+author: "Platform Team"
+repository: "https://github.com/company/k8s-gen-database-plugin"
+license: "MIT"
+k8s_gen_version: ">=1.0.0"
+
+dependencies:
+  - name: "backup-plugin"
+    version: ">=1.0.0"
+
+categories:
+  - database
+  - stateful
+  - high-availability
+
+features:
+  - automatic_failover
+  - backup_automation
+  - monitoring_integration
+  - multi_cloud_support
+
+configuration:
+  required:
+    - cluster_size
+    - storage_size
+  optional:
+    - backup_schedule
+    - monitoring_enabled
+    - ssl_enabled
+
+examples:
+  - name: "Basic cluster"
+    code: |
+      db = DatabaseCluster("app-db")
+        .cluster_size(3)
+        .storage("100Gi")
+        .backup_schedule("0 2 * * *")
   
-  databases:
-    postgres:
-      name: "k8s-gen-postgres-plugin"
-      version: "2.0.0"
-      description: "PostgreSQL database integration"
-      repository: "https://github.com/k8s-gen/postgres-plugin"
+  - name: "High availability"
+    code: |
+      db = DatabaseCluster("prod-db")
+        .cluster_size(5)
+        .high_availability(True)
+        .cross_region_replication(True)
+        .monitoring(True)
 ```
 
-This extensible architecture allows K8s-Gen to grow with the community and adapt to specific organizational needs while maintaining a clean core API. 
+This extension system makes K8s-Gen highly customizable while maintaining the simplicity and elegance of the core DSL. Organizations can create their own plugins for specific needs while benefiting from community-contributed solutions. 

@@ -1,70 +1,99 @@
 # Advanced Features
 
-Production-ready features and integrations for enterprise Kubernetes deployments.
+Production-ready features and enterprise integrations for the K8s-Gen DSL.
 
 ## Multi-Format Output
 
-The DSL can generate multiple deployment formats from the same code:
+Generate multiple deployment formats from the same DSL code.
 
-- **Kubernetes YAML** - For production deployment to K8s clusters
-- **Docker Compose** - For local development and testing
-- **Helm Charts** - For templated K8s deployments
-- **Kustomize** - For environment-specific overlays
-- **Terraform** - For infrastructure as code
+```python
+from k8s_gen import App, StatefulApp
 
-This allows developers to:
-- Start development locally with Docker Compose
-- Test the same application structure in different environments
-- Gradually migrate from Docker Compose to Kubernetes
-- Maintain consistency across development and production
+# Define your application once
+app = (App("web-app")
+    .image("webapp:latest")
+    .port(8080)
+    .scale(replicas=3)
+    .expose(external_access=True))
+
+database = StatefulApp("database").image("database-server:latest").storage("20Gi")
+
+# Generate different output formats
+app.generate().to_yaml("./k8s/")                    # Kubernetes YAML
+app.generate().to_docker_compose("./compose.yml")   # Docker Compose
+app.generate().to_helm_chart("./charts/")           # Helm Chart
+app.generate().to_kustomize("./kustomize/")         # Kustomize
+app.generate().to_terraform("./terraform/")         # Terraform
+
+# Generate all formats at once
+app.generate().to_all_formats("./output/", formats=["yaml", "helm", "compose"])
+```
+
+## Custom Resources & Operators
+
+Extend Kubernetes with custom resources and operators.
+
+```python
+from k8s_gen import CustomResource
+
+# Machine Learning Pipeline Custom Resource
+ml_pipeline = (CustomResource("MLPipeline", "v1", "ml.company.com")
+    .spec({
+        "model": "bert-large",
+        "training_data": "s3://bucket/data/",
+        "resources": {"gpu": 2, "memory": "16Gi"},
+        "hyperparameters": {
+            "learning_rate": 0.001,
+            "batch_size": 32,
+            "epochs": 10
+        }
+    })
+    .metadata(name="text-classification-pipeline"))
+
+# Database Operator Custom Resource
+database_cluster = (CustomResource("DatabaseCluster", "v1", "db.company.com")
+    .spec({
+        "replicas": 3,
+        "storage": "100Gi",
+        "backup_schedule": "0 2 * * *",
+        "monitoring": True,
+        "high_availability": True
+    })
+    .metadata(name="production-db-cluster"))
+
+app.add_custom_resources([ml_pipeline, database_cluster])
+```
 
 ## Observability and Monitoring
 
-Comprehensive observability stack integration for production workloads.
+Comprehensive observability stack integration.
 
 ```python
 from k8s_gen import Observability
 
 app.observability(
     Observability()
+        .metrics(
+            endpoint="/metrics",
+            port=9090,
+            scrape_interval="30s",
+            labels={"service": "web-app", "team": "backend"}
+        )
         .logging(
             level="INFO",
             format="json",
-            output=["stdout", "fluentd"],
-            structured_fields=["timestamp", "level", "message", "trace_id", "user_id"],
-            retention_days=30,
-            sampling_rate=1.0
-        )
-        .metrics(
-            prometheus_scraping=True,
-            scrape_interval="15s",
-            metrics_path="/metrics",
-            custom_metrics=[
-                "http_requests_total",
-                "http_request_duration_seconds",
-                "db_connection_pool_size",
-                "business_events_total"
-            ],
-            dashboards=[
-                "grafana://app-dashboard",
-                "grafana://business-metrics"
-            ],
-            recording_rules={
-                "job:http_requests:rate5m": "rate(http_requests_total[5m])",
-                "job:http_request_duration:p99": "histogram_quantile(0.99, http_request_duration_seconds_bucket)"
-            }
+            output="/var/log/app.log",
+            rotation="daily",
+            retention="30d"
         )
         .tracing(
-            enabled=True,
-            jaeger_endpoint="http://jaeger:14268/api/traces",
+            service_name="web-app",
             sampling_rate=0.1,
-            trace_headers=["x-trace-id", "x-request-id", "x-correlation-id"],
-            service_name="myapp"
+            endpoint="http://jaeger-collector:14268/api/traces"
         )
         .alerting(
-            slack_webhook="https://hooks.slack.com/services/...",
-            pagerduty_integration_key="...",
-            email_recipients=["ops@company.com"],
+            notification_webhook="https://hooks.chat.com/services/...",
+            notification_email=["ops@company.com"],
             rules={
                 "high_error_rate": {
                     "condition": "rate(http_errors_total[5m]) > 0.05",
@@ -91,7 +120,7 @@ app.observability(
             liveness_probe="/health/live",
             custom_probes={
                 "database": "SELECT 1",
-                "redis": "PING",
+                "cache": "PING",
                 "external_api": "GET https://api.external.com/health"
             }
         )
@@ -115,392 +144,402 @@ Zero-downtime deployments with sophisticated rollout strategies.
 ```python
 from k8s_gen import DeploymentStrategy
 
+# Blue-Green Deployment
 app.deployment_strategy(
     DeploymentStrategy()
         .blue_green(
-            enabled=True,
-            switch_traffic_on_success=True,
-            rollback_on_failure=True,
-            test_suite="./tests/smoke_tests.py",
-            success_criteria=[
-                "error_rate < 1%",
-                "latency_p99 < 500ms",
-                "all_health_checks_pass"
-            ],
-            pre_switch_hook="./scripts/pre_switch.sh",
-            post_switch_hook="./scripts/post_switch.sh"
+            preview_service="web-app-preview",
+            active_service="web-app-active", 
+            auto_promotion_enabled=True,
+            scaledown_delay="30s",
+            rollback_window="10m"
         )
+        .promotion_criteria(
+            success_rate_threshold=99.5,
+            latency_threshold="100ms",
+            error_rate_threshold=0.1
+        )
+        .rollback_triggers(
+            error_rate_threshold=1.0,
+            latency_threshold="500ms"
+        )
+)
+
+# Canary Deployment
+app.deployment_strategy(
+    DeploymentStrategy()
         .canary(
-            enabled=True,
-            initial_percentage=5,
-            increment_percentage=10,
-            success_criteria=[
-                "error_rate < 0.5%",
-                "latency_p95 < 200ms"
+            steps=[
+                {"weight": 10, "pause": "2m"},
+                {"weight": 25, "pause": "5m"},
+                {"weight": 50, "pause": "10m"},
+                {"weight": 100}
             ],
-            analysis_duration="5m",
-            automated_promotion=True,
-            max_percentage=50,
-            rollback_on_failure=True
+            analysis_template="success-rate",
+            analysis_args={"service-name": "web-app"}
         )
-        .rolling_update(
-            max_unavailable="25%",
-            max_surge="25%",
-            readiness_timeout="5m",
-            progress_deadline="10m",
-            revision_history_limit=5
+        .traffic_routing(
+            smi_traffic_split=True,
+            istio_virtual_service=True,
+            header_routing={"version": "canary"}
         )
+)
+
+# Feature Flag Integration
+app.deployment_strategy(
+    DeploymentStrategy()
         .feature_flags(
-            provider="launchdarkly",
+            provider="flagsmith",  # or launchdarkly, split.io
             flags={
-                "new_algorithm": {"default": False, "canary": True},
-                "enhanced_ui": {"default": False, "percentage": 10}
+                "new_algorithm": {
+                    "rollout_percentage": 25,
+                    "user_segments": ["beta_users"],
+                    "default_value": False
+                },
+                "enhanced_ui": {
+                    "rollout_percentage": 50,
+                    "geographic_restrictions": ["US", "CA"],
+                    "default_value": True
+                }
             }
         )
 )
 ```
 
-### Deployment Strategy Features
-
-- **Blue-Green Deployments** - Zero downtime with traffic switching
-- **Canary Releases** - Gradual rollout with automated promotion/rollback
-- **Rolling Updates** - Standard Kubernetes rolling update with fine-tuning
-- **Feature Flags** - Integration with feature flag providers
-- **Automated Testing** - Run test suites during deployment
-- **Success Criteria** - Define metrics-based success conditions
-
 ## External Service Integration
 
-Cloud services and third-party integrations for complete application stacks.
+Connect to cloud services, APIs, and external systems.
 
 ```python
 from k8s_gen import ExternalServices
 
 app.external_services(
     ExternalServices()
-        # AWS Services
-        .aws_s3_bucket("my-app-storage", 
+        # Cloud Storage Services
+        .cloud_storage("app-storage", 
+            type="s3",  # or gcs, azure_blob
             region="us-east-1",
             versioning=True,
             encryption="AES256",
-            lifecycle_policy="./s3-lifecycle.json"
+            lifecycle_policy="./storage-lifecycle.json"
         )
-        .aws_rds_instance("my-app-db",
-            engine="postgres",
+        .cloud_database("app-db",
+            type="relational",  # or document, cache, graph
+            engine="postgresql",
             version="13.7",
-            instance_class="db.r5.large",
+            instance_class="standard-large",
             storage="100GB",
             connection_secret="db-secret"
         )
-        .aws_elasticache("my-app-cache",
-            engine="redis",
-            node_type="cache.r6g.large",
-            num_nodes=3
+        .cloud_cache("app-cache",
+            type="redis",
+            node_type="standard-large",
+            num_nodes=3,
+            cluster_mode=True
         )
-        .aws_sqs_queue("my-app-queue",
+        .cloud_queue("app-queue",
+            type="message_queue",
             visibility_timeout=300,
             message_retention=1209600
         )
         
-        # Google Cloud Services
-        .gcp_cloud_sql("my-app-db",
-            database_version="POSTGRES_13",
-            tier="db-custom-2-8192"
-        )
-        .gcp_pub_sub("my-app-events",
-            topics=["user-events", "order-events"]
-        )
-        
         # Monitoring and Observability
-        .datadog(
-            api_key_secret="datadog-secret",
+        .monitoring_service(
+            provider="datadog",  # or newrelic, honeycomb
+            api_key_secret="monitoring-secret",
             tags=["env:production", "service:myapp"]
         )
-        .new_relic(
-            license_key_secret="newrelic-secret",
-            app_name="MyApp Production"
+        .logging_service(
+            provider="elasticsearch",  # or splunk, datadog
+            endpoint="https://logging.company.com",
+            auth_secret="logging-secret"
         )
         
         # External APIs
         .external_api("payment-gateway",
-            url="https://api.stripe.com",
-            auth={"type": "bearer", "secret": "stripe-secret"},
-            rate_limit=100
+            url="https://api.payment.com",
+            auth={"type": "bearer", "secret": "payment-secret"},
+            rate_limit=100,
+            timeout="30s"
         )
         .external_api("notification-service",
-            url="https://api.sendgrid.com",
-            auth={"type": "api_key", "secret": "sendgrid-secret"}
+            url="https://api.notifications.com",
+            auth={"type": "api_key", "secret": "notification-secret"},
+            retry_policy={"max_attempts": 3, "backoff": "exponential"}
         )
         
         # CDN and Load Balancing
-        .cloudfront_distribution("my-app-cdn",
+        .cdn_distribution("app-cdn",
             origins=["api.mycompany.com"],
             cache_behaviors={
                 "/api/*": {"ttl": 0},
                 "/static/*": {"ttl": 86400}
-            }
+            },
+            ssl_certificate="wildcard-cert"
         )
 )
 ```
 
-### External Service Categories
+### Generated External Service Resources
 
-- **Cloud Storage** - S3, Google Cloud Storage, Azure Blob
-- **Managed Databases** - RDS, Cloud SQL, Azure Database
-- **Message Queues** - SQS, Pub/Sub, Service Bus
-- **Caching** - ElastiCache, Memorystore, Redis Cache
-- **Monitoring** - DataDog, New Relic, Splunk
-- **CDN** - CloudFront, CloudFlare, Azure CDN
-- **External APIs** - Payment gateways, notification services
-
-## Custom Resources & Operators
-
-Integration with Kubernetes operators and custom resource definitions.
-
-```python
-# Custom resource integration
-app.add_custom_resource(
-    CustomResource("CertManager")
-        .api_version("cert-manager.io/v1")
-        .kind("Certificate")
-        .spec({
-            "secretName": "my-app-tls",
-            "dnsNames": ["api.mycompany.com"],
-            "issuerRef": {"name": "letsencrypt-prod", "kind": "ClusterIssuer"}
-        })
-)
-
-# Operator pattern
-app.add_operator(
-    Operator("prometheus")
-        .helm_chart("prometheus-community/prometheus")
-        .values_file("./charts/prometheus-values.yaml")
-        .namespace("monitoring")
-)
-```
-
-### Supported Operators
-
-- **Cert-Manager** - TLS certificate management
-- **Prometheus Operator** - Monitoring stack
-- **Istio** - Service mesh
-- **ArgoCD** - GitOps deployments
-- **Velero** - Backup and restore
-- **External-DNS** - DNS record management
+This generates:
+- **ConfigMaps** with connection details
+- **Secrets** for authentication
+- **ExternalName Services** for service discovery
+- **NetworkPolicies** for secure communication
+- **ServiceEntries** for service mesh integration
 
 ## Security Policies
 
-Comprehensive security configuration for production workloads.
+Enterprise-grade security and compliance features.
 
 ```python
+from k8s_gen import SecurityPolicy
+
 app.security(
     SecurityPolicy()
-        .run_as_non_root()
-        .read_only_filesystem()
-        .drop_capabilities(["ALL"])
-        .add_capabilities(["NET_ADMIN"])  # if needed
-        .security_context_constraints("restricted")
-        .pod_security_policy("baseline")
-)
-
-# Network security
-app.network_security(
-    NetworkSecurity()
-        .deny_all_ingress()
-        .allow_ingress_from_namespaces(["frontend", "api-gateway"])
-        .allow_egress_to_services(["database", "cache"])
-        .require_tls()
+        .pod_security_standards(
+            profile="restricted",  # baseline, restricted, privileged
+            audit=True,
+            warn=True,
+            enforce=True
+        )
+        .network_policies(
+            default_deny_all=True,
+            allowed_ingress=[
+                {"from": "same-namespace", "ports": [8080]},
+                {"from": "monitoring-namespace", "ports": [9090]}
+            ],
+            allowed_egress=[
+                {"to": "database-namespace", "ports": [5432]},
+                {"to": "external", "ports": [443, 80]}
+            ]
+        )
+        .rbac_policies(
+            principle_of_least_privilege=True,
+            service_account_per_workload=True,
+            rotate_tokens=True,
+            token_ttl="1h"
+        )
+        .image_policies(
+            allowed_registries=["company-registry.com", "docker.io"],
+            required_signatures=True,
+            vulnerability_scanning=True,
+            base_image_restrictions=["alpine", "distroless"]
+        )
+        .runtime_security(
+            admission_controller="gatekeeper",  # or opa, falco
+            policies_path="./security-policies/",
+            violation_action="block"  # warn, block
+        )
 )
 ```
-
-### Security Features
-
-- **Pod Security Standards** - Baseline, restricted, privileged
-- **Network Policies** - Fine-grained network access control
-- **Security Contexts** - Container security configuration
-- **RBAC** - Role-based access control
-- **Image Security** - Vulnerability scanning and admission control
-- **Secrets Management** - Secure secret storage and rotation
 
 ## Cost Optimization
 
-Built-in cost optimization features for efficient resource usage.
+Intelligent resource management and cost controls.
 
 ```python
+from k8s_gen import CostOptimization
+
 app.cost_optimization(
     CostOptimization()
-        .spot_instances(percentage=50)
-        .scheduled_scaling({
-            "business_hours": {"replicas": 5, "schedule": "0 8 * * 1-5"},
-            "off_hours": {"replicas": 1, "schedule": "0 18 * * 1-5"}
-        })
-        .resource_quotas(
-            cpu_limit="2000m",
-            memory_limit="4Gi",
-            storage_limit="100Gi"
+        .resource_requests(
+            cpu_percentile=95,  # Use 95th percentile of actual usage
+            memory_percentile=90,
+            right_sizing_window="7d"
+        )
+        .vertical_scaling(
+            enabled=True,
+            mode="Auto",  # Off, Initial, Auto
+            resource_policies={
+                "cpu": {"min": "100m", "max": "2000m"},
+                "memory": {"min": "128Mi", "max": "4Gi"}
+            }
+        )
+        .horizontal_scaling(
+            predictive_scaling=True,
+            schedule_based_scaling={
+                "business_hours": {"replicas": 10, "schedule": "0 9 * * 1-5"},
+                "night_hours": {"replicas": 2, "schedule": "0 18 * * 1-5"}
+            }
+        )
+        .spot_instances(
+            enabled=True,
+            interruption_handling=True,
+            mixed_instance_policy={
+                "on_demand_percentage": 20,
+                "spot_instance_types": ["m5.large", "m5.xlarge", "c5.large"]
+            }
+        )
+        .idle_resource_detection(
+            cpu_threshold=5,  # Percentage
+            memory_threshold=10,
+            duration="1h",
+            action="scale_down"  # alert, scale_down, terminate
         )
 )
 ```
 
-### Cost Optimization Features
+### Generated Cost Optimization Resources
 
-- **Spot Instances** - Use cheaper spot instances where appropriate
-- **Scheduled Scaling** - Scale down during off-hours
-- **Resource Quotas** - Prevent resource over-allocation
-- **Vertical Pod Autoscaling** - Right-size containers automatically
-- **Resource Recommendations** - AI-powered resource recommendations
+This creates:
+- **VerticalPodAutoscaler** resources
+- **PodDisruptionBudgets** for safe scaling
+- **Custom metrics** for cost tracking
+- **Scheduled scaling** CronJobs
+- **Resource quotas** and limits
 
 ## Plugin System
 
-Extensible plugin architecture for custom functionality.
+Extend K8s-Gen with custom functionality and integrations.
 
 ```python
-# Custom plugin for specific needs
-from k8s_gen.plugins import Plugin
+from k8s_gen import PluginManager
 
-class CustomLogPlugin(Plugin):
-    def apply(self, app):
-        app.add_companion(
-            Companion("custom-logger")
-                .image("mycompany/custom-logger:latest")
-                .type("sidecar")
-                .environment(self.config)
-        )
+# Register custom plugins
+plugins = PluginManager()
+plugins.register("custom_database", "./plugins/database_plugin.py")
+plugins.register("monitoring_stack", "./plugins/monitoring_plugin.py")
+plugins.register("ml_workflow", "./plugins/ml_plugin.py")
 
-app.use_plugin(
-    CustomLogPlugin(config={"LOG_FORMAT": "json", "LOG_LEVEL": "info"})
-)
+# Use plugin-provided builders
+from k8s_gen.plugins import CustomDatabase, MonitoringStack
+
+# Custom database with automatic clustering
+database = (CustomDatabase("postgres-cluster")
+    .version("13.7")
+    .cluster_size(3)
+    .automatic_failover(True)
+    .backup_retention("30d")
+    .connection_pooling(max_connections=100))
+
+# Complete monitoring stack
+monitoring = (MonitoringStack("observability")
+    .prometheus(retention="30d", storage="100Gi")
+    .grafana(plugins=["postgres", "redis"])
+    .alertmanager(slack_webhook="...", email_smtp="...")
+    .jaeger(sampling_rate=0.1)
+    .fluentd(log_retention="7d"))
+
+app.add_plugins([database, monitoring])
 ```
 
-### Available Plugins
-
-- **Monitoring Plugins** - DataDog, New Relic, Splunk
-- **Security Plugins** - Falco, OPA Gatekeeper, Twistlock
-- **Backup Plugins** - Velero, Kasten, Stash
-- **CI/CD Plugins** - ArgoCD, Flux, Tekton
-- **Service Mesh Plugins** - Istio, Linkerd, Consul Connect
-
-## Environment Management
-
-Multi-environment deployment with environment-specific configurations.
+### Plugin Development
 
 ```python
-# Multi-environment deployment
-environments = {
-    "development": {
-        "replicas": 1,
-        "resources": {"cpu": "100m", "memory": "256Mi"},
-        "ingress": "dev-api.mycompany.com"
-    },
-    "staging": {
-        "replicas": 2,
-        "resources": {"cpu": "500m", "memory": "512Mi"},
-        "ingress": "staging-api.mycompany.com"
-    },
-    "production": {
-        "replicas": 5,
-        "resources": {"cpu": "1000m", "memory": "1Gi"},
-        "ingress": "api.mycompany.com",
-        "auto_scaling": True
-    }
-}
+# plugins/database_plugin.py
+from k8s_gen import Plugin, StatefulApp, Secret, ConfigMap
 
-for env_name, config in environments.items():
-    env_app = app.for_environment(env_name)
-    env_app.apply_config(config)
-    env_app.generate().to_yaml(f"./k8s/{env_name}/")
+class CustomDatabase(Plugin):
+    def __init__(self, name):
+        super().__init__(name)
+        self.cluster_size = 1
+        self.version = "latest"
+        
+    def cluster_size(self, size):
+        self.cluster_size = size
+        return self
+        
+    def version(self, version):
+        self.version = version
+        return self
+    
+    def generate(self):
+        # Generate database cluster resources
+        primary = StatefulApp(f"{self.name}-primary")
+        replicas = [StatefulApp(f"{self.name}-replica-{i}") 
+                   for i in range(self.cluster_size - 1)]
+        
+        # Generate cluster configuration
+        cluster_config = ConfigMap(f"{self.name}-config")
+        cluster_secret = Secret(f"{self.name}-credentials")
+        
+        return [primary] + replicas + [cluster_config, cluster_secret]
 ```
 
-### Environment Features
+## Integration Examples
 
-- **Environment-Specific Configuration** - Different settings per environment
-- **Promotion Pipelines** - Automated promotion between environments
-- **Configuration Drift Detection** - Detect configuration differences
-- **Environment Isolation** - Network and resource isolation
-
-## Performance Optimization
-
-Advanced performance tuning for high-throughput applications.
+### CI/CD Pipeline Integration
 
 ```python
-app.performance(
-    Performance()
-        .cpu_optimization(
-            cpu_manager_policy="static",
-            topology_spread_constraints=True
-        )
-        .memory_optimization(
-            huge_pages="2Mi",
-            numa_awareness=True
-        )
-        .network_optimization(
-            cni="cilium",
-            bandwidth_limit="1Gbps",
-            latency_optimization=True
-        )
-        .storage_optimization(
-            storage_class="ssd",
-            io_priority="high",
-            access_pattern="random"
-        )
-)
+# .github/workflows/deploy.yml integration
+name: Deploy to Kubernetes
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Generate K8s manifests
+      run: |
+        pip install k8s-gen
+        k8s-gen generate app.py --output ./k8s/
+        
+    - name: Validate manifests
+      run: |
+        k8s-gen validate ./k8s/
+        k8s-gen security-scan ./k8s/
+        
+    - name: Deploy to staging
+      run: |
+        k8s-gen deploy ./k8s/ --environment staging
+        k8s-gen test ./k8s/ --wait-for-ready
+        
+    - name: Deploy to production
+      if: github.ref == 'refs/heads/main'
+      run: |
+        k8s-gen deploy ./k8s/ --environment production --strategy blue-green
 ```
 
-### Performance Features
-
-- **CPU Optimization** - CPU pinning, topology awareness
-- **Memory Optimization** - Huge pages, NUMA awareness
-- **Network Optimization** - CNI selection, bandwidth limits
-- **Storage Optimization** - Storage class selection, I/O optimization
-- **Autoscaling Tuning** - Custom metrics, predictive scaling
-
-## Disaster Recovery
-
-Built-in disaster recovery and backup capabilities.
+### Multi-Environment Configuration
 
 ```python
-app.disaster_recovery(
-    DisasterRecovery()
-        .backup_schedule("0 2 * * *")
-        .backup_retention(days=30)
-        .cross_region_replication(regions=["us-west-2", "eu-west-1"])
-        .rto_target("15m")  # Recovery Time Objective
-        .rpo_target("1h")   # Recovery Point Objective
-        .failover_strategy("automatic")
-)
+# environments/base.py
+from k8s_gen import App, StatefulApp
+
+def create_app(env_config):
+    database = (StatefulApp("database")
+        .image("database-server:latest")
+        .storage(env_config.database_storage)
+        .replicas(env_config.database_replicas))
+    
+    app = (App("web-app")
+        .image(f"webapp:{env_config.app_version}")
+        .replicas(env_config.app_replicas)
+        .resources(
+            cpu=env_config.cpu_request,
+            memory=env_config.memory_request
+        ))
+    
+    return app, database
+
+# environments/development.py
+from dataclasses import dataclass
+
+@dataclass
+class DevConfig:
+    app_version = "latest"
+    app_replicas = 1
+    database_storage = "10Gi"
+    database_replicas = 1
+    cpu_request = "100m"
+    memory_request = "256Mi"
+
+# environments/production.py
+@dataclass
+class ProdConfig:
+    app_version = "v1.2.3"
+    app_replicas = 5
+    database_storage = "100Gi"
+    database_replicas = 3
+    cpu_request = "500m"
+    memory_request = "1Gi"
 ```
 
-### Disaster Recovery Features
-
-- **Automated Backups** - Scheduled backups with retention policies
-- **Cross-Region Replication** - Replicate data across regions
-- **Failover Automation** - Automatic failover on failure detection
-- **Recovery Testing** - Regular disaster recovery testing
-- **Point-in-Time Recovery** - Restore to specific points in time
-
-## Compliance & Governance
-
-Built-in compliance and governance features for enterprise environments.
-
-```python
-app.compliance(
-    Compliance()
-        .standards(["SOC2", "HIPAA", "PCI-DSS"])
-        .audit_logging(enabled=True, retention_years=7)
-        .data_classification(sensitivity="confidential")
-        .encryption(at_rest=True, in_transit=True)
-        .access_controls(
-            mfa_required=True,
-            session_timeout="8h",
-            privileged_access_review=True
-        )
-)
-```
-
-### Compliance Features
-
-- **Standards Compliance** - SOC2, HIPAA, PCI-DSS, GDPR
-- **Audit Logging** - Comprehensive audit trails
-- **Data Classification** - Automatic data sensitivity labeling
-- **Encryption** - End-to-end encryption
-- **Access Controls** - MFA, session management, privilege review 
+This advanced features specification demonstrates the enterprise-ready capabilities of K8s-Gen while maintaining the simplicity and abstraction that makes it powerful for both development and production use cases. 

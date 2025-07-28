@@ -12,11 +12,11 @@ The `App` class represents stateless applications that don't require persistent 
 from k8s_gen import App
 
 app = (App("my-web-app")
-    .image("nginx:1.21")
-    .port(80)
+    .image("web-server:latest")
+    .port(8080)
     .environment({
         "ENV": "production",
-        "DB_HOST": "postgres.default.svc.cluster.local"
+        "DB_HOST": "database.default.svc.cluster.local"
     })
     .resources(
         cpu="500m",
@@ -30,7 +30,7 @@ app = (App("my-web-app")
 
 | Method | Description | Example |
 |--------|-------------|---------|
-| `.image(name)` | Set container image | `.image("nginx:alpine")` |
+| `.image(name)` | Set container image | `.image("web-server:latest")` |
 | `.port(number)` | Expose port | `.port(8080)` |
 | `.environment(dict)` | Set environment variables | `.environment({"DEBUG": "true"})` |
 | `.resources(...)` | Set CPU/memory limits | `.resources(cpu="500m", memory="1Gi")` |
@@ -44,36 +44,36 @@ The `StatefulApp` class represents applications requiring persistent state like 
 ```python
 from k8s_gen import StatefulApp
 
-# PostgreSQL database
-postgres = (StatefulApp("postgres")
-    .image("postgres:13")
+# Database server
+database = (StatefulApp("database")
+    .image("database-server:latest")
     .port(5432)
     .storage("20Gi")
     .replicas(1)
     .environment({
-        "POSTGRES_DB": "myapp",
-        "POSTGRES_USER": "admin"
+        "DB_NAME": "myapp",
+        "DB_USER": "admin"
     })
     .backup_schedule("0 2 * * *")  # Daily at 2 AM
 )
 
-# Kafka event streaming
-kafka = (StatefulApp("kafka")
-    .image("bitnami/kafka:latest")
+# Message queue
+message_queue = (StatefulApp("message-queue")
+    .image("message-broker:latest")
     .port(9092)
     .storage("50Gi")
     .replicas(3)
     .environment({
-        "KAFKA_REPLICATION_FACTOR": "2",
-        "KAFKA_NUM_PARTITIONS": "3"
+        "REPLICATION_FACTOR": "2",
+        "NUM_PARTITIONS": "3"
     })
     .topics(["user-events", "order-events"])
     .retention_hours(168)  # 7 days
 )
 
-# Redis cache cluster
-redis = (StatefulApp("redis")
-    .image("redis:alpine")
+# Cache cluster
+cache = (StatefulApp("cache")
+    .image("cache-server:latest")
     .port(6379)
     .storage("10Gi")
     .replicas(3)
@@ -81,7 +81,7 @@ redis = (StatefulApp("redis")
     .persistence(save_interval="60 1000"))
 
 # Connect app to stateful services
-app.connect_to([postgres, kafka, redis])
+app.connect_to([database, message_queue, cache])
 ```
 
 ### Secrets Management
@@ -95,14 +95,14 @@ from k8s_gen import Secret
 db_secret = (Secret("database-credentials")
     .add("username", "admin")
     .add("password", "super-secret-password")
-    .add("connection-string", "postgresql://admin:password@postgres:5432/myapp")
+    .add("connection-string", "database://admin:password@database:5432/myapp")
     .from_env_file(".env.secrets")
     .mount_path("/etc/secrets")
     .mount_as_env_vars(prefix="DB_"))
 
 # API keys and certificates
 api_secret = (Secret("api-keys")
-    .add("stripe_key", "sk_live_...")
+    .add("payment_key", "pk_live_...")
     .add("jwt_secret", "...")
     .add("github_token", "ghp_...")
     .from_file("tls.crt", "./certs/app.crt")
@@ -117,9 +117,9 @@ vault_secret = (Secret("vault-secrets")
     })
     .vault_auth("kubernetes", role="myapp-role"))
 
-aws_secret = (Secret("aws-secrets")
-    .from_aws_parameter_store("/myapp/production/")
-    .from_aws_secrets_manager("myapp/api-keys"))
+cloud_secret = (Secret("cloud-secrets")
+    .from_cloud_parameter_store("/myapp/production/")
+    .from_cloud_secrets_manager("myapp/api-keys"))
 
 # Generated secrets
 generated_secret = (Secret("generated-keys")
@@ -139,80 +139,56 @@ from k8s_gen import ConfigMap
 
 # Simple key-value configuration
 app_config = (ConfigMap("app-config")
-    .add("database_url", "postgresql://localhost:5432/myapp")
-    .add("api_key", "your-api-key-here")
-    .add("debug", "true")
-    .mount_path("/etc/config"))
+    .add("environment", "production")
+    .add("log_level", "info")
+    .add("max_connections", "100")
+    .add("feature_flags", '{"new_ui": true, "beta_features": false}'))
 
-# Load from files
+# Configuration from files
 file_config = (ConfigMap("file-config")
-    .from_file("app.yaml", "./config/app.yaml")
-    .from_file("nginx.conf", "./config/nginx.conf")
-    .mount_path("/etc/app"))
+    .from_file("app.properties", "./config/app.properties")
+    .from_file("database.conf", "./config/database.conf")
+    .from_directory("./config/", pattern="*.conf"))
 
-# Load entire directory
-dir_config = (ConfigMap("dir-config")
-    .from_directory("./config/")
-    .mount_path("/etc/config")
-    .file_mode(0o644))
-
-# Environment-style configuration
+# Environment-specific configuration
 env_config = (ConfigMap("env-config")
-    .from_env_file(".env")
-    .from_env_file(".env.production", prefix="PROD_")
-    .mount_as_env_vars())
+    .from_env_file(".env.production")
+    .from_env_file(".env.shared"))
 
-# JSON/YAML data structures
-data_config = (ConfigMap("data-config")
-    .add_json("database", {
-        "host": "localhost",
-        "port": 5432,
-        "name": "myapp"
+# Structured configuration formats
+structured_config = (ConfigMap("structured-config")
+    .add_json("app_settings", {
+        "server": {"host": "0.0.0.0", "port": 8080},
+        "database": {"pool_size": 10, "timeout": 30},
+        "cache": {"ttl": 3600, "max_size": "128MB"}
     })
-    .add_yaml("features", {
-        "feature_a": True,
-        "feature_b": False,
-        "limits": {"max_users": 1000}
-    })
-    .mount_path("/etc/data"))
+    .add_yaml("logging_config", """
+        version: 1
+        handlers:
+          console:
+            class: logging.StreamHandler
+            level: INFO
+        root:
+          level: INFO
+          handlers: [console]
+    """)
+    .add_properties("app_properties", {
+        "database_url": "database://localhost:5432/myapp",
+        "cache_ttl": "3600",
+        "debug_mode": "false"
+    }))
 
-# Template-based configuration
-template_config = (ConfigMap("template-config")
-    .from_template("app.yaml.j2", {
+# Advanced ConfigMap features
+advanced_config = (ConfigMap("advanced-config")
+    .from_template("config.j2", variables={
         "environment": "production",
-        "replicas": 3,
-        "db_host": "postgres.prod.svc.cluster.local"
+        "replica_count": 3
     })
-    .mount_path("/etc/templates"))
-
-# Hot-reload configuration
-hot_reload_config = (ConfigMap("hot-config")
-    .from_file("config.yaml", "./config/config.yaml")
-    .enable_hot_reload(interval="30s")
+    .hot_reload(enabled=True, restart_policy="rolling")
     .mount_path("/etc/config")
-    .on_change(restart_pods=True))
+    .mount_as_env_vars(prefix="APP_")
+    .file_permissions(0o644))
 
-# Multi-format configuration
-multi_config = (ConfigMap("multi-config")
-    .add_properties("app.properties", {
-        "server.port": "8080",
-        "logging.level": "INFO"
-    })
-    .add_ini("database.ini", {
-        "database": {
-            "host": "localhost",
-            "port": "5432"
-        }
-    })
-    .add_toml("features.toml", {
-        "features": {
-            "feature_a": True,
-            "feature_b": False
-        }
-    })
-    .mount_path("/etc/config"))
-
-# Add config to app
 app.add_config([app_config, file_config, env_config])
 ```
 
@@ -228,37 +204,30 @@ from k8s_gen import Job, CronJob
 # Database migration job
 migration = (Job("db-migration")
     .image("myapp/migrator:latest")
-    .run_once()
-    .depends_on([postgres])
-    .environment({"MIGRATE_UP": "true"})
-    .command(["python", "migrate.py", "--up"])
-    .on_success(cleanup=True)
-    .on_failure(restart_policy="Never")
+    .command(["python", "migrate.py"])
+    .environment({"DB_URL": "database://user:pass@database:5432/myapp"})
+    .depends_on([database])
     .timeout("10m")
-    .parallelism(1)
-    .completions(1))
+    .retention_limit(3))
 
-# Data processing job
+# Batch processing job
 batch_job = (Job("data-processing")
     .image("myapp/processor:latest")
-    .parallelism(5)
-    .completions(100)
-    .environment({"BATCH_SIZE": "1000"})
+    .command(["python", "process_data.py", "--batch-size=1000"])
     .resources(cpu="2000m", memory="4Gi")
-    .timeout("2h")
-    .backoff_limit(3))
+    .parallelism(5)
+    .completions(10)
+    .timeout("2h"))
 
 # Scheduled backup
-backup_job = (CronJob("daily-backup")
-    .image("postgres:13")
-    .schedule("0 2 * * *")  # 2 AM daily
-    .command(["sh", "-c", "pg_dump -h postgres mydb > /backup/backup-$(date +%Y%m%d).sql"])
-    .environment({"PGPASSWORD": {"secret": "db-secret", "key": "password"}})
-    .retention_limit(successful=7, failed=3)
-    .timezone("America/New_York")
-    .suspend(False))
+backup_job = (CronJob("backup")
+    .image("database-tools:latest")
+    .schedule("0 2 * * *")  # Daily at 2 AM
+    .command(["sh", "-c", "backup_tool --source database --dest /backup/backup-$(date +%Y%m%d).sql"])
+    .volumes([{"name": "backup-storage", "mount_path": "/backup"}])
+    .retention_limit(7))  # Keep 7 successful jobs
 
-# Scheduled cleanup
+# Cleanup job
 cleanup_job = (CronJob("cleanup-temp-files")
     .image("alpine:latest")
     .schedule("0 0 * * 0")  # Weekly on Sunday
@@ -292,6 +261,121 @@ app.lifecycle(
 )
 ```
 
+### Dependency Management
+
+Comprehensive dependency management without relying on init containers or sidecars.
+
+```python
+from k8s_gen import DependencyManager, WaitCondition
+
+# Service-Level Dependencies
+app.dependencies(
+    DependencyManager()
+        .wait_for_service("database", health_check="/health")
+        .wait_for_service("cache", health_check="PING")
+        .wait_for_service("message-queue", health_check="/ready")
+        .wait_for_external_service("payment-gateway", url="https://api.payment.com/health")
+        .wait_for_config_map("app-config")
+        .wait_for_secret("db-credentials")
+        .wait_for_persistent_volume("data-storage")
+)
+
+# Advanced Wait Conditions
+app.dependencies(
+    DependencyManager()
+        .wait_for(
+            WaitCondition("database-ready")
+                .service("database")
+                .health_check("/health")
+                .timeout("5m")
+                .retry_interval("10s")
+                .max_retries(30)
+                .success_criteria("status == 'ready'")
+        )
+        .wait_for(
+            WaitCondition("cache-warm")
+                .service("cache")
+                .custom_check("cache-cli ping")
+                .timeout("2m")
+                .poll_interval("5s")
+        )
+        .wait_for(
+            WaitCondition("message-queue-ready")
+                .service("message-queue")
+                .custom_check("queue-admin status")
+                .timeout("3m")
+                .expected_topics(["user-events", "order-events"])
+        )
+)
+
+# Multi-Service Orchestration
+orchestrator = DependencyManager()
+orchestrator.wait_for_all([
+    "database", "cache", "message-queue"
+]).then_start("api-service")
+
+orchestrator.wait_for_any([
+    "primary-db", "replica-db"
+]).then_start("read-service")
+
+orchestrator.wait_for_sequence([
+    "init-db", "migrate-schema", "seed-data"
+]).then_start("web-app")
+
+# Health Check Based Dependencies
+app.dependencies(
+    DependencyManager()
+        .wait_for_healthy_pods("database", min_ready=1)
+        .wait_for_healthy_pods("cache", min_ready=2)
+        .wait_for_service_endpoints("api-gateway", min_endpoints=3)
+        .wait_for_load_balancer_ready("external-service")
+)
+
+# Custom Dependency Checks
+app.dependencies(
+    DependencyManager()
+        .wait_for_custom_check(
+            name="database-migration-complete",
+            command=["kubectl", "get", "job", "db-migration", "-o", "jsonpath='{.status.succeeded}'"],
+            expected_result="1",
+            timeout="10m"
+        )
+        .wait_for_custom_check(
+            name="config-sync-complete",
+            command=["kubectl", "get", "configmap", "app-config", "-o", "jsonpath='{.data.version}'"],
+            expected_result="v2.0.0",
+            timeout="2m"
+        )
+)
+
+# Conditional Dependencies
+app.dependencies(
+    DependencyManager()
+        .wait_for_if(
+            condition="environment == 'production'",
+            service="monitoring-stack"
+        )
+        .wait_for_if(
+            condition="feature_flags.advanced_logging == true",
+            service="log-aggregator"
+        )
+)
+
+# Dependency Groups
+app.dependencies(
+    DependencyManager()
+        .wait_for_group("infrastructure", [
+            "database", "cache", "storage"
+        ])
+        .wait_for_group("monitoring", [
+            "prometheus", "grafana", "alertmanager"
+        ])
+        .wait_for_group("security", [
+            "vault", "cert-manager"
+        ])
+)
+```
+
 ## Networking and Exposure
 
 ### Companions (Sidecars & Init Containers)
@@ -302,7 +386,7 @@ Supporting containers that run alongside your main application.
 # Sidecar for logging
 app.add_companion(
     Companion("log-collector")
-        .image("fluentd:latest")
+        .image("log-agent:latest")
         .type("sidecar")
         .mount_shared_volume("/var/log")
         .environment({"LOG_LEVEL": "info"})
@@ -313,7 +397,7 @@ app.add_companion(
     Companion("db-migrate")
         .image("migrate:latest")
         .type("init")
-        .environment({"DB_URL": "postgresql://..."})
+        .environment({"DB_URL": "database://..."})
         .wait_for_completion()
 )
 ```
@@ -334,204 +418,154 @@ app.add_storage(
 
 # Shared storage between containers
 app.add_storage(
-    Storage("shared-logs")
+    Storage("shared-cache")
         .type("shared")
-        .mount_path("/var/log")
-        .share_with_companions()
+        .size("5Gi")
+        .mount_path("/cache")
+        .access_mode("read_write_many")
 )
 
-# Configuration storage
+# Temporary storage
 app.add_storage(
-    Storage("app-config")
-        .type("config")
-        .from_files({
-            "app.yaml": "./config/app.yaml",
-            "database.yaml": "./config/database.yaml"
-        })
-        .mount_path("/etc/config")
-)
-
-# Secret storage
-app.add_storage(
-    Storage("api-keys")
-        .type("secret")
-        .from_env_file(".env")
-        .mount_path("/etc/secrets")
+    Storage("temp-data")
+        .type("ephemeral")
+        .size("1Gi")
+        .mount_path("/tmp")
 )
 ```
 
-### Networking & Service Discovery
+### Service Discovery
 
-How services communicate with each other.
+Automatic service discovery and networking.
 
 ```python
-# Expose application to cluster
+# Basic service exposure
 app.expose(
-    Networking()
-        .internal_port(80)
-        .cluster_access()  # Creates ClusterIP service
-        .service_name("web-api")
+    Service()
+        .type("cluster_ip")
+        .port(8080)
+        .target_port(8080)
 )
 
-# External access
+# Load balancer service
 app.expose(
-    Networking()
-        .internal_port(80)
-        .external_access()  # Creates LoadBalancer service
-        .domain("api.mycompany.com")
-        .ssl_redirect()
+    Service()
+        .type("load_balancer")
+        .port(80)
+        .target_port(8080)
+        .external_traffic_policy("Local")
 )
 
-# Service mesh integration
+# Multiple ports
 app.expose(
-    Networking()
-        .internal_port(80)
-        .service_mesh()  # Istio/Linkerd annotations
-        .traffic_policy("round_robin")
-        .circuit_breaker(max_failures=3)
+    Service()
+        .add_port("http", 8080, 8080)
+        .add_port("metrics", 9090, 9090)
+        .add_port("admin", 8081, 8081)
 )
 ```
 
 ### Advanced Ingress Management
 
-Sophisticated HTTP routing and traffic management.
+Sophisticated HTTP routing, SSL, rate limiting, and more.
 
 ```python
 from k8s_gen import Ingress
 
-# Basic HTTP routing
-basic_ingress = (Ingress("app-ingress")
+advanced_ingress = (Ingress("api-ingress")
     .host("api.mycompany.com")
-    .path("/", app, port=8080)
-    .ssl_certificate(cert_manager="letsencrypt-prod")
-    .annotations({"kubernetes.io/ingress.class": "nginx"}))
-
-# Multi-service routing
-api_ingress = (Ingress("api-gateway")
-    .host("api.mycompany.com")
-    .path("/api/v1/users", user_service, port=8080)
-    .path("/api/v1/products", product_service, port=8081)
-    .path("/api/v1/orders", order_service, port=8082)
-    .path("/", frontend_service, port=3000)
-    .ssl_certificate(cert_manager="letsencrypt-prod")
+    .path("/api/v1", "api-service", 8080)
+    .path("/api/v2", "api-v2-service", 8080)
+    .ssl_certificate("api-tls-secret")
     .rate_limiting(requests_per_minute=1000, burst=100)
     .cors(
-        origins=["https://myapp.com", "https://admin.myapp.com"],
-        methods=["GET", "POST", "PUT", "DELETE"],
-        headers=["Authorization", "Content-Type"]
+        allowed_origins=["https://myapp.com", "https://admin.myapp.com"],
+        allowed_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allowed_headers=["Authorization", "Content-Type", "X-Requested-With"]
     )
-    .middleware(["auth", "logging", "compression"])
-    .load_balancer_class("nginx")
-    .ip_whitelist(["192.168.1.0/24", "10.0.0.0/8"]))
-
-# Advanced routing with rewrites
-advanced_ingress = (Ingress("advanced-routing")
-    .host("myapp.com")
-    .path("/api/(.*)", api_service, port=8080, rewrite="/v1/$1")
-    .path("/legacy/(.*)", legacy_service, port=9090, rewrite="/$1")
-    .redirect_http_to_https()
+    .middleware([
+        {"name": "auth", "config": {"auth_url": "http://auth-service.default.svc.cluster.local/auth"}},
+        {"name": "compression", "config": {"level": 6}},
+        {"name": "timeout", "config": {"read_timeout": "30s", "write_timeout": "30s"}}
+    ])
+    .load_balancer_class("external-lb")
+    .ip_whitelist(["10.0.0.0/8", "192.168.0.0/16"])
+    .redirect_http_to_https(True)
     .custom_headers({
         "X-Frame-Options": "DENY",
-        "X-Content-Type-Options": "nosniff"
+        "X-Content-Type-Options": "nosniff",
+        "Strict-Transport-Security": "max-age=31536000; includeSubDomains"
     })
-    .timeout(connect=5, read=30, send=30))
+    .timeout(connect=10, read=60, write=60))
 
-app.add_ingress([basic_ingress, api_ingress])
+app.add_ingress([advanced_ingress])
 ```
-
-## Scaling & Availability
 
 ### Scaling Configuration
 
-Performance and availability requirements.
+Horizontal and vertical scaling with advanced policies.
 
 ```python
+from k8s_gen import Scaling
+
 app.scale(
     Scaling()
         .replicas(3)
-        .max_replicas(10)
-        .auto_scale_on_cpu(70)  # CPU percentage
-        .auto_scale_on_memory(80)  # Memory percentage
-        .auto_scale_on_requests_per_second(100)
-)
-
-# Advanced scaling
-app.scale(
-    Scaling()
-        .replicas(2)
+        .auto_scale_on_cpu(target_percentage=70, min_replicas=2, max_replicas=10)
+        .auto_scale_on_memory(target_percentage=80, min_replicas=2, max_replicas=10)
+        .auto_scale_on_custom_metric("http_requests_per_second", target_value=100)
+        .scale_down_policy(period="5m", pods=2, percentage=10)
+        .scale_up_policy(period="1m", pods=4, percentage=50)
         .spread_across_zones()
-        .avoid_single_points_of_failure()
-        .rolling_update(max_unavailable=1, max_surge=1)
+        .anti_affinity("hard")
 )
 ```
 
 ### Health & Monitoring
 
-Health checks and monitoring integration.
+Comprehensive health checks and observability.
 
 ```python
-app.health(
-    HealthCheck()
-        .startup_probe("/health/startup", timeout=30)
-        .readiness_probe("/health/ready", interval=10)
-        .liveness_probe("/health/live", interval=30)
-        .graceful_shutdown_timeout(30)
-)
+from k8s_gen import Health
 
-# Monitoring integration
-app.monitor(
-    Monitoring()
-        .metrics_endpoint("/metrics")
-        .prometheus_scraping()
-        .custom_metrics(["http_requests_total", "response_time"])
-        .alerts({
-            "high_error_rate": "rate(http_errors_total[5m]) > 0.1",
-            "high_latency": "histogram_quantile(0.95, response_time) > 1"
+app.health(
+    Health()
+        .startup_probe("/health/startup", initial_delay=10, period=10, timeout=5, failure_threshold=30)
+        .readiness_probe("/health/ready", initial_delay=5, period=5, timeout=3, failure_threshold=3)
+        .liveness_probe("/health/live", initial_delay=30, period=10, timeout=5, failure_threshold=3)
+        .custom_probes({
+            "database": "SELECT 1",
+            "cache": "PING",
+            "external_api": "GET https://api.external.com/health"
         })
+        .metrics_endpoint("/metrics", port=9090)
+        .log_config(level="INFO", format="json", output="/var/log/app.log")
 )
 ```
 
-## Security
-
 ### RBAC Security
 
-Role-based access control configuration.
+Role-Based Access Control with service accounts and permissions.
 
 ```python
 from k8s_gen import ServiceAccount, Role, ClusterRole, RoleBinding
 
-# Service account for the application
-service_account = (ServiceAccount("app-service-account")
-    .namespace("production")
-    .annotations({
-        "eks.amazonaws.com/role-arn": "arn:aws:iam::123456789:role/MyAppRole",
-        "iam.gke.io/gcp-service-account": "myapp@project.iam.gserviceaccount.com"
-    })
-    .automount_service_account_token(False)
-    .image_pull_secrets(["regcred"]))
+# Service account
+service_account = ServiceAccount("app-service-account")
 
 # Application-specific role
 app_role = (Role("app-role")
-    .allow("get", "list", "watch").on("pods", "services", "endpoints")
-    .allow("create", "update", "patch").on("configmaps")
-    .allow("get").on("secrets").names(["app-secrets", "db-credentials"])
-    .deny("delete").on("*"))
+    .allow("get", "list", "watch").on("configmaps", "secrets")
+    .allow("create", "update", "patch").on("events")
+    .allow("get").on("pods"))
 
 # Monitoring role
 monitoring_role = (ClusterRole("monitoring-role")
-    .allow("get", "list", "watch").on("pods", "services", "nodes")
-    .allow("get").on("metrics.k8s.io", "custom.metrics.k8s.io")
-    .cluster_wide())
+    .allow("get", "list", "watch").on("nodes", "pods", "services", "endpoints"))
 
-# Bind roles to service account
-role_binding = (RoleBinding("app-role-binding")
-    .bind(app_role).to(service_account)
-    .namespace("production"))
-
-# Admin access for ops team
-admin_binding = (ClusterRoleBinding("ops-admin")
-    .bind("cluster-admin").to_group("ops-team@company.com")
-    .cluster_wide())
+# Role bindings
+role_binding = RoleBinding("app-binding", app_role, service_account)
+admin_binding = RoleBinding("admin-binding", "admin", service_account)
 
 app.rbac(
     service_account=service_account,
@@ -552,31 +586,31 @@ from k8s_gen import AppGroup
 microservices = AppGroup("ecommerce-platform")
 
 # Stateful services
-postgres = StatefulApp("postgres").image("postgres:13").storage("20Gi")
-redis = StatefulApp("redis").image("redis:alpine").storage("5Gi")
-kafka = StatefulApp("kafka").image("bitnami/kafka:latest").storage("10Gi")
+database = StatefulApp("database").image("database-server:latest").storage("20Gi")
+cache = StatefulApp("cache").image("cache-server:latest").storage("5Gi")
+message_queue = StatefulApp("message-queue").image("message-broker:latest").storage("10Gi")
 
 # User service
 user_service = (App("user-service")
     .image("mycompany/user-service:v1.2.0")
     .port(8080)
-    .connect_to([postgres, redis]))
+    .connect_to([database, cache]))
 
 # Product service
 product_service = (App("product-service")
     .image("mycompany/product-service:v1.1.0")
     .port(8080)
-    .connect_to([postgres, kafka]))
+    .connect_to([database, message_queue]))
 
 # Order service
 order_service = (App("order-service")
     .image("mycompany/order-service:v1.0.0")
     .port(8080)
     .depends_on([user_service, product_service])
-    .connect_to([postgres, kafka]))
+    .connect_to([database, message_queue]))
 
 microservices.add_services([
-    postgres, redis, kafka,
+    database, cache, message_queue,
     user_service, product_service, order_service
 ])
 
