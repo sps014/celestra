@@ -37,8 +37,8 @@ class TestServiceAccount:
         sa = ServiceAccount("app-service-account")
         
         assert sa._name == "app-service-account"
-        # Note: namespace is not set by default
-        assert sa._namespace is None
+        # Note: namespace defaults to "default"
+        assert sa._namespace == "default"
     
     def test_service_account_with_annotations(self):
         """Test ServiceAccount with annotations."""

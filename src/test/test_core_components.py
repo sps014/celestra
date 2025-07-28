@@ -59,6 +59,70 @@ class TestApp:
         assert port_map["https"] == 8443
         assert port_map["metrics"] == 9090
 
+    def test_app_port_mapping(self):
+        """Test new port mapping functionality."""
+        app = (App("port-mapped-app")
+               .image("nginx:latest")
+               .port_mapping(8080, 80, "http")  # Host 8080 → Container 80
+               .port_mapping(8443, 443, "https"))  # Host 8443 → Container 443
+        
+        assert len(app._ports) == 2
+        
+        # Check first port mapping
+        assert app._ports[0]["containerPort"] == 80
+        assert app._ports[0]["hostPort"] == 8080
+        assert app._ports[0]["name"] == "http"
+        
+        # Check second port mapping
+        assert app._ports[1]["containerPort"] == 443
+        assert app._ports[1]["hostPort"] == 8443
+        assert app._ports[1]["name"] == "https"
+
+    def test_app_expose_port(self):
+        """Test expose_port method with external port mapping."""
+        app = (App("exposed-app")
+               .image("webapp:latest")
+               .expose_port(8080, "http", external_port=80)  # Container 8080, external 80
+               .expose_port(9090, "metrics"))  # Container 9090, same external
+        
+        assert len(app._ports) == 2
+        
+        # Check port with external mapping
+        assert app._ports[0]["containerPort"] == 8080
+        assert app._ports[0]["hostPort"] == 80
+        assert app._ports[0]["name"] == "http"
+        
+        # Check port without external mapping
+        assert app._ports[1]["containerPort"] == 9090
+        assert "hostPort" not in app._ports[1]
+        assert app._ports[1]["name"] == "metrics"
+
+    def test_app_docker_compose_port_mapping(self):
+        """Test Docker Compose generation with port mapping."""
+        app = (App("compose-app")
+               .image("nginx:latest")
+               .port_mapping(8080, 80, "http")
+               .port_mapping(9090, 9090, "metrics"))
+        
+        # Generate Docker Compose and check port mappings
+        import tempfile
+        import os
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yml', delete=False) as f:
+            compose_file = f.name
+        
+        try:
+            app.generate().to_docker_compose(compose_file)
+            
+            with open(compose_file, 'r') as f:
+                content = f.read()
+                
+            # Check that port mappings are correct
+            assert "8080:80" in content  # Host 8080 → Container 80
+            assert "9090:9090" in content  # Host 9090 → Container 9090
+            
+        finally:
+            os.unlink(compose_file)
+
     def test_app_environment_variables(self):
         app = (App("env-app")
                .image("test:latest")

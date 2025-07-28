@@ -53,9 +53,9 @@ from .plugins.plugin_base import PluginBase, PluginType, PluginMetadata
 from .plugins.template_manager import TemplateManager, TemplateEngine
 
 # Validation
-from .validation.validator import Validator
-from .validation.security_scanner import SecurityScanner
-from .validation.cost_estimator import CostEstimator
+from .validation.validator import Validator, ValidationLevel
+from .validation.security_scanner import SecurityScanner, SecurityLevel
+from .validation.cost_estimator import CostEstimator, CloudProvider
 
 # Main exports for convenient imports
 __all__ = [
@@ -88,7 +88,7 @@ __all__ = [
     "TemplateManager", "TemplateEngine",
     
     # Validation
-    "Validator", "SecurityScanner", "CostEstimator"
+    "Validator", "ValidationLevel", "SecurityScanner", "SecurityLevel", "CostEstimator", "CloudProvider"
 ]
 
 # Version info
