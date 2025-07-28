@@ -1,8 +1,8 @@
 """
-Comprehensive test suite for K8s-Gen DSL.
+Comprehensive test suite for Celestra.
 
 This package contains comprehensive tests covering all components and scenarios
-defined in the K8s-Gen DSL specifications.
+defined in the Celestra specifications.
 
 Test Structure:
 - test_core_components.py: App, StatefulApp, AppGroup, Secret, ConfigMap
@@ -19,7 +19,7 @@ Test Structure:
 """
 
 __version__ = "1.0.0"
-__author__ = "K8s-Gen Team"
+__author__ = "Celestra Team"
 
 # Test configuration
 TEST_CONFIG = {

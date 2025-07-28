@@ -1,6 +1,6 @@
 # App Component
 
-The `App` component is the primary building block for stateless applications in K8s-Gen DSL. It generates Kubernetes Deployments and Services for your applications.
+The `App` component is the primary building block for stateless applications in Celestra. It generates Kubernetes Deployments and Services for your applications.
 
 ## Overview
 
@@ -335,7 +335,7 @@ app = (App("app-with-sidecar")
 
 ## API Reference
 
-::: src.k8s_gen.core.app.App
+::: src.celestra.core.app.App
     options:
       show_source: false
       heading_level: 3

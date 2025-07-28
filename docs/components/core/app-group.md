@@ -68,7 +68,7 @@ app_group = (AppGroup("production-stack")
     .namespace("production")
     .label("environment", "prod")
     .label("team", "backend")
-    .annotation("managed-by", "k8s-gen"))
+    .annotation("managed-by", "Celestra"))
 ```
 
 ## Complete Example
@@ -181,7 +181,7 @@ def create_ecommerce_platform():
         # Shared configuration
         .namespace("ecommerce")
         .label("platform", "ecommerce")
-        .label("managed-by", "k8s-gen")
+        .label("managed-by", "Celestra")
         .annotation("version", "v1.2.0")
         .annotation("contact", "platform-team@company.com"))
     
@@ -355,7 +355,7 @@ metadata:
   name: ecommerce
   labels:
     platform: ecommerce
-    managed-by: k8s-gen
+    managed-by: Celestra
 ```
 
 ### Services and Deployments
@@ -427,7 +427,7 @@ platform = AppGroup("ecommerce").add_group(user_domain).add_group(order_domain)
 
 ## API Reference
 
-::: src.k8s_gen.core.app_group.AppGroup
+::: src.celestra.core.app_group.AppGroup
     options:
       show_source: false
       heading_level: 3

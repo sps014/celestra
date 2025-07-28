@@ -2,11 +2,11 @@
 """
 Integration Test Suite.
 
-End-to-end tests for K8s-Gen DSL integration scenarios.
+End-to-end tests for Celestra integration scenarios.
 """
 
 import pytest
-from src.k8s_gen import App, StatefulApp, Service, Ingress, AppGroup
+from src.celestra import App, StatefulApp, Service, Ingress, AppGroup
 
 
 class TestMicroservicesPlatform:

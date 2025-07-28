@@ -1,6 +1,6 @@
 # Examples
 
-Real-world examples and use cases for K8s-Gen DSL. Each example includes complete code, deployment instructions, and best practices.
+Real-world examples and use cases for Celestra. Each example includes complete code, deployment instructions, and best practices.
 
 ## 🚀 Getting Started Examples
 

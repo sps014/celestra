@@ -2,7 +2,7 @@
 """
 Output Formats Test Suite.
 
-Tests for K8s-Gen DSL output format generation including:
+Tests for Celestra output format generation including:
 - Kubernetes YAML
 - Docker Compose 
 - Helm Charts
@@ -15,8 +15,8 @@ import tempfile
 import os
 from pathlib import Path
 
-from src.k8s_gen import App, StatefulApp
-from src.k8s_gen.output import KubernetesOutput, DockerComposeOutput, HelmOutput, KustomizeOutput, TerraformOutput
+from src.celestra import App, StatefulApp
+from src.celestra.output import KubernetesOutput, DockerComposeOutput, HelmOutput, KustomizeOutput, TerraformOutput
 
 
 class TestKubernetesOutput:

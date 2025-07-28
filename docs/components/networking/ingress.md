@@ -552,7 +552,7 @@ kubectl get events --field-selector involvedObject.name=<ingress-name>
 
 ## API Reference
 
-::: src.k8s_gen.networking.ingress.Ingress
+::: src.celestra.networking.ingress.Ingress
     options:
       show_source: false
       heading_level: 3

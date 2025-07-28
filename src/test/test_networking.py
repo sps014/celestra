@@ -2,7 +2,7 @@
 """
 Networking Test Suite.
 
-Tests for K8s-Gen DSL networking components:
+Tests for Celestra networking components:
 - Service (service discovery and load balancing)
 - Ingress (HTTP routing and SSL)
 - Companion (sidecars and init containers)
@@ -14,7 +14,7 @@ Tests for K8s-Gen DSL networking components:
 import pytest
 import yaml
 
-from src.k8s_gen import Service, Ingress, Companion, Scaling, Health, NetworkPolicy, App
+from src.celestra import Service, Ingress, Companion, Scaling, Health, NetworkPolicy, App
 from .utils import TestHelper, AssertionHelper, MockKubernetesCluster, assert_valid_kubernetes_resource
 
 
@@ -244,7 +244,7 @@ class TestCompanion:
         assert companion.name == "comm-companion"
 
     def test_companion_with_app_integration(self):
-        from k8s_gen import App
+        from celestra import App
         
         companion = (Companion("monitoring-sidecar")
                      .image("monitor:latest"))

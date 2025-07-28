@@ -1,6 +1,6 @@
 # RBAC (Role-Based Access Control)
 
-RBAC components in K8s-Gen DSL provide fine-grained access control for your applications and users. They include ServiceAccounts, Roles, ClusterRoles, RoleBindings, and ClusterRoleBindings.
+RBAC components in Celestra provide fine-grained access control for your applications and users. They include ServiceAccounts, Roles, ClusterRoles, RoleBindings, and ClusterRoleBindings.
 
 ## Overview
 
@@ -470,7 +470,7 @@ monitoring_role = (ClusterRole("prometheus-reader")
 
 ## API Reference
 
-::: src.k8s_gen.security.rbac
+::: src.celestra.security.rbac
     options:
       show_source: false
       heading_level: 3

@@ -1,6 +1,6 @@
 # Getting Started
 
-Welcome to K8s-Gen DSL! This section will help you get up and running quickly with our powerful Domain-Specific Language for Kubernetes.
+Welcome to Celestra! This section will help you get up and running quickly with our powerful Domain-Specific Language for Kubernetes.
 
 ## What You'll Learn
 
@@ -10,7 +10,7 @@ Welcome to K8s-Gen DSL! This section will help you get up and running quickly wi
 
     ---
 
-    Install K8s-Gen DSL and set up your development environment
+    Install Celestra and set up your development environment
 
 -   :material-rocket-launch:{ .lg .middle } **[Quick Start](quick-start.md)**
 
@@ -28,7 +28,7 @@ Welcome to K8s-Gen DSL! This section will help you get up and running quickly wi
 
     ---
 
-    Understand the fundamental concepts of K8s-Gen DSL
+    Understand the fundamental concepts of Celestra
 
 </div>
 
@@ -59,7 +59,7 @@ Before you begin, make sure you have:
 
 ## Quick Overview
 
-K8s-Gen DSL allows you to define Kubernetes applications using intuitive Python code:
+Celestra allows you to define Kubernetes applications using intuitive Python code:
 
 ```python
 from src.k8s_gen import App, StatefulApp
@@ -82,7 +82,7 @@ resources = web_app.generate_kubernetes_resources()
 db_resources = database.generate_kubernetes_resources()
 ```
 
-## Why K8s-Gen DSL?
+## Why Celestra?
 
 ### ✨ **Intuitive Syntax**
 Write infrastructure as code with clear, readable Python syntax that's easy to understand and maintain.
@@ -103,7 +103,7 @@ Extensive documentation, examples, and community resources to help you succeed.
 
 Ready to get started? Follow our step-by-step guide:
 
-1. **[Install K8s-Gen](installation.md)** - Set up your environment
+1. **[Install Celestra](installation.md)** - Set up your environment
 2. **[Quick Start](quick-start.md)** - Build your first app
 3. **[Core Concepts](core-concepts.md)** - Understand the fundamentals
 4. **[Tutorials](../tutorials/index.md)** - Dive deeper with guided examples

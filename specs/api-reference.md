@@ -1,6 +1,6 @@
 # API Reference
 
-Complete reference for the K8s-Gen DSL API with examples and usage patterns.
+Complete reference for the Celestra API with examples and usage patterns.
 
 ## Core Components
 

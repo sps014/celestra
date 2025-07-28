@@ -2,7 +2,7 @@
 
 **⭐⭐⭐⭐ Difficulty:** Advanced | **⏱️ Time:** 25 minutes
 
-Build a comprehensive observability stack with monitoring, logging, and tracing using K8s-Gen DSL.
+Build a comprehensive observability stack with monitoring, logging, and tracing using Celestra.
 
 ## What You'll Build
 
@@ -17,7 +17,7 @@ A complete observability platform featuring:
 
 ## Prerequisites
 
-- K8s-Gen DSL installed
+- Celestra installed
 - Kubernetes cluster with sufficient resources (4+ GB RAM, 4+ CPU cores)
 - Understanding of observability concepts
 - Basic knowledge of Prometheus, Grafana, and Jaeger
@@ -37,7 +37,7 @@ Applications → Metrics/Logs/Traces → Collection Layer → Storage → Visual
 Start with Prometheus for metrics collection:
 
 ```python
-from k8s_gen import StatefulApp, App, Service, ConfigMap
+from celestra import StatefulApp, App, Service, ConfigMap
 
 # Prometheus server
 prometheus = (StatefulApp("prometheus")
@@ -435,7 +435,7 @@ print("✅ Node monitoring configured")
 Add observability to applications:
 
 ```python
-from k8s_gen import Observability
+from celestra import Observability
 
 # Create comprehensive observability configuration
 observability = (Observability("application-observability")
@@ -553,10 +553,10 @@ Here's the complete stack:
 ```python
 #!/usr/bin/env python3
 """
-Observability Stack - Comprehensive monitoring, logging, and tracing with K8s-Gen DSL
+Observability Stack - Comprehensive monitoring, logging, and tracing with Celestra
 """
 
-from k8s_gen import (
+from celestra import (
     App, StatefulApp, Service, ConfigMap,
     Observability, KubernetesOutput
 )
@@ -796,4 +796,4 @@ Enhance your observability:
 
 ---
 
-**Congratulations!** You've built a production-ready observability stack with comprehensive monitoring, logging, and tracing capabilities using K8s-Gen DSL.
+**Congratulations!** You've built a production-ready observability stack with comprehensive monitoring, logging, and tracing capabilities using Celestra.

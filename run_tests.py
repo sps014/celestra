@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-K8s-Gen DSL Test Execution Script
+Celestra Test Execution Script
 
 This script provides a simple way to run the comprehensive test suite.
 """
@@ -11,7 +11,7 @@ import subprocess
 
 def main():
     """Main test execution function."""
-    print("🧪 K8s-Gen DSL Comprehensive Test Suite")
+    print("🧪 Celestra Comprehensive Test Suite")
     print("=" * 50)
     
     # Ensure we're in the right directory
@@ -33,7 +33,7 @@ def main():
         
         if result.returncode == 0:
             print("\n✅ All tests completed successfully!")
-            print("🎉 K8s-Gen DSL is ready for use!")
+            print("🎉 Celestra is ready for use!")
         else:
             print("\n❌ Some tests failed. Check the output above for details.")
             print("🔧 Please review and fix any issues before proceeding.")

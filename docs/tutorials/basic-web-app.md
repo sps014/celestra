@@ -2,7 +2,7 @@
 
 **⭐ Difficulty:** Easy | **⏱️ Time:** 10 minutes
 
-Learn the fundamentals of K8s-Gen DSL by building a simple web application with load balancing and health checks.
+Learn the fundamentals of Celestra by building a simple web application with load balancing and health checks.
 
 ## What You'll Build
 
@@ -14,7 +14,7 @@ A scalable NGINX web server with:
 
 ## Prerequisites
 
-- K8s-Gen DSL installed
+- Celestra installed
 - Basic understanding of Kubernetes concepts
 - kubectl configured (optional, for deployment)
 
@@ -29,7 +29,7 @@ Internet → LoadBalancer Service → NGINX Pods (3 replicas)
 Start with a simple NGINX web server:
 
 ```python
-from k8s_gen import App
+from celestra import App
 
 # Create the web application
 web_app = (App("simple-web-app")
@@ -54,7 +54,7 @@ print("✅ Web application created")
 Expose the application with a load balancer:
 
 ```python
-from k8s_gen import Service
+from celestra import Service
 
 # Create service for external access
 web_service = (Service("web-app-service")
@@ -80,7 +80,7 @@ Create the complete deployment:
 Basic Web App - Simple NGINX deployment with load balancing
 """
 
-from k8s_gen import App, Service, KubernetesOutput
+from celestra import App, Service, KubernetesOutput
 
 def create_web_app():
     """Create a simple web application with load balancing."""
@@ -229,7 +229,7 @@ spec:
 Mount custom content using ConfigMap:
 
 ```python
-from k8s_gen import ConfigMap
+from celestra import ConfigMap
 
 # Create custom content
 html_config = (ConfigMap("web-content")
@@ -239,7 +239,7 @@ html_config = (ConfigMap("web-content")
     <head><title>My App</title></head>
     <body>
         <h1>Welcome to My Web App!</h1>
-        <p>Built with K8s-Gen DSL</p>
+        <p>Built with Celestra</p>
     </body>
     </html>
     """))
@@ -276,7 +276,7 @@ web_service = (Service("web-app-service")
 Use Ingress for advanced routing:
 
 ```python
-from k8s_gen import Ingress
+from celestra import Ingress
 
 ingress = (Ingress("web-app-ingress")
     .host("myapp.example.com")
@@ -333,4 +333,4 @@ Ready for more advanced patterns?
 
 ---
 
-**Congratulations!** You've successfully built and deployed your first web application with K8s-Gen DSL. The application is now running with high availability and load balancing.
+**Congratulations!** You've successfully built and deployed your first web application with Celestra. The application is now running with high availability and load balancing.

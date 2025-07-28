@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Complete Platform Demo for K8s-Gen DSL Phase 7 & 8
+Complete Platform Demo for Celestra Phase 7 & 8
 
 This comprehensive example demonstrates all the advanced features implemented
 in Phase 7 (Output Formats) and Phase 8 (Plugin System), showcasing how they
@@ -9,7 +9,7 @@ work together to create a complete enterprise-grade platform deployment.
 
 import tempfile
 from pathlib import Path
-from src.k8s_gen import (
+from src.celestra import (
     # Core Components
     App, StatefulApp, Secret, ConfigMap,
     
@@ -556,7 +556,7 @@ def main():
         print("  🔌 Extensible Plugin Architecture")
         print("  📝 Multi-Engine Template System")
         
-        print("\n✨ K8s-Gen DSL: Enterprise-Ready Kubernetes Generation!")
+        print("\n✨ Celestra: Enterprise-Ready Kubernetes Generation!")
         
     except Exception as e:
         print(f"❌ Demo failed with error: {e}")

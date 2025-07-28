@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Enterprise Validation and Security Demo for K8s-Gen DSL.
+Enterprise Validation and Security Demo for Celestra.
 
 This comprehensive example demonstrates enterprise-grade security, validation,
 and compliance features suitable for production environments.
 """
 
-from ..k8s_gen import (
+from ..celestra import (
     App, StatefulApp, Job, CronJob, Service, Ingress, 
     Secret, ConfigMap, ServiceAccount, Role, ClusterRole, 
     RoleBinding, ClusterRoleBinding, SecurityPolicy, NetworkPolicy,
@@ -527,7 +527,7 @@ def demonstrate_integrated_governance():
 
 def main():
     """Run enterprise validation and tools demonstration."""
-    print("🏢 K8s-Gen DSL Enterprise Validation & Tools Demo")
+    print("🏢 Celestra Enterprise Validation & Tools Demo")
     print("=" * 60)
     print("🎯 Showcasing Phase 9: Governance, Compliance & Cost Optimization")
     print("=" * 60)
@@ -592,7 +592,7 @@ def main():
         print(f"  ✅ Enterprise-Grade Reporting & Recommendations")
         print(f"  ✅ Complete Compliance & Audit Trail")
         
-        print(f"\n🏢 K8s-Gen DSL: Enterprise-Ready Kubernetes Platform!")
+        print(f"\n🏢 Celestra: Enterprise-Ready Kubernetes Platform!")
         print("    With complete governance, security, and cost optimization!")
         
     except Exception as e:

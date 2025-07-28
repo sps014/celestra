@@ -1,6 +1,6 @@
 # Kafka Deployment Tutorial
 
-Learn how to deploy a production-ready Apache Kafka cluster with ZooKeeper using K8s-Gen DSL. This tutorial covers everything from basic setup to advanced configurations.
+Learn how to deploy a production-ready Apache Kafka cluster with ZooKeeper using Celestra. This tutorial covers everything from basic setup to advanced configurations.
 
 !!! info "Tutorial Overview"
     **Difficulty**: ⭐⭐⭐ Intermediate  
@@ -44,7 +44,7 @@ Let's start with a simple Kafka deployment:
 ```python
 #!/usr/bin/env python3
 """
-Basic Kafka Deployment with K8s-Gen DSL
+Basic Kafka Deployment with Celestra
 """
 
 from src.k8s_gen import App, StatefulApp, Service, ConfigMap, KubernetesOutput
@@ -111,7 +111,7 @@ Now let's create a production-ready cluster with multiple brokers:
 ```python
 #!/usr/bin/env python3
 """
-Production Kafka Cluster with K8s-Gen DSL
+Production Kafka Cluster with Celestra
 """
 
 from src.k8s_gen import (

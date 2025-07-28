@@ -459,7 +459,7 @@ kubectl get events --field-selector involvedObject.name=<service-name>
 
 ## API Reference
 
-::: src.k8s_gen.networking.service.Service
+::: src.celestra.networking.service.Service
     options:
       show_source: false
       heading_level: 3

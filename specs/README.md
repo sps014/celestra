@@ -1,6 +1,6 @@
-# K8s-Gen DSL Specifications
+# Celestra Specifications
 
-This directory contains the complete specification for the K8s-Gen Domain-Specific Language (DSL) for generating Kubernetes manifests with minimal code complexity.
+This directory contains the complete specification for the Celestra Domain-Specific Language (DSL) for generating Kubernetes manifests with minimal code complexity.
 
 ## 📋 Table of Contents
 

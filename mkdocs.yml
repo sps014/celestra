@@ -1,15 +1,15 @@
-site_name: K8s-Gen DSL Documentation
-site_url: https://your-username.github.io/k8s-gen/
+site_name: Celestra DSL Documentation
+site_url: https://your-username.github.io/celestra/
 site_description: A modern Python DSL for generating Kubernetes manifests, Helm charts, and more
-site_author: K8s-Gen Team
+site_author: Celestra Team
 
 # Repository
-repo_url: https://github.com/sps014/k8s-gen
-repo_name: sps014/k8s-gen
+repo_url: https://github.com/sps014/celestra
+repo_name: sps014/celestra
 edit_uri: edit/main/docs/
 
 # Copyright
-copyright: Copyright &copy; 2024 K8s-Gen Contributors
+copyright: Copyright &copy; 2024 Celestra Contributors
 
 # Configuration
 theme:

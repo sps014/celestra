@@ -1,6 +1,6 @@
 # Advanced Features
 
-Production-ready features and enterprise integrations for the K8s-Gen DSL.
+Production-ready features and enterprise integrations for the Celestra.
 
 ## Multi-Format Output
 
@@ -392,7 +392,7 @@ This creates:
 
 ## Plugin System
 
-Extend K8s-Gen with custom functionality and integrations.
+Extend Celestra with custom functionality and integrations.
 
 ```python
 from k8s_gen import PluginManager
@@ -478,23 +478,23 @@ jobs:
     
     - name: Generate K8s manifests
       run: |
-        pip install k8s-gen
-        k8s-gen generate app.py --output ./k8s/
+        pip install Celestra
+        Celestra generate app.py --output ./k8s/
         
     - name: Validate manifests
       run: |
-        k8s-gen validate ./k8s/
-        k8s-gen security-scan ./k8s/
+        Celestra validate ./k8s/
+        Celestra security-scan ./k8s/
         
     - name: Deploy to staging
       run: |
-        k8s-gen deploy ./k8s/ --environment staging
-        k8s-gen test ./k8s/ --wait-for-ready
+        Celestra deploy ./k8s/ --environment staging
+        Celestra test ./k8s/ --wait-for-ready
         
     - name: Deploy to production
       if: github.ref == 'refs/heads/main'
       run: |
-        k8s-gen deploy ./k8s/ --environment production --strategy blue-green
+        Celestra deploy ./k8s/ --environment production --strategy blue-green
 ```
 
 ### Multi-Environment Configuration
@@ -542,4 +542,4 @@ class ProdConfig:
     memory_request = "1Gi"
 ```
 
-This advanced features specification demonstrates the enterprise-ready capabilities of K8s-Gen while maintaining the simplicity and abstraction that makes it powerful for both development and production use cases. 
+This advanced features specification demonstrates the enterprise-ready capabilities of Celestra while maintaining the simplicity and abstraction that makes it powerful for both development and production use cases. 

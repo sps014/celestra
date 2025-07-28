@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Comprehensive Multiple Ports Showcase for K8s-Gen DSL.
+Comprehensive Multiple Ports Showcase for Celestra.
 
 This example demonstrates the enhanced multiple ports support across all
 components that support ports: App, StatefulApp, Job, CronJob, and Service.
 """
 
-from ..k8s_gen import (
+from ..celestra import (
     App, StatefulApp, Job, CronJob, Service, 
     KubernetesOutput, HelmOutput, Secret, ConfigMap
 )
@@ -409,7 +409,7 @@ def generate_comprehensive_output():
 
 def main():
     """Run the comprehensive multiple ports showcase."""
-    print("🚀 K8s-Gen DSL: Comprehensive Multiple Ports Showcase")
+    print("🚀 Celestra: Comprehensive Multiple Ports Showcase")
     print("=" * 70)
     print("🎯 Demonstrating Enhanced Multiple Ports Support Across All Components")
     print("=" * 70)
@@ -471,7 +471,7 @@ def main():
         print(f"  ✅ CronJob - Scheduled tasks with web interfaces")
         print(f"  ✅ Service - Multi-port service mapping")
         
-        print(f"\n🚀 K8s-Gen DSL: Complete Multiple Ports Support Ready!")
+        print(f"\n🚀 Celestra: Complete Multiple Ports Support Ready!")
         print("    Perfect for modern microservices architectures!")
         
     except Exception as e:

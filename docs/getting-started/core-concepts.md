@@ -1,10 +1,10 @@
 # Core Concepts
 
-Understanding the fundamental concepts of K8s-Gen DSL will help you build cloud-native applications effectively. This guide covers the core principles and components that make up the DSL.
+Understanding the fundamental concepts of Celestra will help you build cloud-native applications effectively. This guide covers the core principles and components that make up the DSL.
 
 ## DSL Philosophy
 
-K8s-Gen DSL is built on three core principles:
+Celestra is built on three core principles:
 
 ### 🎯 **Simplicity First**
 Write infrastructure as code using intuitive Python syntax that's easy to read and maintain.
@@ -23,7 +23,7 @@ Generate various deployment formats (Kubernetes, Helm, Docker Compose, etc.) fro
 The `App` class represents stateless applications that can be horizontally scaled without data persistence concerns.
 
 ```python
-from k8s_gen import App
+from celestra import App
 
 web_app = (App("web-server")
     .image("nginx:1.21")
@@ -41,7 +41,7 @@ web_app = (App("web-server")
 The `StatefulApp` class represents applications that require persistent storage and stable network identities.
 
 ```python
-from k8s_gen import StatefulApp
+from celestra import StatefulApp
 
 database = (StatefulApp("postgres")
     .image("postgres:13")
@@ -62,7 +62,7 @@ database = (StatefulApp("postgres")
 Execute batch processing tasks that run to completion.
 
 ```python
-from k8s_gen import Job
+from celestra import Job
 
 data_job = (Job("data-migration")
     .image("migrator:1.0")
@@ -74,7 +74,7 @@ data_job = (Job("data-migration")
 Run jobs on a schedule using cron syntax.
 
 ```python
-from k8s_gen import CronJob
+from celestra import CronJob
 
 backup_job = (CronJob("daily-backup")
     .schedule("0 2 * * *")  # Daily at 2 AM
@@ -88,7 +88,7 @@ backup_job = (CronJob("daily-backup")
 Expose applications within the cluster or externally.
 
 ```python
-from k8s_gen import Service
+from celestra import Service
 
 service = (Service("web-service")
     .selector({"app": "web-server"})
@@ -100,7 +100,7 @@ service = (Service("web-service")
 Configure external HTTP/HTTPS access to services.
 
 ```python
-from k8s_gen import Ingress
+from celestra import Ingress
 
 ingress = (Ingress("web-ingress")
     .host("myapp.example.com")
@@ -114,7 +114,7 @@ ingress = (Ingress("web-ingress")
 Configure fine-grained permissions for applications.
 
 ```python
-from k8s_gen import ServiceAccount, Role, RoleBinding
+from celestra import ServiceAccount, Role, RoleBinding
 
 service_account = ServiceAccount("app-sa")
 role = (Role("app-role")
@@ -127,7 +127,7 @@ binding = RoleBinding("app-binding", role, service_account)
 Manage sensitive information like passwords and API keys.
 
 ```python
-from k8s_gen import Secret
+from celestra import Secret
 
 secret = (Secret("app-secrets")
     .add_data("database_url", "postgres://...")
@@ -140,7 +140,7 @@ secret = (Secret("app-secrets")
 Store non-sensitive configuration data.
 
 ```python
-from k8s_gen import ConfigMap
+from celestra import ConfigMap
 
 config = (ConfigMap("app-config")
     .add_data("app.properties", "debug=false\nport=8080")
@@ -149,7 +149,7 @@ config = (ConfigMap("app-config")
 
 ## Builder Pattern
 
-K8s-Gen uses the builder pattern extensively, allowing you to chain methods to configure components:
+Celestra uses the builder pattern extensively, allowing you to chain methods to configure components:
 
 ```python
 app = (App("my-app")                    # Start with component name
@@ -215,7 +215,7 @@ app = (App("multi-port-app")
 Generate standard Kubernetes manifests:
 
 ```python
-from k8s_gen import KubernetesOutput
+from celestra import KubernetesOutput
 
 # Generate resources
 resources = app.generate_kubernetes_resources()
@@ -229,7 +229,7 @@ output.generate(app, "manifests/")
 Generate different deployment formats:
 
 ```python
-from k8s_gen import HelmOutput, DockerComposeOutput
+from celestra import HelmOutput, DockerComposeOutput
 
 # Helm chart
 helm = HelmOutput("my-app-chart")
@@ -246,7 +246,7 @@ compose.generate(app, "docker-compose.yml")
 Add monitoring and tracing capabilities:
 
 ```python
-from k8s_gen import Observability
+from celestra import Observability
 
 observability = (Observability("monitoring")
     .enable_metrics()
@@ -260,7 +260,7 @@ app.add_observability(observability)
 Define dependencies between components:
 
 ```python
-from k8s_gen import DependencyManager
+from celestra import DependencyManager
 
 deps = (DependencyManager()
     .add_dependency(web_app, database)
@@ -271,7 +271,7 @@ deps = (DependencyManager()
 Optimize resource usage and costs:
 
 ```python
-from k8s_gen import CostOptimization
+from celestra import CostOptimization
 
 optimizer = (CostOptimization("cost-optimizer")
     .resource_optimization()

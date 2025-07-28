@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "k8s-gen"
+name = "celestra"
 version = "0.0.1"
 description = "A Python DSL for generating Kubernetes manifests with minimal complexity"
 readme = "README.md"
@@ -58,24 +58,24 @@ docs = [
     "mkdocs-mermaid2-plugin>=1.1.0",
 ]
 all = [
-    "k8s-gen[dev,docs]",
+    "celestra[dev,docs]",
 ]
 
 [project.urls]
-Homepage = "https://github.com/your-org/k8s-gen"
-Documentation = "https://your-org.github.io/k8s-gen/"
-Repository = "https://github.com/your-org/k8s-gen"
-"Bug Tracker" = "https://github.com/your-org/k8s-gen/issues"
-"Source Code" = "https://github.com/your-org/k8s-gen"
+Homepage = "https://github.com/sps014/celestra"
+Documentation = "https://sps014.github.io/celestra/"
+Repository = "https://github.com/sps014/celestra"
+"Bug Tracker" = "https://github.com/sps014/celestra/issues"
+"Source Code" = "https://github.com/sps014/celestra"
 
 [project.scripts]
-k8s-gen = "k8s_gen.cli:main"
+celestra = "celestra.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-"k8s_gen" = ["py.typed", "templates/*"]
+"celestra" = ["py.typed", "templates/*"]
 
 [tool.black]
 line-length = 88
@@ -123,7 +123,7 @@ minversion = "7.4.0"
 addopts = [
     "--strict-markers",
     "--strict-config",
-    "--cov=k8s_gen",
+    "--cov=celestra",
     "--cov-report=term-missing",
     "--cov-report=html",
     "--cov-report=xml",
@@ -141,7 +141,7 @@ markers = [
 ]
 
 [tool.coverage.run]
-source = ["src/k8s_gen"]
+source = ["src/celestra"]
 omit = [
     "*/test/*",
     "*/tests/*",
@@ -185,4 +185,4 @@ exclude = [
 profile = "black"
 multi_line_output = 3
 line_length = 88
-known_first_party = ["k8s_gen"] 
+known_first_party = ["celestra"] 

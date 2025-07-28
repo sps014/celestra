@@ -2,7 +2,7 @@
 """
 Validation Test Suite.
 
-Tests for K8s-Gen DSL validation and scanning:
+Tests for Celestra validation and scanning:
 - Validator (resource validation)
 - SecurityScanner (security scanning)
 - CostEstimator (cost estimation)
@@ -10,7 +10,7 @@ Tests for K8s-Gen DSL validation and scanning:
 
 import pytest
 
-from src.k8s_gen import Validator, SecurityScanner, CostEstimator, App, ValidationLevel, SecurityLevel, CloudProvider
+from src.celestra import Validator, SecurityScanner, CostEstimator, App, ValidationLevel, SecurityLevel, CloudProvider
 from .utils import TestHelper, MockKubernetesCluster
 
 

@@ -136,7 +136,7 @@ secret = (Secret("production-secrets")
     .add_data("api-key", "prod-api-key")
     .label("environment", "production")
     .label("component", "database")
-    .annotation("managed-by", "k8s-gen")
+    .annotation("managed-by", "Celestra")
     .annotation("rotation-policy", "90-days"))
 ```
 
@@ -455,7 +455,7 @@ external_secret = (Secret("external-ref")
 
 ## API Reference
 
-::: src.k8s_gen.security.secret.Secret
+::: src.celestra.security.secret.Secret
     options:
       show_source: false
       heading_level: 3

@@ -2,7 +2,7 @@
 """
 Plugins Test Suite.
 
-Tests for K8s-Gen DSL plugin system:
+Tests for Celestra plugin system:
 - PluginManager (plugin loading and management)
 - PluginBase (plugin interface)
 - TemplateManager (template management)
@@ -11,7 +11,7 @@ Tests for K8s-Gen DSL plugin system:
 import pytest
 import os
 
-from src.k8s_gen import PluginManager, PluginBase, TemplateManager
+from src.celestra import PluginManager, PluginBase, TemplateManager
 from .utils import TestHelper, MockKubernetesCluster
 
 

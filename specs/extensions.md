@@ -1,10 +1,10 @@
 # Extensions
 
-Plugin system and customization guide for extending K8s-Gen functionality.
+Plugin system and customization guide for extending Celestra functionality.
 
 ## Plugin System
 
-K8s-Gen features a powerful plugin architecture that allows you to extend the DSL with custom functionality, integrations, and domain-specific abstractions.
+Celestra features a powerful plugin architecture that allows you to extend the DSL with custom functionality, integrations, and domain-specific abstractions.
 
 ### Plugin Architecture
 
@@ -623,7 +623,7 @@ Add support for new output formats.
 from k8s_gen import OutputFormat
 
 class TerraformOutput(OutputFormat):
-    """Generate Terraform modules from K8s-Gen DSL."""
+    """Generate Terraform modules from Celestra."""
     
     def generate(self, app, output_path):
         """Generate Terraform configuration."""
@@ -706,7 +706,7 @@ app.generate().to_terraform('./terraform/')
 from k8s_gen import OutputFormat
 
 class ArgoWorkflowsOutput(OutputFormat):
-    """Generate Argo Workflows from K8s-Gen DSL."""
+    """Generate Argo Workflows from Celestra."""
     
     def generate(self, jobs, output_path):
         """Generate Argo Workflow templates."""
@@ -714,7 +714,7 @@ class ArgoWorkflowsOutput(OutputFormat):
             'apiVersion': 'argoproj.io/v1alpha1',
             'kind': 'Workflow',
             'metadata': {
-                'generateName': 'k8s-gen-workflow-'
+                'generateName': 'Celestra-workflow-'
             },
             'spec': {
                 'entrypoint': 'main',
@@ -771,7 +771,7 @@ workflow_output.generate(jobs, './workflows/pipeline.yaml')
 
 ### Community Plugins
 
-K8s-Gen maintains a registry of community-contributed plugins:
+Celestra maintains a registry of community-contributed plugins:
 
 ```python
 # Install community plugins
@@ -813,7 +813,7 @@ name: database-cluster
 version: 1.2.0
 description: "Automated database clustering with failover and backups"
 author: "Platform Team"
-repository: "https://github.com/company/k8s-gen-database-plugin"
+repository: "https://github.com/company/Celestra-database-plugin"
 license: "MIT"
 k8s_gen_version: ">=1.0.0"
 
@@ -858,4 +858,4 @@ examples:
         .monitoring(True)
 ```
 
-This extension system makes K8s-Gen highly customizable while maintaining the simplicity and elegance of the core DSL. Organizations can create their own plugins for specific needs while benefiting from community-contributed solutions. 
+This extension system makes Celestra highly customizable while maintaining the simplicity and elegance of the core DSL. Organizations can create their own plugins for specific needs while benefiting from community-contributed solutions. 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test Runner for K8s-Gen DSL Comprehensive Test Suite.
+Test Runner for Celestraa DSL Comprehensive Test Suite.
 
 This script runs all test suites and provides comprehensive reporting.
 """
@@ -15,7 +15,7 @@ import json
 
 
 class TestRunner:
-    """Comprehensive test runner for K8s-Gen DSL."""
+    """Comprehensive test runner for Celestraa DSL."""
     
     def __init__(self):
         self.test_modules = [
@@ -38,7 +38,7 @@ class TestRunner:
     
     def run_all_tests(self, verbose: bool = True, fail_fast: bool = False) -> bool:
         """Run all test suites and return overall success status."""
-        print("🧪 K8s-Gen DSL Comprehensive Test Suite")
+        print("🧪 Celestraa DSL Comprehensive Test Suite")
         print("=" * 65)
         print(f"🎯 Running {len(self.test_modules)} test modules")
         print("=" * 65)
@@ -211,7 +211,7 @@ class TestRunner:
         # Overall status
         print(f"\n🏆 OVERALL STATUS:")
         if successful_modules == total_modules and total_failed == 0:
-            print(f"  🌟 ALL TESTS PASSED! K8s-Gen DSL is fully functional!")
+            print(f"  🌟 ALL TESTS PASSED! Celestraa DSL is fully functional!")
         elif total_failed == 0:
             print(f"  ✅ All tests passed, but some modules had issues")
         else:
@@ -294,7 +294,7 @@ def main():
     """Main entry point for test runner."""
     import argparse
     
-    parser = argparse.ArgumentParser(description="K8s-Gen DSL Test Runner")
+    parser = argparse.ArgumentParser(description="Celestraa DSL Test Runner")
     parser.add_argument("--modules", nargs="+", help="Specific modules to test")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
     parser.add_argument("--fail-fast", action="store_true", help="Stop on first failure")

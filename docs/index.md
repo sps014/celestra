@@ -1,12 +1,12 @@
-# K8s-Gen DSL Documentation
+# Celestra Documentation
 
-Welcome to the complete guide for **K8s-Gen**, a powerful Domain-Specific Language (DSL) for generating Kubernetes manifests, Helm charts, Docker Compose files, and more.
+Welcome to the complete guide for **Celestra**, a powerful Domain-Specific Language (DSL) for generating Kubernetes manifests, Helm charts, Docker Compose files, and more.
 
-![K8s-Gen Logo](assets/k8s-gen-banner.png)
+![Celestra Logo](assets/Celestra-banner.png)
 
-## 🚀 What is K8s-Gen?
+## 🚀 What is Celestra?
 
-K8s-Gen is a Python-based DSL that simplifies Kubernetes application deployment by providing:
+Celestra is a Python-based DSL that simplifies Kubernetes application deployment by providing:
 
 - **Intuitive API** - Write infrastructure as code with clear, readable syntax
 - **Multiple Output Formats** - Generate Kubernetes YAML, Helm charts, Docker Compose, Kustomize, and Terraform
@@ -16,7 +16,7 @@ K8s-Gen is a Python-based DSL that simplifies Kubernetes application deployment 
 ## ⚡ Quick Example
 
 ```python
-from k8s_gen import App, StatefulApp, Service
+from celestra import App, StatefulApp, Service
 
 # Create a web application
 web_app = (App("my-web-app")
@@ -66,7 +66,7 @@ db_resources = database.generate_kubernetes_resources()
 
     ```python
     # Built-in security and validation
-    from k8s_gen import SecurityPolicy, Validator
+    from celestra import SecurityPolicy, Validator
     
     policy = SecurityPolicy("strict").enable_rbac().pod_security_standards("restricted")
     validator = Validator().validate_resources(resources)
@@ -76,7 +76,7 @@ db_resources = database.generate_kubernetes_resources()
 
     ```python
     # Advanced capabilities
-    from k8s_gen import Observability, CostOptimization
+    from celestra import Observability, CostOptimization
     
     observability = Observability("monitoring").enable_metrics().enable_tracing()
     cost_optimizer = CostOptimization("optimizer").resource_optimization()
@@ -86,7 +86,7 @@ db_resources = database.generate_kubernetes_resources()
 
 ```mermaid
 graph TB
-    subgraph "K8s-Gen DSL"
+    subgraph "Celestra"
         A[App] --> O[Output Formats]
         B[StatefulApp] --> O
         C[Job/CronJob] --> O
@@ -192,13 +192,13 @@ graph TB
 
 ## 🤝 Community & Support
 
-- **GitHub Repository**: [github.com/your-username/k8s-gen](https://github.com/your-username/k8s-gen)
+- **GitHub Repository**: [github.com/your-username/Celestra](https://github.com/your-username/Celestra)
 - **Issues & Discussions**: Use GitHub Issues for bug reports and feature requests
 - **Examples Repository**: Find more examples in our [examples collection](examples/index.md)
 
 ## 📝 License
 
-K8s-Gen is open source software licensed under the MIT License.
+Celestra is open source software licensed under the MIT License.
 
 ---
 

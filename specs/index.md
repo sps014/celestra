@@ -1,4 +1,4 @@
-# K8s-Gen DSL Overview
+# Celestra Overview
 
 A Python-based Domain-Specific Language for generating Kubernetes manifests with minimal complexity.
 
@@ -69,7 +69,7 @@ This generates complete Kubernetes manifests, Docker Compose files, and more wit
 ## Key Benefits
 
 ### For Developers
-- **Familiar Syntax**: If you know Python, you know K8s-Gen
+- **Familiar Syntax**: If you know Python, you know Celestra
 - **No YAML Debugging**: Catch errors at "compile time"
 - **Local Development**: Start with Docker Compose, deploy to Kubernetes
 - **Type Safety**: IDE completion and error detection

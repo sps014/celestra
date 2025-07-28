@@ -1,6 +1,6 @@
 # Advanced Topics
 
-Advanced features and enterprise capabilities of K8s-Gen DSL.
+Advanced features and enterprise capabilities of Celestra.
 
 ## Advanced Features
 

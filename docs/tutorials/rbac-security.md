@@ -2,7 +2,7 @@
 
 **⭐⭐⭐ Difficulty:** Intermediate | **⏱️ Time:** 15 minutes
 
-Implement comprehensive Role-Based Access Control (RBAC) security for your Kubernetes applications using K8s-Gen DSL.
+Implement comprehensive Role-Based Access Control (RBAC) security for your Kubernetes applications using Celestra.
 
 ## What You'll Learn
 
@@ -14,7 +14,7 @@ Implement comprehensive Role-Based Access Control (RBAC) security for your Kuber
 
 ## Prerequisites
 
-- K8s-Gen DSL installed
+- Celestra installed
 - Understanding of Kubernetes RBAC concepts
 - kubectl access with admin privileges
 
@@ -31,7 +31,7 @@ Users/Apps → ServiceAccounts → RoleBindings → Roles → Resources
 Start by creating service accounts for different application components:
 
 ```python
-from k8s_gen import ServiceAccount
+from celestra import ServiceAccount
 
 # Web application service account
 web_sa = (ServiceAccount("web-app-sa")
@@ -62,7 +62,7 @@ print("✅ Service accounts created")
 Create roles with specific permissions for each application tier:
 
 ```python
-from k8s_gen import Role
+from celestra import Role
 
 # Web application role - minimal read permissions
 web_role = (Role("web-app-role")
@@ -98,7 +98,7 @@ print("✅ Application roles defined")
 Define cluster-wide roles for special purposes:
 
 ```python
-from k8s_gen import ClusterRole
+from celestra import ClusterRole
 
 # Monitoring role - read-only access to cluster resources
 monitoring_role = (ClusterRole("monitoring-role")
@@ -123,7 +123,7 @@ print("✅ Cluster roles defined")
 Connect service accounts to their respective roles:
 
 ```python
-from k8s_gen import RoleBinding, ClusterRoleBinding
+from celestra import RoleBinding, ClusterRoleBinding
 
 # Bind application roles to service accounts
 web_binding = RoleBinding("web-app-binding", web_role, web_sa)
@@ -142,7 +142,7 @@ print("✅ Role bindings created")
 Configure security policies for the applications:
 
 ```python
-from k8s_gen import SecurityPolicy
+from celestra import SecurityPolicy
 
 # Application security policy
 app_security = (SecurityPolicy("app-security-policy")
@@ -169,7 +169,7 @@ print("✅ Security policies configured")
 Apply the security configuration to your applications:
 
 ```python
-from k8s_gen import App, StatefulApp
+from celestra import App, StatefulApp
 
 # Web application with RBAC
 web_app = (App("secure-web-app")
@@ -208,10 +208,10 @@ Here's the complete security setup:
 ```python
 #!/usr/bin/env python3
 """
-RBAC Security Demo - Comprehensive security setup with K8s-Gen DSL
+RBAC Security Demo - Comprehensive security setup with Celestra
 """
 
-from k8s_gen import (
+from celestra import (
     App, StatefulApp, ServiceAccount, Role, ClusterRole,
     RoleBinding, ClusterRoleBinding, SecurityPolicy,
     KubernetesOutput

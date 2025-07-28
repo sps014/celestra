@@ -559,7 +559,7 @@ kubectl patch cronjob <cronjob-name> -p '{"spec":{"suspend":false}}'
 
 ## API Reference
 
-::: src.k8s_gen.workloads.cron_job.CronJob
+::: src.celestra.workloads.cron_job.CronJob
     options:
       show_source: false
       heading_level: 3

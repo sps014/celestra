@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-RBAC Security Demo for K8s-Gen DSL.
+RBAC Security Demo for Celestra.
 
 This example demonstrates comprehensive Role-Based Access Control (RBAC) 
 configuration for a multi-tenant Kubernetes environment.
@@ -12,7 +12,7 @@ import os
 # Add the src directory to the Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
-from ..k8s_gen import (
+from ..celestra import (
     App, Service, ServiceAccount, Role, ClusterRole, 
     RoleBinding, ClusterRoleBinding, SecurityPolicy,
     KubernetesOutput
@@ -21,7 +21,7 @@ from ..k8s_gen import (
 
 def demo_rbac_features():
     """Demonstrate comprehensive RBAC features."""
-    print("🔐 K8s-Gen DSL Phase 4: Security & RBAC Demo")
+    print("🔐 Celestra Phase 4: Security & RBAC Demo")
     print("=" * 50)
     
     # 1. Create a ServiceAccount for our application

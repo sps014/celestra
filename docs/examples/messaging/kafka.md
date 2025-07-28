@@ -1,6 +1,6 @@
 # Kafka Messaging Example
 
-This example demonstrates how to deploy a production-ready Apache Kafka cluster using K8s-Gen DSL.
+This example demonstrates how to deploy a production-ready Apache Kafka cluster using Celestra.
 
 ## Overview
 

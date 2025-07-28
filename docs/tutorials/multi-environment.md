@@ -1,11 +1,11 @@
 # Multi-Environment Setup Tutorial
 
-Learn how to configure and deploy applications across multiple environments (development, staging, and production) using K8s-Gen DSL.
+Learn how to configure and deploy applications across multiple environments (development, staging, and production) using Celestra.
 
 !!! info "Tutorial Overview"
     **Difficulty**: ⭐⭐⭐ Intermediate  
     **Time**: 20-25 minutes  
-    **Prerequisites**: Basic K8s-Gen knowledge  
+    **Prerequisites**: Basic Celestra knowledge  
     **You'll Learn**: Environment-specific configurations, GitOps workflows, CI/CD integration
 
 ## Environment Strategy

@@ -133,8 +133,9 @@ k8s/
 rbac-demo/
 output/
 manifests/
-*.yaml
-*.yml
+# Don't ignore GitHub Actions workflows
+!.github/workflows/*.yml
+!.github/workflows/*.yaml
 
 # IDE specific
 .vscode/

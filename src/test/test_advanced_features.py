@@ -2,7 +2,7 @@
 """
 Advanced Features Test Suite.
 
-Tests for K8s-Gen DSL advanced features:
+Tests for Celestra advanced features:
 - DependencyManager (dependency management)
 - WaitCondition (wait conditions)
 - CustomResource (custom resources and operators)
@@ -12,7 +12,7 @@ Tests for K8s-Gen DSL advanced features:
 import pytest
 import yaml
 
-from src.k8s_gen import (
+from src.celestra import (
     DependencyManager, WaitCondition, CustomResource, CostOptimization, 
     DeploymentStrategy, ExternalServices, App, StatefulApp
 )

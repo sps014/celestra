@@ -1,20 +1,20 @@
 # CLI Reference
 
-Complete command-line interface documentation for the K8s-Gen DSL tool.
+Complete command-line interface documentation for the Celestra tool.
 
 ## Installation
 
 ```bash
 # Install from PyPI
-pip install k8s-gen
+pip install Celestra
 
 # Install from source
-git clone https://github.com/k8s-gen/k8s-gen.git
-cd k8s-gen
+git clone https://github.com/Celestra/Celestra.git
+cd Celestra
 pip install -e .
 
 # Verify installation
-k8s-gen --version
+Celestra --version
 ```
 
 ## Global Options
@@ -26,17 +26,17 @@ Options available for all commands:
 | `--help, -h` | Show help message | |
 | `--version, -v` | Show version information | |
 | `--verbose` | Enable verbose output | False |
-| `--config` | Specify config file | `./k8s-gen.yaml` |
+| `--config` | Specify config file | `./Celestra.yaml` |
 | `--dry-run` | Show what would be done without executing | False |
 
 ## Commands
 
 ### init
 
-Initialize a new K8s-Gen project.
+Initialize a new Celestra project.
 
 ```bash
-k8s-gen init [PROJECT_NAME] [OPTIONS]
+Celestra init [PROJECT_NAME] [OPTIONS]
 ```
 
 **Arguments:**
@@ -50,16 +50,16 @@ k8s-gen init [PROJECT_NAME] [OPTIONS]
 **Examples:**
 ```bash
 # Create a new project
-k8s-gen init my-app
+Celestra init my-app
 
 # Create with web app template
-k8s-gen init my-web-app --template web
+Celestra init my-web-app --template web
 
 # Create in specific directory
-k8s-gen init my-app --output ./projects/
+Celestra init my-app --output ./projects/
 
 # Available templates
-k8s-gen init --list-templates
+Celestra init --list-templates
 ```
 
 **Available Templates:**
@@ -74,7 +74,7 @@ k8s-gen init --list-templates
 Generate Kubernetes manifests or other formats from DSL code.
 
 ```bash
-k8s-gen generate [FILE] [OPTIONS]
+Celestra generate [FILE] [OPTIONS]
 ```
 
 **Arguments:**
@@ -91,19 +91,19 @@ k8s-gen generate [FILE] [OPTIONS]
 **Examples:**
 ```bash
 # Generate Kubernetes YAML
-k8s-gen generate app.py --output ./k8s/
+Celestra generate app.py --output ./k8s/
 
 # Generate Docker Compose
-k8s-gen generate app.py --format docker-compose --output ./docker-compose.yml
+Celestra generate app.py --format docker-compose --output ./docker-compose.yml
 
 # Generate for specific environment
-k8s-gen generate app.py --environment production --output ./k8s/prod/
+Celestra generate app.py --environment production --output ./k8s/prod/
 
 # Generate multiple formats
-k8s-gen generate app.py --format kubernetes,docker-compose,helm --output ./output/
+Celestra generate app.py --format kubernetes,docker-compose,helm --output ./output/
 
 # Watch for changes
-k8s-gen generate app.py --watch --output ./k8s/
+Celestra generate app.py --watch --output ./k8s/
 ```
 
 **Format-Specific Options:**
@@ -111,7 +111,7 @@ k8s-gen generate app.py --watch --output ./k8s/
 **Docker Compose:**
 ```bash
 # Generate with override files
-k8s-gen generate app.py --format docker-compose \
+Celestra generate app.py --format docker-compose \
   --override development:./docker-compose.override.yml \
   --override production:./docker-compose.prod.yml
 ```
@@ -119,14 +119,14 @@ k8s-gen generate app.py --format docker-compose \
 **Helm:**
 ```bash
 # Generate Helm chart
-k8s-gen generate app.py --format helm --output ./charts/my-app/ \
+Celestra generate app.py --format helm --output ./charts/my-app/ \
   --chart-version 1.0.0 --app-version latest
 ```
 
 **Kustomize:**
 ```bash
 # Generate Kustomize structure
-k8s-gen generate app.py --format kustomize --output ./k8s/ \
+Celestra generate app.py --format kustomize --output ./k8s/ \
   --overlays dev,staging,prod
 ```
 
@@ -135,7 +135,7 @@ k8s-gen generate app.py --format kustomize --output ./k8s/ \
 Validate DSL configuration and generated manifests.
 
 ```bash
-k8s-gen validate [FILE] [OPTIONS]
+Celestra validate [FILE] [OPTIONS]
 ```
 
 **Arguments:**
@@ -150,16 +150,16 @@ k8s-gen validate [FILE] [OPTIONS]
 **Examples:**
 ```bash
 # Basic validation
-k8s-gen validate app.py
+Celestra validate app.py
 
 # Validate for specific environment
-k8s-gen validate app.py --environment production
+Celestra validate app.py --environment production
 
 # Strict validation with JSON output
-k8s-gen validate app.py --strict --output-format json
+Celestra validate app.py --strict --output-format json
 
 # Validate generated Helm chart
-k8s-gen validate app.py --format helm
+Celestra validate app.py --format helm
 ```
 
 ### deploy
@@ -167,7 +167,7 @@ k8s-gen validate app.py --format helm
 Deploy applications to Kubernetes or start with Docker Compose.
 
 ```bash
-k8s-gen deploy [FILE] [OPTIONS]
+Celestra deploy [FILE] [OPTIONS]
 ```
 
 **Arguments:**
@@ -186,16 +186,16 @@ k8s-gen deploy [FILE] [OPTIONS]
 **Examples:**
 ```bash
 # Deploy to Kubernetes
-k8s-gen deploy app.py --environment production
+Celestra deploy app.py --environment production
 
 # Deploy with Docker Compose
-k8s-gen deploy app.py --format docker-compose
+Celestra deploy app.py --format docker-compose
 
 # Dry run deployment
-k8s-gen deploy app.py --dry-run --environment production
+Celestra deploy app.py --dry-run --environment production
 
 # Deploy to specific namespace
-k8s-gen deploy app.py --namespace my-app --wait
+Celestra deploy app.py --namespace my-app --wait
 ```
 
 ### dev
@@ -203,7 +203,7 @@ k8s-gen deploy app.py --namespace my-app --wait
 Start local development environment with Docker Compose.
 
 ```bash
-k8s-gen dev [FILE] [OPTIONS]
+Celestra dev [FILE] [OPTIONS]
 ```
 
 **Arguments:**
@@ -220,19 +220,19 @@ k8s-gen dev [FILE] [OPTIONS]
 **Examples:**
 ```bash
 # Start development environment
-k8s-gen dev app.py
+Celestra dev app.py
 
 # Start and follow logs
-k8s-gen dev app.py --logs --follow
+Celestra dev app.py --logs --follow
 
 # Stop development environment
-k8s-gen dev app.py --down
+Celestra dev app.py --down
 
 # Watch for changes and auto-restart
-k8s-gen dev app.py --watch
+Celestra dev app.py --watch
 
 # Rebuild and start
-k8s-gen dev app.py --build
+Celestra dev app.py --build
 ```
 
 ### secrets
@@ -240,7 +240,7 @@ k8s-gen dev app.py --build
 Manage secrets and sensitive configuration.
 
 ```bash
-k8s-gen secrets [SUBCOMMAND] [OPTIONS]
+Celestra secrets [SUBCOMMAND] [OPTIONS]
 ```
 
 **Subcommands:**
@@ -249,7 +249,7 @@ k8s-gen secrets [SUBCOMMAND] [OPTIONS]
 Generate secrets from DSL configuration.
 
 ```bash
-k8s-gen secrets generate [FILE] [OPTIONS]
+Celestra secrets generate [FILE] [OPTIONS]
 ```
 
 **Options:**
@@ -260,17 +260,17 @@ k8s-gen secrets generate [FILE] [OPTIONS]
 **Examples:**
 ```bash
 # Generate secret manifests
-k8s-gen secrets generate app.py --output ./secrets/
+Celestra secrets generate app.py --output ./secrets/
 
 # Generate encrypted secrets
-k8s-gen secrets generate app.py --encrypt --key-file ./key.txt
+Celestra secrets generate app.py --encrypt --key-file ./key.txt
 ```
 
 #### sync
 Synchronize secrets with external secret stores.
 
 ```bash
-k8s-gen secrets sync [OPTIONS]
+Celestra secrets sync [OPTIONS]
 ```
 
 **Options:**
@@ -281,18 +281,18 @@ k8s-gen secrets sync [OPTIONS]
 **Examples:**
 ```bash
 # Sync with HashiCorp Vault
-k8s-gen secrets sync --vault-addr https://vault.company.com
+Celestra secrets sync --vault-addr https://vault.company.com
 
 # Sync with AWS Secrets Manager
-k8s-gen secrets sync --aws-region us-east-1
+Celestra secrets sync --aws-region us-east-1
 ```
 
 #### encrypt/decrypt
 Encrypt or decrypt secret files.
 
 ```bash
-k8s-gen secrets encrypt [FILES] --key-file [KEY_FILE]
-k8s-gen secrets decrypt [FILES] --key-file [KEY_FILE]
+Celestra secrets encrypt [FILES] --key-file [KEY_FILE]
+Celestra secrets decrypt [FILES] --key-file [KEY_FILE]
 ```
 
 ### jobs
@@ -300,7 +300,7 @@ k8s-gen secrets decrypt [FILES] --key-file [KEY_FILE]
 Manage Jobs and CronJobs.
 
 ```bash
-k8s-gen jobs [SUBCOMMAND] [OPTIONS]
+Celestra jobs [SUBCOMMAND] [OPTIONS]
 ```
 
 **Subcommands:**
@@ -309,7 +309,7 @@ k8s-gen jobs [SUBCOMMAND] [OPTIONS]
 Run a job immediately.
 
 ```bash
-k8s-gen jobs run [JOB_NAME] [OPTIONS]
+Celestra jobs run [JOB_NAME] [OPTIONS]
 ```
 
 **Options:**
@@ -320,17 +320,17 @@ k8s-gen jobs run [JOB_NAME] [OPTIONS]
 **Examples:**
 ```bash
 # Run database migration
-k8s-gen jobs run db-migration --wait --logs
+Celestra jobs run db-migration --wait --logs
 
 # Run with custom timeout
-k8s-gen jobs run data-processing --timeout 3600
+Celestra jobs run data-processing --timeout 3600
 ```
 
 #### list
 List jobs and their status.
 
 ```bash
-k8s-gen jobs list [OPTIONS]
+Celestra jobs list [OPTIONS]
 ```
 
 **Options:**
@@ -341,7 +341,7 @@ k8s-gen jobs list [OPTIONS]
 Show logs for a specific job.
 
 ```bash
-k8s-gen jobs logs [JOB_NAME] [OPTIONS]
+Celestra jobs logs [JOB_NAME] [OPTIONS]
 ```
 
 **Options:**
@@ -353,7 +353,7 @@ k8s-gen jobs logs [JOB_NAME] [OPTIONS]
 Manage RBAC (Role-Based Access Control) resources.
 
 ```bash
-k8s-gen rbac [SUBCOMMAND] [OPTIONS]
+Celestra rbac [SUBCOMMAND] [OPTIONS]
 ```
 
 **Subcommands:**
@@ -362,14 +362,14 @@ k8s-gen rbac [SUBCOMMAND] [OPTIONS]
 Validate RBAC configuration.
 
 ```bash
-k8s-gen rbac validate [FILE] [OPTIONS]
+Celestra rbac validate [FILE] [OPTIONS]
 ```
 
 #### generate
 Generate RBAC manifests.
 
 ```bash
-k8s-gen rbac generate [FILE] [OPTIONS]
+Celestra rbac generate [FILE] [OPTIONS]
 ```
 
 **Options:**
@@ -380,7 +380,7 @@ k8s-gen rbac generate [FILE] [OPTIONS]
 Check RBAC permissions for a user or service account.
 
 ```bash
-k8s-gen rbac check [USER_OR_SA] [OPTIONS]
+Celestra rbac check [USER_OR_SA] [OPTIONS]
 ```
 
 **Options:**
@@ -392,7 +392,7 @@ k8s-gen rbac check [USER_OR_SA] [OPTIONS]
 Security scanning and policy management.
 
 ```bash
-k8s-gen security [SUBCOMMAND] [OPTIONS]
+Celestra security [SUBCOMMAND] [OPTIONS]
 ```
 
 **Subcommands:**
@@ -401,7 +401,7 @@ k8s-gen security [SUBCOMMAND] [OPTIONS]
 Scan configuration for security issues.
 
 ```bash
-k8s-gen security scan [FILE] [OPTIONS]
+Celestra security scan [FILE] [OPTIONS]
 ```
 
 **Options:**
@@ -412,20 +412,20 @@ k8s-gen security scan [FILE] [OPTIONS]
 **Examples:**
 ```bash
 # Basic security scan
-k8s-gen security scan app.py
+Celestra security scan app.py
 
 # Generate HTML report
-k8s-gen security scan app.py --report ./security-report.html --format html
+Celestra security scan app.py --report ./security-report.html --format html
 
 # Show only high and critical issues
-k8s-gen security scan app.py --severity high
+Celestra security scan app.py --severity high
 ```
 
 #### policies
 Manage security policies.
 
 ```bash
-k8s-gen security policies [list|apply|delete] [OPTIONS]
+Celestra security policies [list|apply|delete] [OPTIONS]
 ```
 
 ### monitor
@@ -433,7 +433,7 @@ k8s-gen security policies [list|apply|delete] [OPTIONS]
 Set up and manage monitoring and observability.
 
 ```bash
-k8s-gen monitor [SUBCOMMAND] [OPTIONS]
+Celestra monitor [SUBCOMMAND] [OPTIONS]
 ```
 
 **Subcommands:**
@@ -442,7 +442,7 @@ k8s-gen monitor [SUBCOMMAND] [OPTIONS]
 Set up monitoring stack (Prometheus, Grafana, Jaeger).
 
 ```bash
-k8s-gen monitor setup [FILE] [OPTIONS]
+Celestra monitor setup [FILE] [OPTIONS]
 ```
 
 **Options:**
@@ -454,7 +454,7 @@ k8s-gen monitor setup [FILE] [OPTIONS]
 Manage Grafana dashboards.
 
 ```bash
-k8s-gen monitor dashboards [import|export|list] [OPTIONS]
+Celestra monitor dashboards [import|export|list] [OPTIONS]
 ```
 
 **Options:**
@@ -465,7 +465,7 @@ k8s-gen monitor dashboards [import|export|list] [OPTIONS]
 Manage alerting rules.
 
 ```bash
-k8s-gen monitor alerts [test|apply|list] [OPTIONS]
+Celestra monitor alerts [test|apply|list] [OPTIONS]
 ```
 
 **Options:**
@@ -475,21 +475,21 @@ k8s-gen monitor alerts [test|apply|list] [OPTIONS]
 **Examples:**
 ```bash
 # Setup monitoring stack
-k8s-gen monitor setup app.py --namespace monitoring
+Celestra monitor setup app.py --namespace monitoring
 
 # Import dashboards
-k8s-gen monitor dashboards import --dashboard-dir ./dashboards/
+Celestra monitor dashboards import --dashboard-dir ./dashboards/
 
 # Test alerting rules
-k8s-gen monitor alerts test --dry-run
+Celestra monitor alerts test --dry-run
 ```
 
 ## Configuration File
 
-K8s-Gen can be configured using a YAML configuration file:
+Celestra can be configured using a YAML configuration file:
 
 ```yaml
-# k8s-gen.yaml
+# Celestra.yaml
 project:
   name: "my-app"
   version: "1.0.0"
@@ -562,11 +562,11 @@ plugins:
 
 ## Environment Variables
 
-Configure K8s-Gen using environment variables:
+Configure Celestra using environment variables:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `K8S_GEN_CONFIG` | Path to configuration file | `./k8s-gen.yaml` |
+| `K8S_GEN_CONFIG` | Path to configuration file | `./Celestra.yaml` |
 | `K8S_GEN_ENVIRONMENT` | Default environment | `development` |
 | `K8S_GEN_NAMESPACE` | Default Kubernetes namespace | `default` |
 | `K8S_GEN_OUTPUT_DIR` | Default output directory | `./output/` |
@@ -575,7 +575,7 @@ Configure K8s-Gen using environment variables:
 
 ## Exit Codes
 
-K8s-Gen uses standard exit codes:
+Celestra uses standard exit codes:
 
 | Code | Description |
 |------|-------------|
@@ -592,23 +592,23 @@ Enable shell completion for better command-line experience:
 
 ```bash
 # Bash
-eval "$(k8s-gen completion bash)"
+eval "$(Celestra completion bash)"
 
 # Zsh
-eval "$(k8s-gen completion zsh)"
+eval "$(Celestra completion zsh)"
 
 # Fish
-k8s-gen completion fish | source
+Celestra completion fish | source
 
 # PowerShell
-k8s-gen completion powershell | Out-String | Invoke-Expression
+Celestra completion powershell | Out-String | Invoke-Expression
 ```
 
 Add to your shell profile to make it permanent:
 
 ```bash
 # Add to ~/.bashrc or ~/.zshrc
-eval "$(k8s-gen completion bash)"  # or zsh
+eval "$(Celestra completion bash)"  # or zsh
 ```
 
 ## Troubleshooting
@@ -619,7 +619,7 @@ eval "$(k8s-gen completion bash)"  # or zsh
 ```bash
 Error: ModuleNotFoundError: No module named 'k8s_gen'
 ```
-Solution: Ensure K8s-Gen is properly installed: `pip install k8s-gen`
+Solution: Ensure Celestra is properly installed: `pip install Celestra`
 
 **2. Validation Errors**
 ```bash
@@ -644,19 +644,19 @@ Solution: Check your `kubectl` configuration and cluster connectivity.
 Enable debug mode for detailed troubleshooting:
 
 ```bash
-k8s-gen --verbose generate app.py
-K8S_GEN_VERBOSE=true k8s-gen generate app.py
+Celestra --verbose generate app.py
+K8S_GEN_VERBOSE=true Celestra generate app.py
 ```
 
 ### Log Files
 
-K8s-Gen logs are written to:
-- Linux/macOS: `~/.k8s-gen/logs/`
-- Windows: `%APPDATA%\k8s-gen\logs\`
+Celestra logs are written to:
+- Linux/macOS: `~/.Celestra/logs/`
+- Windows: `%APPDATA%\Celestra\logs\`
 
 ### Getting Help
 
-- Documentation: https://k8s-gen.readthedocs.io
-- GitHub Issues: https://github.com/k8s-gen/k8s-gen/issues
-- Community Slack: https://k8s-gen.slack.com
-- Stack Overflow: Tag questions with `k8s-gen` 
+- Documentation: https://Celestra.readthedocs.io
+- GitHub Issues: https://github.com/Celestra/Celestra/issues
+- Community Slack: https://Celestra.slack.com
+- Stack Overflow: Tag questions with `Celestra` 

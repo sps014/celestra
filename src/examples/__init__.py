@@ -1,8 +1,8 @@
 """
-K8s-Gen DSL Examples Package.
+Celestra Examples Package.
 
 This package contains comprehensive examples demonstrating various features
-and use cases of the K8s-Gen Domain-Specific Language.
+and use cases of the Celestra Domain-Specific Language.
 
 Available Examples:
 - multiple_ports_showcase: Demonstrates multi-port configurations across all components
@@ -23,7 +23,7 @@ Or run from project root:
 """
 
 __version__ = "1.0.0"
-__author__ = "K8s-Gen Development Team"
+__author__ = "Celestra Development Team"
 
 # Make examples easily importable
 from . import multiple_ports_showcase

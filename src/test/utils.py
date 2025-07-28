@@ -1,5 +1,5 @@
 """
-Test utilities and helper functions for K8s-Gen DSL tests.
+Test utilities and helper functions for Celestraa DSL tests.
 """
 
 import os

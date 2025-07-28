@@ -487,7 +487,7 @@ kubectl delete jobs --field-selector status.successful=1
 
 ## API Reference
 
-::: src.k8s_gen.workloads.job.Job
+::: src.celestra.workloads.job.Job
     options:
       show_source: false
       heading_level: 3

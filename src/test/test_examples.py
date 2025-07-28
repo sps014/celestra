@@ -2,7 +2,7 @@
 """
 Examples Test Suite.
 
-Real-world example tests for K8s-Gen DSL:
+Real-world example tests for Celestra:
 - WordPress deployment
 - Machine Learning pipeline
 - E-commerce platform
@@ -11,7 +11,7 @@ Real-world example tests for K8s-Gen DSL:
 
 import pytest
 
-from src.k8s_gen import (
+from src.celestra import (
     App, StatefulApp, AppGroup, Job, CronJob, Secret, ConfigMap,
     Service, Ingress, Observability, Scaling
 )

@@ -2,7 +2,7 @@
 """
 Core Components Test Suite.
 
-Tests for core K8s-Gen DSL components:
+Tests for core Celestra components:
 - App (stateless applications)
 - StatefulApp (stateful applications) 
 - AppGroup (multi-service applications)
@@ -15,7 +15,7 @@ import os
 import yaml
 from typing import Dict, List, Any
 
-from src.k8s_gen import App, StatefulApp, AppGroup, Secret, ConfigMap
+from src.celestra import App, StatefulApp, AppGroup, Secret, ConfigMap
 from .utils import TestHelper, AssertionHelper, MockKubernetesCluster, assert_valid_kubernetes_resource
 
 
@@ -146,7 +146,7 @@ class TestApp:
         assert app._resources["limits"]["memory"] == "512Mi"
 
     def test_app_scaling_configuration(self):
-        from k8s_gen import Scaling
+        from celestra import Scaling
         
         # Create a scaling configuration
         scaling = Scaling()
@@ -197,7 +197,7 @@ class TestApp:
         # Service creation is handled internally
 
     def test_app_secrets_and_configs(self):
-        from k8s_gen import Secret, ConfigMap
+        from celestra import Secret, ConfigMap
         
         secret = Secret("app-secret").add("password", "secret123")
         config = ConfigMap("app-config").add("setting", "value")

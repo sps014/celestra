@@ -1,6 +1,6 @@
 # Configuration
 
-Learn how to configure K8s-Gen DSL components for different environments and use cases.
+Learn how to configure Celestra components for different environments and use cases.
 
 ## Configuration Topics
 

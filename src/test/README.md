@@ -1,6 +1,6 @@
-# K8s-Gen DSL Comprehensive Test Suite
+# Celestra Comprehensive Test Suite
 
-This directory contains a comprehensive test suite for the K8s-Gen DSL, covering all components and scenarios defined in the specifications.
+This directory contains a comprehensive test suite for the Celestra, covering all components and scenarios defined in the specifications.
 
 ## Test Structure
 

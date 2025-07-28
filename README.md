@@ -1,10 +1,10 @@
-# K8s-Gen 🚀
+# Celestra 🚀
 
 > **Transform your application deployments with a simple Python DSL**
 
-K8s-Gen is a powerful Domain-Specific Language (DSL) that lets you define cloud-native applications using simple Python code and automatically generates production-ready Kubernetes manifests, Docker Compose files, Helm charts, and more.
+Celestra is a powerful Domain-Specific Language (DSL) that lets you define cloud-native applications using simple Python code and automatically generates production-ready Kubernetes manifests, Docker Compose files, Helm charts, and more.
 
-## ✨ Why K8s-Gen?
+## ✨ Why Celestra?
 
 **Before (Traditional YAML):**
 ```yaml
@@ -38,9 +38,9 @@ spec:
 # ... and much more YAML
 ```
 
-**After (K8s-Gen DSL):**
+**After (Celestra):**
 ```python
-from k8s_gen import App
+from celestra import App
 
 web_app = (App("web-app")
     .image("web-server:latest")
@@ -68,19 +68,21 @@ web_app.generate().to_helm_chart("./charts/")           # Helm packaging
 
 ### Installation
 ```bash
-# From source (recommended for development)
-git clone https://github.com/your-org/k8s-gen.git
-cd k8s-gen
+
+# install from PyPI 
+pip install celestra
+
+# Or from source (recommended for development)
+git clone https://github.com/your-org/celestra.git
+cd celestra
 pip install -e src/
 
-# Or install from PyPI (when available)
-pip install k8s-gen-dsl
 ```
 
 ### Create Your First App
 ```python
 # app.py
-from k8s_gen import App, StatefulApp, Secret
+from celestra import App, StatefulApp, Secret
 
 # Database with automatic backups
 db = (StatefulApp("database")
@@ -117,11 +119,11 @@ kubectl apply -f ./k8s/
 
 ## 🏗️ Architecture
 
-K8s-Gen abstracts Kubernetes complexity while maintaining full power:
+Celestra abstracts Kubernetes complexity while maintaining full power:
 
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Python DSL    │───▶│   K8s-Gen Core   │───▶│   Output Files  │
+│   Python DSL    │───▶│   Celestra Core  │───▶│   Output Files  │
 │                 │    │                  │    │                 │
 │ • Apps          │    │ • Validation     │    │ • Kubernetes    │
 │ • StatefulApps  │    │ • Templates      │    │ • Docker Compose│
@@ -134,7 +136,7 @@ K8s-Gen abstracts Kubernetes complexity while maintaining full power:
 
 ### Microservices Platform
 ```python
-from k8s_gen import AppGroup, App, StatefulApp
+from celestra import AppGroup, App, StatefulApp
 
 platform = AppGroup("ecommerce")
 
@@ -153,7 +155,7 @@ platform.generate().to_yaml("./k8s/")
 
 ### ML Training Pipeline
 ```python
-from k8s_gen import Job, CronJob
+from celestra import Job, CronJob
 
 # One-time training job
 training = (Job("model-training")
@@ -173,7 +175,7 @@ retrain.generate().to_yaml("./jobs/")
 
 ### Complete Web Application
 ```python
-from k8s_gen import App, StatefulApp, Secret, Service, Ingress
+from celestra import App, StatefulApp, Secret, Service, Ingress
 
 # Database
 db_secret = Secret("db-secret").add("password", "secure-password")
@@ -253,13 +255,13 @@ for component in [db_secret, database, api, frontend, api_service, frontend_serv
 - **`CostOptimization`** - Resource optimization
 - **`CustomResource`** - Custom resource definitions
 
-## 🌟 Why Choose K8s-Gen?
+## 🌟 Why Choose Celestra?
 
 ### For Developers
 - **No YAML Hell** - Write infrastructure in Python
 - **Fast Iteration** - Start local, deploy anywhere
 - **Type Safety** - Catch errors before deployment
-- **Familiar Syntax** - If you know Python, you know K8s-Gen
+- **Familiar Syntax - If you know Python, you know Celestra
 
 ### For DevOps Teams
 - **Standardization** - Consistent deployments across teams
@@ -297,7 +299,7 @@ python kubernetes_yaml_generation_example.py
 
 ## ⚠️ Format-Specific Methods & Output Awareness
 
-K8s-Gen supports multiple output formats (Kubernetes, Docker Compose, Helm, etc.). Some methods are only meaningful for certain formats. **K8s-Gen will automatically warn you if you use a method that is not supported in your chosen output format!**
+Celestra supports multiple output formats (Kubernetes, Docker Compose, Helm, etc.). Some methods are only meaningful for certain formats. **Celestra will automatically warn you if you use a method that is not supported in your chosen output format!**
 
 ### 🐳 Docker Compose-Only Methods
 - `.port_mapping(host_port, container_port, ...)` — Only for Docker Compose (host:container mapping)
@@ -326,7 +328,7 @@ K8s-Gen supports multiple output formats (Kubernetes, Docker Compose, Helm, etc.
 ### 🏷️ Decorators for Custom Extensions
 You can mark your own methods as format-specific using built-in decorators:
 ```python
-from k8s_gen import docker_compose_only, kubernetes_only, output_formats
+from celestra import docker_compose_only, kubernetes_only, output_formats
 
 @docker_compose_only
 def my_compose_method(self, ...): ...
@@ -343,7 +345,7 @@ def my_multi_format_method(self, ...): ...
 - **For Kubernetes:** Use `.port()` and create a `Service` for exposure
 - **Universal:** Use `.port()`, `.image()`, `.replicas()`, `.env()`, etc.
 
-K8s-Gen will always guide you with clear warnings and suggestions if you use a method in the wrong context!
+Celestra will always guide you with clear warnings and suggestions if you use a method in the wrong context!
 
 ## 🤝 Contributing
 
@@ -364,14 +366,14 @@ This project is licensed under the MIT License - see the [LICENSE](./LICENSE) fi
 ## 🎉 Get Started Now
 
 ```bash
-# Install K8s-Gen from source
-git clone https://github.com/your-org/k8s-gen.git
-cd k8s-gen
+# Install Celestra from source
+git clone https://github.com/your-org/celestra.git
+cd celestra
 pip install -e src/
 
 # Create your first application
 cat > my_app.py << EOF
-from k8s_gen import App
+from celestra import App
 
 app = (App("hello-world")
     .image("nginxdemos/hello:latest")
@@ -388,7 +390,7 @@ python my_app.py
 kubectl apply -f ./k8s/
 ```
 
-**Ready to simplify your Kubernetes deployments?** [Check out the complete documentation](./docs/) and join thousands of developers already using K8s-Gen! 🚀
+**Ready to simplify your Kubernetes deployments?** [Check out the complete documentation](./docs/) and join thousands of developers already using Celestra! 🚀
 
 ---
 
@@ -396,6 +398,6 @@ kubectl apply -f ./k8s/
 
 **[Documentation](./docs/) • [Examples](./docs/examples/) • [API Reference](./docs/api-reference/) • [Components](./docs/components/)**
 
-Made with ❤️ by the K8s-Gen community
+Made with ❤️ by the Celestra community
 
 </div>

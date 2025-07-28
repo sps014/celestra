@@ -2,7 +2,7 @@
 
 ## Current Implementation Status ✅
 
-The K8s-Gen DSL has been successfully implemented with the following components:
+The Celestra has been successfully implemented with the following components:
 
 ### ✅ **Core Components (COMPLETED)**
 

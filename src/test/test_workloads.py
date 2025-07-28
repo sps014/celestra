@@ -2,7 +2,7 @@
 """
 Workloads Test Suite.
 
-Tests for K8s-Gen DSL workload components:
+Tests for Celestra workload components:
 - Job (batch processing)
 - CronJob (scheduled tasks)
 - Lifecycle (container lifecycle management)
@@ -12,7 +12,7 @@ import pytest
 import yaml
 from datetime import datetime, timedelta
 
-from src.k8s_gen import Job, CronJob, Lifecycle
+from src.celestra import Job, CronJob, Lifecycle
 from .utils import TestHelper, AssertionHelper, MockKubernetesCluster, assert_valid_kubernetes_resource
 
 
@@ -85,7 +85,7 @@ class TestJob:
         assert "output-data" in volume_names
 
     def test_job_with_secrets_and_configs(self):
-        from k8s_gen import Secret, ConfigMap
+        from celestra import Secret, ConfigMap
         
         secret = Secret("job-secret").add("api_key", "secret123")
         config = ConfigMap("job-config").add("settings", "value")
@@ -439,7 +439,7 @@ class TestLifecycle:
         assert lifecycle._pre_stop["exec"]["command"] == ["cleanup.sh", "/tmp", "/var/cache"]
 
     def test_lifecycle_kubernetes_integration(self):
-        from k8s_gen import App
+        from celestra import App
         
         lifecycle = (Lifecycle()
                      .post_start_exec(["sh", "-c", "echo 'Started'"])

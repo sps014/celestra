@@ -1,4 +1,4 @@
-# K8s-Gen DSL Requirements
+# Celestra DSL Requirements
 
 # Core Dependencies
 PyYAML>=6.0                # YAML processing (used throughout DSL)

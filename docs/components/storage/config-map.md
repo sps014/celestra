@@ -128,7 +128,7 @@ config = (ConfigMap("production-config")
     .add_data("region", "us-west-2")
     .label("component", "configuration")
     .label("environment", "production")
-    .annotation("managed-by", "k8s-gen")
+    .annotation("managed-by", "Celestra")
     .annotation("last-updated", "2024-01-15"))
 ```
 
@@ -595,7 +595,7 @@ kubectl run test-pod --image=busybox --rm -it -- sh
 
 ## API Reference
 
-::: src.k8s_gen.storage.config_map.ConfigMap
+::: src.celestra.storage.config_map.ConfigMap
     options:
       show_source: false
       heading_level: 3

@@ -1,6 +1,6 @@
 # Components Overview
 
-K8s-Gen DSL provides a comprehensive set of components for building Kubernetes applications. Each component is designed to be intuitive, powerful, and production-ready.
+Celestra provides a comprehensive set of components for building Kubernetes applications. Each component is designed to be intuitive, powerful, and production-ready.
 
 ## Component Categories
 
@@ -223,7 +223,7 @@ All components support multiple output formats:
 === "Kubernetes YAML"
 
     ```python
-    from src.k8s_gen.output import KubernetesOutput
+    from src.celestra.output import KubernetesOutput
     
     output = KubernetesOutput()
     output.generate(app, "k8s/")
@@ -232,7 +232,7 @@ All components support multiple output formats:
 === "Helm Charts"
 
     ```python
-    from src.k8s_gen.output import HelmOutput
+    from src.celestra.output import HelmOutput
     
     helm = HelmOutput("my-chart")
     helm.add_resource(app)
@@ -242,7 +242,7 @@ All components support multiple output formats:
 === "Docker Compose"
 
     ```python
-    from src.k8s_gen.output import DockerComposeOutput
+    from src.celestra.output import DockerComposeOutput
     
     compose = DockerComposeOutput()
     compose.generate(app, "docker-compose.yml")
@@ -251,7 +251,7 @@ All components support multiple output formats:
 === "Kustomize"
 
     ```python
-    from src.k8s_gen.output import KustomizeOutput
+    from src.celestra.output import KustomizeOutput
     
     kustomize = KustomizeOutput("base")
     kustomize.add_resource(app)
@@ -261,7 +261,7 @@ All components support multiple output formats:
 === "Terraform"
 
     ```python
-    from src.k8s_gen.output import TerraformOutput
+    from src.celestra.output import TerraformOutput
     
     terraform = TerraformOutput("infrastructure")
     terraform.add_resource(app)

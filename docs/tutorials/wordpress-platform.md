@@ -2,7 +2,7 @@
 
 **⭐ Difficulty:** Easy | **⏱️ Time:** 15 minutes
 
-Deploy a complete WordPress platform with MySQL database, persistent storage, and proper security using K8s-Gen DSL.
+Deploy a complete WordPress platform with MySQL database, persistent storage, and proper security using Celestra.
 
 ## What You'll Build
 
@@ -16,7 +16,7 @@ A production-ready WordPress platform featuring:
 
 ## Prerequisites
 
-- K8s-Gen DSL installed
+- Celestra installed
 - Kubernetes cluster with persistent volume support
 - Basic understanding of WordPress and MySQL
 
@@ -34,7 +34,7 @@ Internet → LoadBalancer → WordPress → MySQL Database
 Start with secure credential management:
 
 ```python
-from k8s_gen import Secret
+from celestra import Secret
 
 # Database credentials
 db_secret = (Secret("wordpress-db-secret")
@@ -62,7 +62,7 @@ print("✅ Secrets created")
 Set up the MySQL database with persistent storage:
 
 ```python
-from k8s_gen import StatefulApp
+from celestra import StatefulApp
 
 # MySQL database
 mysql_db = (StatefulApp("mysql")
@@ -84,7 +84,7 @@ print("✅ MySQL database configured")
 Set up WordPress with persistent storage for uploads:
 
 ```python
-from k8s_gen import App
+from celestra import App
 
 # WordPress application
 wordpress = (App("wordpress")
@@ -113,7 +113,7 @@ print("✅ WordPress application configured")
 Add NGINX as a reverse proxy for better performance:
 
 ```python
-from k8s_gen import ConfigMap
+from celestra import ConfigMap
 
 # NGINX configuration
 nginx_config = (ConfigMap("nginx-config")
@@ -159,7 +159,7 @@ print("✅ NGINX web server configured")
 Create services for database and web access:
 
 ```python
-from k8s_gen import Service
+from celestra import Service
 
 # MySQL service (internal only)
 mysql_service = (Service("mysql")
@@ -187,7 +187,7 @@ print("✅ Services configured")
 Configure ingress with SSL termination:
 
 ```python
-from k8s_gen import Ingress
+from celestra import Ingress
 
 # Ingress for external access with SSL
 wordpress_ingress = (Ingress("wordpress-ingress")
@@ -205,7 +205,7 @@ print("✅ Ingress configured")
 Implement proper security:
 
 ```python
-from k8s_gen import ServiceAccount, Role, RoleBinding, SecurityPolicy
+from celestra import ServiceAccount, Role, RoleBinding, SecurityPolicy
 
 # Service accounts
 wordpress_sa = (ServiceAccount("wordpress-sa")
@@ -246,7 +246,7 @@ print("✅ Security configured")
 Implement database backup:
 
 ```python
-from k8s_gen import CronJob
+from celestra import CronJob
 
 # Database backup job
 db_backup = (CronJob("mysql-backup")
@@ -276,7 +276,7 @@ Here's the complete platform code:
 WordPress Platform - Complete WordPress deployment with MySQL and NGINX
 """
 
-from k8s_gen import (
+from celestra import (
     App, StatefulApp, Secret, ConfigMap, Service, Ingress, CronJob,
     ServiceAccount, Role, RoleBinding, SecurityPolicy,
     KubernetesOutput
@@ -558,4 +558,4 @@ Enhance your WordPress platform:
 
 ---
 
-**Congratulations!** You've deployed a production-ready WordPress platform with MySQL, persistent storage, security, and backup capabilities using K8s-Gen DSL.
+**Congratulations!** You've deployed a production-ready WordPress platform with MySQL, persistent storage, security, and backup capabilities using Celestra.

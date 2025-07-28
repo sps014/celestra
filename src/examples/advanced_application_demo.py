@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Advanced Application Demo for K8s-Gen DSL.
+Advanced Application Demo for Celestra.
 
 This example demonstrates advanced application patterns including
 sidecar containers, init containers, lifecycle hooks, and health checks.
 """
 
-from ..k8s_gen import (
+from ..celestra import (
     App, StatefulApp, Service, Ingress, Secret, ConfigMap,
     Companion, Health, Lifecycle, Scaling,
     KubernetesOutput
@@ -258,7 +258,7 @@ def create_advanced_microservices_platform():
 
 def main():
     """Generate the complete microservices platform."""
-    print("🏗️ Building Advanced Microservices Platform with K8s-Gen DSL")
+    print("🏗️ Building Advanced Microservices Platform with Celestra")
     print("=" * 70)
     
     # Create all components

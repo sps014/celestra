@@ -2,7 +2,7 @@
 """
 Observability Test Suite.
 
-Tests for K8s-Gen DSL observability components:
+Tests for Celestra observability components:
 - Observability (metrics, logging, tracing, alerting)
 - DeploymentStrategy (advanced deployment patterns)
 - ExternalServices (external service integration)
@@ -11,7 +11,7 @@ Tests for K8s-Gen DSL observability components:
 import pytest
 import yaml
 
-from src.k8s_gen import Observability, DeploymentStrategy, ExternalServices, App
+from src.celestra import Observability, DeploymentStrategy, ExternalServices, App
 from .utils import TestHelper, AssertionHelper, MockKubernetesCluster, assert_valid_kubernetes_resource
 
 

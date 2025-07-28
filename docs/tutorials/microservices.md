@@ -2,7 +2,7 @@
 
 **⭐⭐⭐⭐ Difficulty:** Advanced | **⏱️ Time:** 30 minutes
 
-Build a complete microservices platform with K8s-Gen DSL, featuring service discovery, inter-service communication, and advanced deployment patterns.
+Build a complete microservices platform with Celestra, featuring service discovery, inter-service communication, and advanced deployment patterns.
 
 ## What You'll Build
 
@@ -18,7 +18,7 @@ A complete e-commerce microservices platform:
 
 ## Prerequisites
 
-- K8s-Gen DSL installed
+- Celestra installed
 - Understanding of microservices patterns
 - Kubernetes cluster with sufficient resources
 - Basic knowledge of service mesh concepts
@@ -37,7 +37,7 @@ Internet → API Gateway → Service Mesh → Microservices
 Start with shared infrastructure components:
 
 ```python
-from k8s_gen import StatefulApp, App, Service, Secret, ConfigMap
+from celestra import StatefulApp, App, Service, Secret, ConfigMap
 
 # PostgreSQL database for persistent data
 database = (StatefulApp("postgres-db")
@@ -142,7 +142,7 @@ print("✅ Microservices created")
 Set up the API gateway for external access:
 
 ```python
-from k8s_gen import Ingress
+from celestra import Ingress
 
 # API Gateway using NGINX Ingress
 api_gateway = (App("api-gateway")
@@ -258,7 +258,7 @@ print("✅ Service discovery configured")
 Implement monitoring and tracing:
 
 ```python
-from k8s_gen import Observability
+from celestra import Observability
 
 # Comprehensive observability stack
 observability = (Observability("microservices-monitoring")
@@ -291,7 +291,7 @@ print("✅ Observability configured")
 Add comprehensive security:
 
 ```python
-from k8s_gen import ServiceAccount, Role, RoleBinding, SecurityPolicy
+from celestra import ServiceAccount, Role, RoleBinding, SecurityPolicy
 
 # Service accounts for each microservice
 user_sa = ServiceAccount("user-service-sa")
@@ -341,7 +341,7 @@ print("✅ Security configured")
 Implement advanced microservices patterns:
 
 ```python
-from k8s_gen import DependencyManager, DeploymentStrategy, CostOptimization
+from celestra import DependencyManager, DeploymentStrategy, CostOptimization
 
 # Dependency management
 deps = (DependencyManager()
@@ -383,10 +383,10 @@ Here's the complete platform code:
 ```python
 #!/usr/bin/env python3
 """
-Microservices Platform - Complete e-commerce architecture with K8s-Gen DSL
+Microservices Platform - Complete e-commerce architecture with Celestra
 """
 
-from k8s_gen import (
+from celestra import (
     App, StatefulApp, Service, Secret, ConfigMap, Ingress,
     ServiceAccount, Role, RoleBinding, SecurityPolicy,
     Observability, DependencyManager, DeploymentStrategy,
@@ -607,4 +607,4 @@ Enhance your microservices platform:
 
 ---
 
-**Congratulations!** You've built a production-ready microservices platform with K8s-Gen DSL. The platform includes all essential components for running scalable, secure, and observable microservices.
+**Congratulations!** You've built a production-ready microservices platform with Celestra. The platform includes all essential components for running scalable, secure, and observable microservices.

@@ -8,7 +8,7 @@ multiple ports are correctly included in all supported components.
 
 import os
 import yaml
-from ..k8s_gen import (
+from ..celestra import (
     App, StatefulApp, Job, CronJob, Service, 
     KubernetesOutput
 )
@@ -438,7 +438,7 @@ def main():
         print(f"  ✅ CronJob class - CronJob containers include all configured ports")
         print(f"  ✅ Service class - Service specs include all port mappings")
         
-        print(f"\n🚀 K8s-Gen DSL Multiple Ports: FULLY FUNCTIONAL!")
+        print(f"\n🚀 Celestra Multiple Ports: FULLY FUNCTIONAL!")
         print("    All ports are correctly generated in Kubernetes YAML manifests!")
         
     except Exception as e:

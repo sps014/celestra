@@ -1,6 +1,6 @@
 # Your First App
 
-Build your first complete application with K8s-Gen DSL! This tutorial will guide you through creating a web application with a database, showing you the essential patterns and concepts.
+Build your first complete application with Celestra! This tutorial will guide you through creating a web application with a database, showing you the essential patterns and concepts.
 
 ## What We'll Build
 
@@ -14,7 +14,7 @@ We'll create a complete blog application consisting of:
 
 ## Prerequisites
 
-- K8s-Gen DSL installed ([Installation Guide](installation.md))
+- Celestra installed ([Installation Guide](installation.md))
 - Basic understanding of [Core Concepts](core-concepts.md)
 - Python 3.8+ environment
 
@@ -23,7 +23,7 @@ We'll create a complete blog application consisting of:
 Let's start with the foundation - a PostgreSQL database:
 
 ```python
-from k8s_gen import StatefulApp, Secret
+from celestra import StatefulApp, Secret
 
 # Create database credentials
 db_secret = (Secret("blog-db-secret")
@@ -56,7 +56,7 @@ print("✅ Database configured")
 Add Redis for caching and session storage:
 
 ```python
-from k8s_gen import App
+from celestra import App
 
 # Create Redis cache
 cache = (App("blog-cache")
@@ -124,7 +124,7 @@ print("✅ Web server configured")
 Configure services to connect everything:
 
 ```python
-from k8s_gen import Service, Ingress
+from celestra import Service, Ingress
 
 # Database service (internal only)
 db_service = (Service("blog-database-service")
@@ -171,7 +171,7 @@ print("✅ Networking configured")
 Implement proper RBAC and security:
 
 ```python
-from k8s_gen import ServiceAccount, Role, RoleBinding, SecurityPolicy
+from celestra import ServiceAccount, Role, RoleBinding, SecurityPolicy
 
 # Create service account
 blog_sa = (ServiceAccount("blog-service-account")
@@ -199,7 +199,7 @@ print("✅ Security configured")
 Create all the Kubernetes manifests:
 
 ```python
-from k8s_gen import KubernetesOutput
+from celestra import KubernetesOutput
 
 # Collect all components
 components = [
@@ -226,12 +226,12 @@ Here's the complete application code:
 ```python
 #!/usr/bin/env python3
 """
-Blog Application - Your First K8s-Gen App
+Blog Application - Your First Celestra App
 
 A complete web application with database, cache, API, and frontend.
 """
 
-from k8s_gen import (
+from celestra import (
     App, StatefulApp, Secret, Service, Ingress,
     ServiceAccount, Role, RoleBinding, SecurityPolicy,
     KubernetesOutput
@@ -317,7 +317,7 @@ def create_blog_app():
 
 def main():
     """Generate the complete blog application."""
-    print("🚀 Creating Blog Application with K8s-Gen DSL")
+    print("🚀 Creating Blog Application with Celestra")
     print("=" * 50)
     
     # Create all components
@@ -391,7 +391,7 @@ Then visit `http://localhost:8080` in your browser.
 
 ## What You've Learned
 
-Congratulations! You've built your first complete application with K8s-Gen DSL. You've learned:
+Congratulations! You've built your first complete application with Celestra. You've learned:
 
 - ✅ **Core Components**: App vs StatefulApp usage
 - ✅ **Networking**: Services and ingress configuration

@@ -1,6 +1,6 @@
 # API Reference
 
-Complete API documentation for all K8s-Gen DSL components and classes.
+Complete API documentation for all Celestra components and classes.
 
 ## API Documentation
 

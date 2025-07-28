@@ -2,7 +2,7 @@
 """
 Security Test Suite.
 
-Tests for K8s-Gen DSL security components:
+Tests for Celestra security components:
 - ServiceAccount (service identity)
 - Role and ClusterRole (permissions)
 - RoleBinding and ClusterRoleBinding (role assignments)
@@ -13,7 +13,7 @@ Tests for K8s-Gen DSL security components:
 import pytest
 import yaml
 
-from src.k8s_gen import (
+from src.celestra import (
     ServiceAccount, Role, ClusterRole, RoleBinding, ClusterRoleBinding, 
     SecurityPolicy, App
 )
@@ -373,7 +373,7 @@ class TestSecurityPolicy:
 
     def test_security_policy_with_app_integration(self):
         """Test SecurityPolicy integration with App."""
-        from k8s_gen import App
+        from celestra import App
         
         policy = (SecurityPolicy("app-policy")
                   .pod_security_standards("restricted")

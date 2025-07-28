@@ -428,7 +428,7 @@ kafka = (StatefulApp("kafka")
 
 ## API Reference
 
-::: src.k8s_gen.core.stateful_app.StatefulApp
+::: src.celestra.core.stateful_app.StatefulApp
     options:
       show_source: false
       heading_level: 3

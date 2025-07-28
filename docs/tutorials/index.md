@@ -1,12 +1,12 @@
 # Tutorials
 
-Learn K8s-Gen DSL through hands-on tutorials that cover real-world scenarios from basic web applications to complex enterprise platforms.
+Learn Celestra through hands-on tutorials that cover real-world scenarios from basic web applications to complex enterprise platforms.
 
 ## 🎯 Tutorial Categories
 
 ### 🚀 **Beginner Tutorials**
 
-Perfect for getting started with K8s-Gen DSL:
+Perfect for getting started with Celestra:
 
 <div class="grid cards" markdown>
 
@@ -113,7 +113,7 @@ graph TB
 ## 🔧 What You'll Learn
 
 ### Core Skills
-- **Component Usage** - Master all K8s-Gen DSL components
+- **Component Usage** - Master all Celestra components
 - **Configuration** - Environment-specific configurations
 - **Best Practices** - Production-ready patterns
 - **Security** - Implement proper security measures
@@ -132,7 +132,7 @@ graph TB
 
 ## 🚀 Quick Start
 
-New to K8s-Gen? Start here:
+New to Celestra? Start here:
 
 1. **[Basic Web App](basic-web-app.md)** - Learn the fundamentals
 2. **[Kafka Deployment](kafka-deployment.md)** - Real-world application
@@ -171,7 +171,7 @@ Each tutorial follows a consistent structure:
 
 Before starting the tutorials, make sure you have:
 
-- **K8s-Gen DSL installed** - See [installation guide](../getting-started/installation.md)
+- **Celestra installed** - See [installation guide](../getting-started/installation.md)
 - **Basic Python knowledge** - Understanding of Python syntax
 - **Kubernetes basics** - Familiarity with pods, services, deployments
 - **kubectl configured** - For deploying to Kubernetes (optional)

@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-Get started with K8s-Gen DSL in just a few minutes! This guide will walk you through creating your first Kubernetes application.
+Get started with Celestra in just a few minutes! This guide will walk you through creating your first Kubernetes application.
 
 ## Installation
 
@@ -8,8 +8,8 @@ Get started with K8s-Gen DSL in just a few minutes! This guide will walk you thr
 
     ```bash
     # Install from source
-    git clone https://github.com/your-username/k8s-gen.git
-    cd k8s-gen
+    git clone https://github.com/your-username/Celestra.git
+    cd Celestra
     pip install -r src/requirements.txt
     ```
 
@@ -17,8 +17,8 @@ Get started with K8s-Gen DSL in just a few minutes! This guide will walk you thr
 
     ```bash
     # Clone and setup for development
-    git clone https://github.com/your-username/k8s-gen.git
-    cd k8s-gen
+    git clone https://github.com/your-username/Celestra.git
+    cd Celestra
     pip install -r src/requirements.txt
     
     # Run tests to verify installation
@@ -75,14 +75,14 @@ Here's a complete example file (`my_first_app.py`):
 ```python
 #!/usr/bin/env python3
 """
-My First K8s-Gen Application
+My First Celestra Application
 """
 
 import os
 from src.k8s_gen import App, KubernetesOutput
 
 def main():
-    print("🚀 Creating your first K8s-Gen application...")
+    print("🚀 Creating your first Celestra application...")
     
     # Create the application
     web_app = (App("my-web-app")
@@ -124,7 +124,7 @@ python my_first_app.py
 
 Expected output:
 ```
-🚀 Creating your first K8s-Gen application...
+🚀 Creating your first Celestra application...
 ✅ Generated 2 Kubernetes resources:
    - Deployment: my-web-app
    - Service: my-web-app
@@ -135,7 +135,7 @@ Expected output:
 
 ## Next Steps
 
-🎯 **Congratulations!** You've created your first K8s-Gen application. Here's what to explore next:
+🎯 **Congratulations!** You've created your first Celestra application. Here's what to explore next:
 
 ### Immediate Next Steps
 
@@ -202,7 +202,7 @@ database = (StatefulApp("postgres")
 ### Multiple Output Formats
 
 ```python
-from src.k8s_gen.output import KubernetesOutput, HelmOutput, DockerComposeOutput
+from src.celestra.output import KubernetesOutput, HelmOutput, DockerComposeOutput
 
 # Kubernetes YAML
 KubernetesOutput().generate(web_app, "k8s/")
@@ -236,8 +236,8 @@ DockerComposeOutput().generate(web_app, "docker-compose.yml")
 ### Getting Help
 
 - 📖 **Documentation**: Browse the [Components](components/index.md) and [Examples](examples/index.md)
-- 🐛 **Issues**: Report bugs on [GitHub Issues](https://github.com/your-username/k8s-gen/issues)
-- 💬 **Discussions**: Join conversations on [GitHub Discussions](https://github.com/your-username/k8s-gen/discussions)
+- 🐛 **Issues**: Report bugs on [GitHub Issues](https://github.com/your-username/Celestra/issues)
+- 💬 **Discussions**: Join conversations on [GitHub Discussions](https://github.com/your-username/Celestra/discussions)
 
 ---
 

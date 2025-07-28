@@ -1,6 +1,6 @@
-# K8s-Gen DSL Examples
+# Celestra Examples
 
-This directory contains comprehensive examples demonstrating the features and capabilities of the K8s-Gen Domain-Specific Language.
+This directory contains comprehensive examples demonstrating the features and capabilities of the Celestra Domain-Specific Language.
 
 ## Examples Overview
 
@@ -99,7 +99,7 @@ Each example generates Kubernetes manifests in the `kubernetes_manifests/` direc
 
 ## Prerequisites
 
-Ensure the K8s-Gen DSL is properly installed:
+Ensure the Celestra is properly installed:
 ```bash
 # From project root
 pip install -e .
