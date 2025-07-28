@@ -86,6 +86,67 @@ class App(BaseBuilder):
             "protocol": protocol
         })
         return self
+
+    def port_mapping(self, host_port: int, container_port: int, name: str = "http", protocol: str = "TCP") -> "App":
+        """
+        Add a port mapping (host:container) to the application.
+        
+        This is useful for Docker Compose where you want to map a different host port
+        to the container port (e.g., host:8080 → container:80).
+        
+        Args:
+            host_port: Host/external port number
+            container_port: Container port number
+            name: Port name (default: "http")
+            protocol: Port protocol (default: "TCP")
+            
+        Example:
+            ```python
+            # Map host port 8080 to container port 80
+            app.port_mapping(8080, 80, "http")
+            ```
+            
+        Returns:
+            App: Self for method chaining
+        """
+        self._ports.append({
+            "containerPort": container_port,
+            "hostPort": host_port,
+            "name": name,
+            "protocol": protocol
+        })
+        return self
+
+    def expose_port(self, port: int, name: str = "http", protocol: str = "TCP", external_port: Optional[int] = None) -> "App":
+        """
+        Add a port and optionally expose it externally.
+        
+        Args:
+            port: Container port number
+            name: Port name (default: "http")
+            protocol: Port protocol (default: "TCP")
+            external_port: External/host port (if different from container port)
+            
+        Example:
+            ```python
+            # Container port 8080, exposed on host port 80
+            app.expose_port(8080, "http", external_port=80)
+            ```
+            
+        Returns:
+            App: Self for method chaining
+        """
+        port_config = {
+            "containerPort": port,
+            "name": name,
+            "protocol": protocol
+        }
+        
+        if external_port is not None:
+            port_config["hostPort"] = external_port
+            
+        self._ports.append(port_config)
+        return self
     
     def add_port(self, port: int, name: str = "http", protocol: str = "TCP") -> "App":
         """
