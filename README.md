@@ -295,6 +295,56 @@ python rbac_security_demo.py
 python kubernetes_yaml_generation_example.py
 ```
 
+## ⚠️ Format-Specific Methods & Output Awareness
+
+K8s-Gen supports multiple output formats (Kubernetes, Docker Compose, Helm, etc.). Some methods are only meaningful for certain formats. **K8s-Gen will automatically warn you if you use a method that is not supported in your chosen output format!**
+
+### 🐳 Docker Compose-Only Methods
+- `.port_mapping(host_port, container_port, ...)` — Only for Docker Compose (host:container mapping)
+- `.expose_port(port, ..., external_port=...)` — Only for Docker Compose
+
+### ☸️ Kubernetes-Only Methods
+- `.node_selector({...})` — Only for Kubernetes (pod scheduling)
+- `.tolerations([...])` — Only for Kubernetes (taints/tolerations)
+
+### 🔄 Universal Methods
+- `.port(port)` — Works everywhere (container port)
+- `.image(image)` — Works everywhere
+- `.replicas(n)` — Works everywhere
+- `.env(key, value)` — Works everywhere
+
+### 🚦 How It Works
+- If you use `.port_mapping()` and generate Kubernetes YAML, you will see:
+  ```
+  ⚠️  Method 'port_mapping()' is Docker Compose-specific and will be ignored in Kubernetes output. For Kubernetes, use 'port()' + 'Service' instead of 'port_mapping()'.
+  ```
+- If you use `.node_selector()` and generate Docker Compose, you will see:
+  ```
+  ⚠️  Method 'node_selector()' is Kubernetes-specific and will be ignored in Docker Compose output.
+  ```
+
+### 🏷️ Decorators for Custom Extensions
+You can mark your own methods as format-specific using built-in decorators:
+```python
+from k8s_gen import docker_compose_only, kubernetes_only, output_formats
+
+@docker_compose_only
+def my_compose_method(self, ...): ...
+
+@kubernetes_only
+def my_k8s_method(self, ...): ...
+
+@output_formats('kubernetes', 'helm')
+def my_multi_format_method(self, ...): ...
+```
+
+### 💡 Best Practice
+- **For Docker Compose:** Use `.port_mapping()` for host:container mapping
+- **For Kubernetes:** Use `.port()` and create a `Service` for exposure
+- **Universal:** Use `.port()`, `.image()`, `.replicas()`, `.env()`, etc.
+
+K8s-Gen will always guide you with clear warnings and suggestions if you use a method in the wrong context!
+
 ## 🤝 Contributing
 
 We welcome contributions! Here's how to get started:
