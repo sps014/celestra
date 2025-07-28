@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from .base_builder import BaseBuilder
 
 from ..utils.helpers import ensure_directory
+from ..utils.decorators import show_format_warnings
 
 
 class ResourceGenerator:
@@ -56,6 +57,9 @@ class ResourceGenerator:
         """
         from ..output.kubernetes_output import KubernetesOutput
         
+        # Show warnings for incompatible methods
+        show_format_warnings(self._builder, "kubernetes")
+        
         output = KubernetesOutput()
         output.generate(self.resources, output_path)
         return self
@@ -78,6 +82,9 @@ class ResourceGenerator:
             ResourceGenerator: Self for method chaining
         """
         from ..output.docker_compose_output import DockerComposeOutput
+        
+        # Show warnings for incompatible methods
+        show_format_warnings(self._builder, "docker-compose")
         
         output = DockerComposeOutput()
         output.generate(

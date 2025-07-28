@@ -7,6 +7,7 @@ that don't require persistent storage.
 
 from typing import Dict, List, Any, Optional, Union
 from .base_builder import BaseBuilder
+from ..utils.decorators import docker_compose_only, kubernetes_only, output_formats
 
 
 class App(BaseBuilder):
@@ -126,6 +127,50 @@ class App(BaseBuilder):
             App: Self for method chaining
         """
         return self.build(context, dockerfile, **build_args)
+
+    @kubernetes_only  
+    def node_selector(self, selectors: Dict[str, str]) -> "App":
+        """
+        Set node selector for pod scheduling (Kubernetes only).
+        
+        Args:
+            selectors: Dictionary of node selector labels
+            
+        Example:
+            ```python
+            app.node_selector({"disktype": "ssd", "region": "us-west"})
+            ```
+            
+        Returns:
+            App: Self for method chaining
+        """
+        if not hasattr(self, '_node_selector'):
+            self._node_selector = {}
+        self._node_selector.update(selectors)
+        return self
+
+    @kubernetes_only
+    def tolerations(self, tolerations: List[Dict[str, Any]]) -> "App":
+        """
+        Set pod tolerations for tainted nodes (Kubernetes only).
+        
+        Args:
+            tolerations: List of toleration configurations
+            
+        Example:
+            ```python
+            app.tolerations([
+                {"key": "special", "operator": "Equal", "value": "gpu", "effect": "NoSchedule"}
+            ])
+            ```
+            
+        Returns:
+            App: Self for method chaining
+        """
+        if not hasattr(self, '_tolerations'):
+            self._tolerations = []
+        self._tolerations.extend(tolerations)
+        return self
     
     def port(self, port: int, name: str = "http", protocol: str = "TCP") -> "App":
         """
@@ -146,6 +191,7 @@ class App(BaseBuilder):
         })
         return self
 
+    @docker_compose_only
     def port_mapping(self, host_port: int, container_port: int, name: str = "http", protocol: str = "TCP") -> "App":
         """
         Add a port mapping (host:container) to the application.
@@ -176,6 +222,7 @@ class App(BaseBuilder):
         })
         return self
 
+    @docker_compose_only
     def expose_port(self, port: int, name: str = "http", protocol: str = "TCP", external_port: Optional[int] = None) -> "App":
         """
         Add a port and optionally expose it externally.
