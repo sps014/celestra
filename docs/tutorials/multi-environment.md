@@ -12,22 +12,22 @@ Learn how to configure and deploy applications across multiple environments (dev
 
 ```mermaid
 graph LR
-    subgraph "Development"
+    subgraph Development
         D1[Single Replica]
         D2[Minimal Resources]
         D3[Debug Enabled]
         D4[Local Storage]
     end
     
-    subgraph "Staging"
+    subgraph Staging
         S1[2 Replicas]
         S2[Production-like]
         S3[Monitoring]
         S4[Persistent Storage]
     end
     
-    subgraph "Production"
-        P1[HA (3+ Replicas)]
+    subgraph Production
+        P1[HA 3+ Replicas]
         P2[Resource Limits]
         P3[Security Enabled]
         P4[Backup & Monitoring]
