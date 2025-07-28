@@ -4,6 +4,7 @@
 PyYAML>=6.0                # YAML processing (used throughout DSL)
 pytest>=7.4.0              # Testing framework
 pytest-cov>=4.1.0          # Test coverage
+pytest-json-report>=1.5.0  # JSON test reporting (for test runner)
 
 # Development Dependencies (optional but recommended)
 black>=23.7.0              # Code formatting
@@ -17,3 +18,8 @@ mkdocs-awesome-pages-plugin>=2.9.0  # Better page organization
 mkdocstrings[python]>=0.22.0        # Python API documentation
 pymdown-extensions>=10.0   # Additional markdown extensions
 mkdocs-mermaid2-plugin>=1.1.0       # Mermaid diagrams support
+
+# Optional Runtime Dependencies (auto-detected)
+# pathlib - built into Python 3.4+
+# typing - built into Python 3.5+
+# abc - built into Python standard library
