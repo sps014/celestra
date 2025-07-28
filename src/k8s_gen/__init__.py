@@ -51,6 +51,11 @@ from .plugins.plugin_manager import PluginManager
 from .plugins.plugin_base import PluginBase, PluginType, PluginMetadata
 from .plugins.template_manager import TemplateManager, TemplateEngine
 
+# Phase 9: Validation & Tools
+from .validation.validator import Validator, ValidationLevel, ValidationRule
+from .validation.security_scanner import SecurityScanner, SecurityLevel, SecurityFinding
+from .validation.cost_estimator import CostEstimator, CostBreakdown, CloudProvider
+
 __version__ = "1.0.0"
 __author__ = "K8s-Gen Team"
 __email__ = "team@k8s-gen.com"
@@ -114,5 +119,16 @@ __all__ = [
     "PluginType", 
     "PluginMetadata",
     "TemplateManager",
-    "TemplateEngine"
+    "TemplateEngine",
+    
+    # Phase 9: Validation & Tools
+    "Validator",
+    "ValidationLevel",
+    "ValidationRule",
+    "SecurityScanner", 
+    "SecurityLevel",
+    "SecurityFinding",
+    "CostEstimator",
+    "CostBreakdown",
+    "CloudProvider"
 ] 

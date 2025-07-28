@@ -87,18 +87,154 @@ class App(BaseBuilder):
         })
         return self
     
+    def add_port(self, port: int, name: str = "http", protocol: str = "TCP") -> "App":
+        """
+        Add a port to the application (alias for port() method).
+        
+        Args:
+            port: Port number
+            name: Port name
+            protocol: Port protocol (default: "TCP")
+            
+        Returns:
+            App: Self for method chaining
+        """
+        return self.port(port, name, protocol)
+    
     def ports(self, ports: List[Dict[str, Any]]) -> "App":
         """
         Set multiple ports for the application.
         
         Args:
-            ports: List of port configurations
+            ports: List of port configurations with 'port', 'name', and optional 'protocol'
+            
+        Example:
+            ```python
+            app.ports([
+                {"port": 8080, "name": "http"},
+                {"port": 9090, "name": "metrics"},
+                {"port": 8081, "name": "health"}
+            ])
+            ```
             
         Returns:
             App: Self for method chaining
         """
-        self._ports.extend(ports)
+        for port_config in ports:
+            self._ports.append({
+                "containerPort": port_config.get("port"),
+                "name": port_config.get("name", "http"),
+                "protocol": port_config.get("protocol", "TCP")
+            })
         return self
+    
+    def http_port(self, port: int = 8080, name: str = "http") -> "App":
+        """
+        Add HTTP port (convenience method).
+        
+        Args:
+            port: HTTP port number (default: 8080)
+            name: Port name (default: "http")
+            
+        Returns:
+            App: Self for method chaining
+        """
+        return self.port(port, name, "TCP")
+    
+    def https_port(self, port: int = 8443, name: str = "https") -> "App":
+        """
+        Add HTTPS port (convenience method).
+        
+        Args:
+            port: HTTPS port number (default: 8443)
+            name: Port name (default: "https")
+            
+        Returns:
+            App: Self for method chaining
+        """
+        return self.port(port, name, "TCP")
+    
+    def metrics_port(self, port: int = 9090, name: str = "metrics") -> "App":
+        """
+        Add metrics port (convenience method).
+        
+        Args:
+            port: Metrics port number (default: 9090)
+            name: Port name (default: "metrics")
+            
+        Returns:
+            App: Self for method chaining
+        """
+        return self.port(port, name, "TCP")
+    
+    def health_port(self, port: int = 8081, name: str = "health") -> "App":
+        """
+        Add health check port (convenience method).
+        
+        Args:
+            port: Health check port number (default: 8081)
+            name: Port name (default: "health")
+            
+        Returns:
+            App: Self for method chaining
+        """
+        return self.port(port, name, "TCP")
+    
+    def admin_port(self, port: int = 9000, name: str = "admin") -> "App":
+        """
+        Add admin/management port (convenience method).
+        
+        Args:
+            port: Admin port number (default: 9000)
+            name: Port name (default: "admin")
+            
+        Returns:
+            App: Self for method chaining
+        """
+        return self.port(port, name, "TCP")
+    
+    def grpc_port(self, port: int = 9090, name: str = "grpc") -> "App":
+        """
+        Add gRPC port (convenience method).
+        
+        Args:
+            port: gRPC port number (default: 9090)
+            name: Port name (default: "grpc")
+            
+        Returns:
+            App: Self for method chaining
+        """
+        return self.port(port, name, "TCP")
+    
+    def debug_port(self, port: int = 5005, name: str = "debug") -> "App":
+        """
+        Add debug port (convenience method).
+        
+        Args:
+            port: Debug port number (default: 5005)
+            name: Port name (default: "debug")
+            
+        Returns:
+            App: Self for method chaining
+        """
+        return self.port(port, name, "TCP")
+    
+    def common_ports(self, http: int = 8080, metrics: int = 9090, health: int = 8081) -> "App":
+        """
+        Add common application ports (convenience method).
+        
+        Args:
+            http: HTTP port number (default: 8080)
+            metrics: Metrics port number (default: 9090)
+            health: Health check port number (default: 8081)
+            
+        Returns:
+            App: Self for method chaining
+        """
+        return (self
+            .http_port(http)
+            .metrics_port(metrics)
+            .health_port(health))
     
     def environment(self, env_vars: Dict[str, str]) -> "App":
         """

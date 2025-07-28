@@ -93,18 +93,176 @@ class StatefulApp(BaseBuilder):
         })
         return self
     
+    def add_port(self, port: int, name: str = "app", protocol: str = "TCP") -> "StatefulApp":
+        """
+        Add a port to the application (alias for port() method).
+        
+        Args:
+            port: Port number
+            name: Port name
+            protocol: Port protocol (default: "TCP")
+            
+        Returns:
+            StatefulApp: Self for method chaining
+        """
+        return self.port(port, name, protocol)
+    
     def ports(self, ports: List[Dict[str, Any]]) -> "StatefulApp":
         """
         Set multiple ports for the application.
         
         Args:
-            ports: List of port configurations
+            ports: List of port configurations with 'port', 'name', and optional 'protocol'
+            
+        Example:
+            ```python
+            stateful_app.ports([
+                {"port": 5432, "name": "postgres"},
+                {"port": 9187, "name": "metrics"},
+                {"port": 8080, "name": "admin"}
+            ])
+            ```
             
         Returns:
             StatefulApp: Self for method chaining
         """
-        self._ports.extend(ports)
+        for port_config in ports:
+            self._ports.append({
+                "containerPort": port_config.get("port"),
+                "name": port_config.get("name", "app"),
+                "protocol": port_config.get("protocol", "TCP")
+            })
         return self
+    
+    def database_port(self, port: int, name: str = "database") -> "StatefulApp":
+        """
+        Add database port (convenience method).
+        
+        Args:
+            port: Database port number
+            name: Port name (default: "database")
+            
+        Returns:
+            StatefulApp: Self for method chaining
+        """
+        return self.port(port, name, "TCP")
+    
+    def postgres_port(self, port: int = 5432, name: str = "postgres") -> "StatefulApp":
+        """
+        Add PostgreSQL port (convenience method).
+        
+        Args:
+            port: PostgreSQL port number (default: 5432)
+            name: Port name (default: "postgres")
+            
+        Returns:
+            StatefulApp: Self for method chaining
+        """
+        return self.port(port, name, "TCP")
+    
+    def mysql_port(self, port: int = 3306, name: str = "mysql") -> "StatefulApp":
+        """
+        Add MySQL port (convenience method).
+        
+        Args:
+            port: MySQL port number (default: 3306)
+            name: Port name (default: "mysql")
+            
+        Returns:
+            StatefulApp: Self for method chaining
+        """
+        return self.port(port, name, "TCP")
+    
+    def redis_port(self, port: int = 6379, name: str = "redis") -> "StatefulApp":
+        """
+        Add Redis port (convenience method).
+        
+        Args:
+            port: Redis port number (default: 6379)
+            name: Port name (default: "redis")
+            
+        Returns:
+            StatefulApp: Self for method chaining
+        """
+        return self.port(port, name, "TCP")
+    
+    def mongodb_port(self, port: int = 27017, name: str = "mongodb") -> "StatefulApp":
+        """
+        Add MongoDB port (convenience method).
+        
+        Args:
+            port: MongoDB port number (default: 27017)
+            name: Port name (default: "mongodb")
+            
+        Returns:
+            StatefulApp: Self for method chaining
+        """
+        return self.port(port, name, "TCP")
+    
+    def elasticsearch_port(self, port: int = 9200, name: str = "elasticsearch") -> "StatefulApp":
+        """
+        Add Elasticsearch port (convenience method).
+        
+        Args:
+            port: Elasticsearch port number (default: 9200)
+            name: Port name (default: "elasticsearch")
+            
+        Returns:
+            StatefulApp: Self for method chaining
+        """
+        return self.port(port, name, "TCP")
+    
+    def kafka_port(self, port: int = 9092, name: str = "kafka") -> "StatefulApp":
+        """
+        Add Kafka port (convenience method).
+        
+        Args:
+            port: Kafka port number (default: 9092)
+            name: Port name (default: "kafka")
+            
+        Returns:
+            StatefulApp: Self for method chaining
+        """
+        return self.port(port, name, "TCP")
+    
+    def metrics_port(self, port: int = 9090, name: str = "metrics") -> "StatefulApp":
+        """
+        Add metrics port (convenience method).
+        
+        Args:
+            port: Metrics port number (default: 9090)
+            name: Port name (default: "metrics")
+            
+        Returns:
+            StatefulApp: Self for method chaining
+        """
+        return self.port(port, name, "TCP")
+    
+    def admin_port(self, port: int = 8080, name: str = "admin") -> "StatefulApp":
+        """
+        Add admin/management port (convenience method).
+        
+        Args:
+            port: Admin port number (default: 8080)
+            name: Port name (default: "admin")
+            
+        Returns:
+            StatefulApp: Self for method chaining
+        """
+        return self.port(port, name, "TCP")
+    
+    def cluster_port(self, port: int, name: str = "cluster") -> "StatefulApp":
+        """
+        Add cluster communication port (convenience method).
+        
+        Args:
+            port: Cluster port number
+            name: Port name (default: "cluster")
+            
+        Returns:
+            StatefulApp: Self for method chaining
+        """
+        return self.port(port, name, "TCP")
     
     def environment(self, env_vars: Dict[str, str]) -> "StatefulApp":
         """

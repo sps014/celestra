@@ -48,6 +48,7 @@ class Job(BaseBuilder):
         self._secrets: List[Any] = []
         self._config_maps: List[Any] = []
         self._volumes: List[Dict[str, Any]] = []
+        self._ports: List[Dict[str, Any]] = []  # Added for multiple ports support
         self._volume_mounts: List[Dict[str, Any]] = []
         self._security_context: Optional[Dict[str, Any]] = None
         self._node_selector: Dict[str, str] = {}
@@ -220,7 +221,7 @@ class Job(BaseBuilder):
     
     def restart_policy(self, policy: str) -> "Job":
         """
-        Set the restart policy for the job pods.
+        Set restart policy for job pods.
         
         Args:
             policy: Restart policy ("OnFailure", "Never")
@@ -228,10 +229,107 @@ class Job(BaseBuilder):
         Returns:
             Job: Self for method chaining
         """
-        if policy not in ["OnFailure", "Never"]:
-            raise ValueError("Restart policy must be 'OnFailure' or 'Never'")
         self._restart_policy = policy
         return self
+    
+    def port(self, port: int, name: str = "http", protocol: str = "TCP") -> "Job":
+        """
+        Add a port to the job container.
+        
+        Args:
+            port: Port number
+            name: Port name (default: "http")
+            protocol: Port protocol (default: "TCP")
+            
+        Returns:
+            Job: Self for method chaining
+        """
+        self._ports.append({
+            "containerPort": port,
+            "name": name,
+            "protocol": protocol
+        })
+        return self
+    
+    def add_port(self, port: int, name: str = "http", protocol: str = "TCP") -> "Job":
+        """
+        Add a port to the job container (alias for port() method).
+        
+        Args:
+            port: Port number
+            name: Port name
+            protocol: Port protocol (default: "TCP")
+            
+        Returns:
+            Job: Self for method chaining
+        """
+        return self.port(port, name, protocol)
+    
+    def ports(self, ports: List[Dict[str, Any]]) -> "Job":
+        """
+        Set multiple ports for the job container.
+        
+        Args:
+            ports: List of port configurations with 'port', 'name', and optional 'protocol'
+            
+        Example:
+            ```python
+            job.ports([
+                {"port": 8080, "name": "web"},
+                {"port": 9090, "name": "metrics"},
+                {"port": 8081, "name": "health"}
+            ])
+            ```
+            
+        Returns:
+            Job: Self for method chaining
+        """
+        for port_config in ports:
+            self._ports.append({
+                "containerPort": port_config.get("port"),
+                "name": port_config.get("name", "http"),
+                "protocol": port_config.get("protocol", "TCP")
+            })
+        return self
+    
+    def metrics_port(self, port: int = 9090, name: str = "metrics") -> "Job":
+        """
+        Add metrics port (convenience method).
+        
+        Args:
+            port: Metrics port number (default: 9090)
+            name: Port name (default: "metrics")
+            
+        Returns:
+            Job: Self for method chaining
+        """
+        return self.port(port, name, "TCP")
+    
+    def web_port(self, port: int = 8080, name: str = "web") -> "Job":
+        """
+        Add web interface port (convenience method).
+        
+        Args:
+            port: Web port number (default: 8080)
+            name: Port name (default: "web")
+            
+        Returns:
+            Job: Self for method chaining
+        """
+        return self.port(port, name, "TCP")
+    
+    def status_port(self, port: int = 8081, name: str = "status") -> "Job":
+        """
+        Add status/health port (convenience method).
+        
+        Args:
+            port: Status port number (default: 8081)
+            name: Port name (default: "status")
+            
+        Returns:
+            Job: Self for method chaining
+        """
+        return self.port(port, name, "TCP")
     
     def add_secret(self, secret: "Secret") -> "Job":
         """
@@ -411,6 +509,10 @@ class Job(BaseBuilder):
         # Add resources
         if self._resources:
             container["resources"] = self._resources
+        
+        # Add ports
+        if self._ports:
+            container["ports"] = self._ports
         
         # Add volume mounts
         volume_mounts = self._volume_mounts.copy()

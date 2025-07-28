@@ -54,6 +54,7 @@ class CronJob(BaseBuilder):
         self._secrets: List[Any] = []
         self._config_maps: List[Any] = []
         self._volumes: List[Dict[str, Any]] = []
+        self._ports: List[Dict[str, Any]] = []  # Added for multiple ports support
         self._volume_mounts: List[Dict[str, Any]] = []
         self._security_context: Optional[Dict[str, Any]] = None
         self._node_selector: Dict[str, str] = {}
@@ -270,13 +271,112 @@ class CronJob(BaseBuilder):
         Suspend or resume the cron job.
         
         Args:
-            suspended: Whether to suspend the job
+            suspended: Whether to suspend the cron job
             
         Returns:
             CronJob: Self for method chaining
         """
         self._suspend = suspended
         return self
+    
+    def port(self, port: int, name: str = "http", protocol: str = "TCP") -> "CronJob":
+        """
+        Add a port to the cron job container.
+        
+        Args:
+            port: Port number
+            name: Port name (default: "http")
+            protocol: Port protocol (default: "TCP")
+            
+        Returns:
+            CronJob: Self for method chaining
+        """
+        self._ports.append({
+            "containerPort": port,
+            "name": name,
+            "protocol": protocol
+        })
+        return self
+    
+    def add_port(self, port: int, name: str = "http", protocol: str = "TCP") -> "CronJob":
+        """
+        Add a port to the cron job container (alias for port() method).
+        
+        Args:
+            port: Port number
+            name: Port name
+            protocol: Port protocol (default: "TCP")
+            
+        Returns:
+            CronJob: Self for method chaining
+        """
+        return self.port(port, name, protocol)
+    
+    def ports(self, ports: List[Dict[str, Any]]) -> "CronJob":
+        """
+        Set multiple ports for the cron job container.
+        
+        Args:
+            ports: List of port configurations with 'port', 'name', and optional 'protocol'
+            
+        Example:
+            ```python
+            cron_job.ports([
+                {"port": 8080, "name": "web"},
+                {"port": 9090, "name": "metrics"},
+                {"port": 8081, "name": "health"}
+            ])
+            ```
+            
+        Returns:
+            CronJob: Self for method chaining
+        """
+        for port_config in ports:
+            self._ports.append({
+                "containerPort": port_config.get("port"),
+                "name": port_config.get("name", "http"),
+                "protocol": port_config.get("protocol", "TCP")
+            })
+        return self
+    
+    def metrics_port(self, port: int = 9090, name: str = "metrics") -> "CronJob":
+        """
+        Add metrics port (convenience method).
+        
+        Args:
+            port: Metrics port number (default: 9090)
+            name: Port name (default: "metrics")
+            
+        Returns:
+            CronJob: Self for method chaining
+        """
+        return self.port(port, name, "TCP")
+    
+    def web_port(self, port: int = 8080, name: str = "web") -> "CronJob":
+        """
+        Add web interface port (convenience method).
+        
+        Args:
+            port: Web port number (default: 8080)
+            name: Port name (default: "web")
+            
+        Returns:
+            CronJob: Self for method chaining
+        """
+        return self.port(port, name, "TCP")
+    
+    def status_port(self, port: int = 8081, name: str = "status") -> "CronJob":
+        """
+        Add status/health port (convenience method).
+        
+        Args:
+            port: Status port number (default: 8081)
+            name: Port name (default: "status")
+            
+        Returns:
+            CronJob: Self for method chaining
+        """
+        return self.port(port, name, "TCP")
     
     def history_limits(self, successful: int = 3, failed: int = 1) -> "CronJob":
         """
@@ -445,6 +545,10 @@ class CronJob(BaseBuilder):
         # Add resources
         if self._resources:
             container["resources"] = self._resources
+        
+        # Add ports
+        if self._ports:
+            container["ports"] = self._ports
         
         # Add volume mounts
         volume_mounts = self._volume_mounts.copy()
