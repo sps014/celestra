@@ -3,8 +3,8 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "celestra-dsl"
-version = "0.0.2"
+name = "celestra"
+version = "0.0.1"
 description = "A Python DSL for generating Kubernetes manifests with minimal complexity"
 readme = "README.md"
 license = {text = "MIT"}
@@ -58,7 +58,7 @@ docs = [
     "mkdocs-mermaid2-plugin>=1.1.0",
 ]
 all = [
-    "celestra-dsl[dev,docs]",
+    "celestra[dev,docs]",
 ]
 
 [project.urls]
@@ -69,7 +69,7 @@ Repository = "https://github.com/sps014/celestra"
 "Source Code" = "https://github.com/sps014/celestra"
 
 [project.scripts]
-celestra-dsl = "celestra.cli:main"
+celestra = "celestra.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
