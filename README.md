@@ -46,13 +46,13 @@ web_app = (App("web-app")
     .image("web-server:latest")
     .port(8080)
     .resources(cpu="500m", memory="512Mi", cpu_limit="1000m", memory_limit="1Gi")
-    .scale(replicas=3, auto_scale_on_cpu=70)
-    .expose(external_access=True, domain="myapp.com"))
+    .replicas(3)
+    .expose())
 
 # Generate everything
-web_app.generate().to_yaml("./k8s/")              # Kubernetes manifests
+web_app.generate().to_yaml("./k8s/")                    # Kubernetes manifests
 web_app.generate().to_docker_compose("./docker-compose.yml")  # Local development
-web_app.generate().to_helm_chart("./charts/")     # Helm packaging
+web_app.generate().to_helm_chart("./charts/")           # Helm packaging
 ```
 
 ## 🎯 Key Features
@@ -68,7 +68,13 @@ web_app.generate().to_helm_chart("./charts/")     # Helm packaging
 
 ### Installation
 ```bash
-pip install k8s-gen
+# From source (recommended for development)
+git clone https://github.com/your-org/k8s-gen.git
+cd k8s-gen
+pip install -e src/
+
+# Or install from PyPI (when available)
+pip install k8s-gen-dsl
 ```
 
 ### Create Your First App
@@ -78,9 +84,9 @@ from k8s_gen import App, StatefulApp, Secret
 
 # Database with automatic backups
 db = (StatefulApp("database")
-    .image("database-server:latest")
-    .storage("20Gi")
-    .backup_schedule("0 2 * * *"))
+    .image("postgres:15")
+    .port(5432)
+    .storage("20Gi"))
 
 # Database credentials
 db_secret = (Secret("db-creds")
@@ -91,22 +97,19 @@ db_secret = (Secret("db-creds")
 app = (App("blog")
     .image("webapp:latest")
     .port(8080)
-    .connect_to([db])
-    .add_secrets([db_secret])
-    .scale(replicas=3, auto_scale_on_cpu=70)
-    .expose(external_access=True, domain="myblog.com"))
+    .replicas(3)
+    .expose())
 
 # Generate and deploy
 app.generate().to_yaml("./k8s/")
+db.generate().to_yaml("./k8s/")
+db_secret.generate().to_yaml("./k8s/")
 ```
 
 ### Deploy Locally
 ```bash
-# Start with Docker Compose for development
-k8s-gen dev app.py
-
-# Generate Kubernetes manifests for production
-k8s-gen generate app.py --output ./k8s/
+# Generate Kubernetes manifests
+python app.py
 
 # Deploy to Kubernetes
 kubectl apply -f ./k8s/
@@ -123,7 +126,7 @@ K8s-Gen abstracts Kubernetes complexity while maintaining full power:
 │ • Apps          │    │ • Validation     │    │ • Kubernetes    │
 │ • StatefulApps  │    │ • Templates      │    │ • Docker Compose│
 │ • Secrets       │    │ • Plugins        │    │ • Helm Charts   │
-│ • Jobs          │    │ • Optimization   │    │ • Terraform     │
+│ • Jobs          │    │ • Optimization   │    │ • Kustomize     │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
 ```
 
@@ -136,15 +139,15 @@ from k8s_gen import AppGroup, App, StatefulApp
 platform = AppGroup("ecommerce")
 
 # Shared infrastructure
-database = StatefulApp("database").image("database-server:latest").storage("100Gi")
-cache = StatefulApp("cache").image("cache-server:latest").storage("10Gi")
+database = StatefulApp("database").image("postgres:15").port(5432).storage("100Gi")
+cache = StatefulApp("cache").image("redis:7").port(6379).storage("10Gi")
 
 # Microservices
-user_service = App("users").image("myorg/users:v1.0").port(8080).connect_to([database])
-product_service = App("products").image("myorg/products:v1.0").port(8081).connect_to([database])
-order_service = App("orders").image("myorg/orders:v1.0").port(8082).connect_to([database, cache])
+user_service = App("users").image("myorg/users:v1.0").port(8080)
+product_service = App("products").image("myorg/products:v1.0").port(8081)
+order_service = App("orders").image("myorg/orders:v1.0").port(8082)
 
-platform.add_services([database, cache, user_service, product_service, order_service])
+platform.add([database, cache, user_service, product_service, order_service])
 platform.generate().to_yaml("./k8s/")
 ```
 
@@ -156,7 +159,6 @@ from k8s_gen import Job, CronJob
 training = (Job("model-training")
     .image("ml-framework:latest")
     .resources(cpu="4000m", memory="16Gi")
-    .gpu_resources(2)
     .timeout("6h"))
 
 # Scheduled retraining
@@ -166,16 +168,90 @@ retrain = (CronJob("model-retrain")
     .resources(cpu="8000m", memory="32Gi"))
 
 training.generate().to_yaml("./jobs/")
+retrain.generate().to_yaml("./jobs/")
+```
+
+### Complete Web Application
+```python
+from k8s_gen import App, StatefulApp, Secret, Service, Ingress
+
+# Database
+db_secret = Secret("db-secret").add("password", "secure-password")
+database = (StatefulApp("database")
+    .image("postgres:15")
+    .port(5432)
+    .storage("50Gi")
+    .add_secrets([db_secret]))
+
+# Backend API
+api = (App("api")
+    .image("myapp/api:latest")
+    .port(8080)
+    .replicas(3)
+    .add_secrets([db_secret]))
+
+# Frontend
+frontend = (App("frontend")
+    .image("myapp/frontend:latest")
+    .port(80)
+    .replicas(2))
+
+# Services
+api_service = Service("api-service").add_app(api)
+frontend_service = Service("frontend-service").add_app(frontend)
+
+# Ingress
+ingress = (Ingress("app-ingress")
+    .domain("myapp.com")
+    .route("/api", api_service)
+    .route("/", frontend_service))
+
+# Generate all components
+for component in [db_secret, database, api, frontend, api_service, frontend_service, ingress]:
+    component.generate().to_yaml("./k8s/")
 ```
 
 ## 📚 Documentation
 
-- **[📖 Complete Specifications](./specs/)** - Comprehensive documentation
-- **[🚀 Quick Start Guide](./specs/index.md)** - Get started in minutes  
-- **[📚 API Reference](./specs/api-reference.md)** - Complete API documentation
-- **[📤 Output Examples](./specs/output-examples.md)** - See generated manifests
-- **[⚡ CLI Reference](./specs/cli.md)** - Command-line tools
-- **[🔌 Extensions](./specs/extensions.md)** - Plugin system and customization
+- **[📖 Complete Documentation](./docs/)** - Full documentation site
+- **[🚀 Getting Started](./docs/getting-started/)** - Installation and first steps
+- **[📚 API Reference](./docs/api-reference/)** - Complete API documentation
+- **[🎯 Examples](./docs/examples/)** - Real-world examples and tutorials
+- **[🔧 Components](./docs/components/)** - All available components
+- **[⚙️ Configuration](./docs/configuration/)** - Configuration options
+
+## 📦 Available Components
+
+### Core Components
+- **`App`** - Stateless applications (Deployments)
+- **`StatefulApp`** - Stateful applications (StatefulSets)
+- **`AppGroup`** - Group multiple applications together
+
+### Workloads
+- **`Job`** - One-time tasks
+- **`CronJob`** - Scheduled tasks
+- **`Lifecycle`** - Lifecycle hooks
+
+### Networking
+- **`Service`** - Service definitions
+- **`Ingress`** - Ingress controllers
+- **`NetworkPolicy`** - Network policies
+
+### Security
+- **`Secret`** - Secret management
+- **`ServiceAccount`** - Service accounts
+- **`Role`** / **`ClusterRole`** - RBAC roles
+- **`RoleBinding`** / **`ClusterRoleBinding`** - RBAC bindings
+- **`SecurityPolicy`** - Security policies
+
+### Storage
+- **`ConfigMap`** - Configuration management
+
+### Advanced Features
+- **`Observability`** - Monitoring and logging
+- **`DeploymentStrategy`** - Deployment strategies
+- **`CostOptimization`** - Resource optimization
+- **`CustomResource`** - Custom resource definitions
 
 ## 🌟 Why Choose K8s-Gen?
 
@@ -197,6 +273,28 @@ training.generate().to_yaml("./jobs/")
 - **Cost Optimization** - Built-in resource management
 - **Compliance Ready** - Security and governance features
 
+## 🧪 Running Examples
+
+```bash
+# Run comprehensive examples
+cd src/examples
+
+# Multiple ports showcase
+python multiple_ports_showcase.py
+
+# Enterprise validation demo
+python enterprise_validation_demo.py
+
+# Complete platform demo
+python complete_platform_demo.py
+
+# RBAC security demo
+python rbac_security_demo.py
+
+# Kubernetes YAML generation example
+python kubernetes_yaml_generation_example.py
+```
+
 ## 🤝 Contributing
 
 We welcome contributions! Here's how to get started:
@@ -204,7 +302,7 @@ We welcome contributions! Here's how to get started:
 1. **Fork the repository**
 2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
 3. **Make your changes** and add tests
-4. **Run tests**: `pytest`
+4. **Run tests**: `python run_tests.py`
 5. **Submit a pull request**
 
 See our [Contributing Guide](./CONTRIBUTING.md) for detailed guidelines.
@@ -216,24 +314,37 @@ This project is licensed under the MIT License - see the [LICENSE](./LICENSE) fi
 ## 🎉 Get Started Now
 
 ```bash
-# Install K8s-Gen
-pip install k8s-gen
+# Install K8s-Gen from source
+git clone https://github.com/your-org/k8s-gen.git
+cd k8s-gen
+pip install -e src/
 
 # Create your first application
-k8s-gen init my-app --template web
+cat > my_app.py << EOF
+from k8s_gen import App
 
-# Start developing
-cd my-app
-k8s-gen dev app.py
+app = (App("hello-world")
+    .image("nginxdemos/hello:latest")
+    .port(80)
+    .replicas(2)
+    .expose())
+
+app.generate().to_yaml("./k8s/")
+print("✅ Kubernetes manifests generated in ./k8s/")
+EOF
+
+# Generate and deploy
+python my_app.py
+kubectl apply -f ./k8s/
 ```
 
-**Ready to simplify your Kubernetes deployments?** [Check out the complete documentation](./specs/) and join thousands of developers already using K8s-Gen! 🚀
+**Ready to simplify your Kubernetes deployments?** [Check out the complete documentation](./docs/) and join thousands of developers already using K8s-Gen! 🚀
 
 ---
 
 <div align="center">
 
-**[Documentation](./specs/) • [Examples](./specs/output-examples.md) • [API Reference](./specs/api-reference.md) • [CLI Guide](./specs/cli.md)**
+**[Documentation](./docs/) • [Examples](./docs/examples/) • [API Reference](./docs/api-reference/) • [Components](./docs/components/)**
 
 Made with ❤️ by the K8s-Gen community
 
