@@ -30,6 +30,17 @@ from .networking.network_policy import NetworkPolicy
 from .output.kubernetes_output import KubernetesOutput
 from .output.docker_compose_output import DockerComposeOutput
 
+# Phase 5: Observability
+from .advanced.observability import Observability
+from .advanced.deployment_strategy import DeploymentStrategy
+from .advanced.external_services import ExternalServices
+
+# Phase 6: Advanced Features
+from .advanced.dependency_manager import DependencyManager
+from .advanced.wait_condition import WaitCondition
+from .advanced.cost_optimization import CostOptimization, OptimizationStrategy
+from .advanced.custom_resource import CustomResource, CRDScope
+
 __version__ = "1.0.0"
 __author__ = "K8s-Gen Team"
 __email__ = "team@k8s-gen.com"
@@ -68,4 +79,17 @@ __all__ = [
     # Output Formats
     "KubernetesOutput",
     "DockerComposeOutput",
+    
+    # Phase 5: Observability
+    "Observability",
+    "DeploymentStrategy", 
+    "ExternalServices",
+    
+    # Phase 6: Advanced Features
+    "DependencyManager",
+    "WaitCondition",
+    "CostOptimization",
+    "OptimizationStrategy",
+    "CustomResource",
+    "CRDScope"
 ] 
