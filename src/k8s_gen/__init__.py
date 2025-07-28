@@ -57,6 +57,9 @@ from .validation.validator import Validator, ValidationLevel
 from .validation.security_scanner import SecurityScanner, SecurityLevel
 from .validation.cost_estimator import CostEstimator, CloudProvider
 
+# Format decorators
+from .utils.decorators import docker_compose_only, kubernetes_only, output_formats
+
 # Main exports for convenient imports
 __all__ = [
     # Core components
@@ -88,7 +91,10 @@ __all__ = [
     "TemplateManager", "TemplateEngine",
     
     # Validation
-    "Validator", "ValidationLevel", "SecurityScanner", "SecurityLevel", "CostEstimator", "CloudProvider"
+    "Validator", "ValidationLevel", "SecurityScanner", "SecurityLevel", "CostEstimator", "CloudProvider",
+    
+    # Format decorators
+    "docker_compose_only", "kubernetes_only", "output_formats"
 ]
 
 # Version info
