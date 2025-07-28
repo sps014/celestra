@@ -1,0 +1,146 @@
+{
+  "timestamp": 1753688131.289056,
+  "duration": 2.198699951171875,
+  "modules": {
+    "test_core_components": {
+      "success": false,
+      "stats": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "errors": 0,
+        "total": 0,
+        "duration": 0.0
+      },
+      "timestamp": 1753688129.437234
+    },
+    "test_workloads": {
+      "success": false,
+      "stats": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "errors": 0,
+        "total": 0,
+        "duration": 0.0
+      },
+      "timestamp": 1753688129.62831
+    },
+    "test_networking": {
+      "success": false,
+      "stats": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "errors": 0,
+        "total": 0,
+        "duration": 0.0
+      },
+      "timestamp": 1753688129.814152
+    },
+    "test_security": {
+      "success": false,
+      "stats": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "errors": 0,
+        "total": 0,
+        "duration": 0.0
+      },
+      "timestamp": 1753688130.0022101
+    },
+    "test_observability": {
+      "success": false,
+      "stats": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "errors": 0,
+        "total": 0,
+        "duration": 0.0
+      },
+      "timestamp": 1753688130.196353
+    },
+    "test_advanced_features": {
+      "success": false,
+      "stats": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "errors": 0,
+        "total": 0,
+        "duration": 0.0
+      },
+      "timestamp": 1753688130.382794
+    },
+    "test_output_formats": {
+      "success": false,
+      "stats": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "errors": 0,
+        "total": 0,
+        "duration": 0.0
+      },
+      "timestamp": 1753688130.560491
+    },
+    "test_plugins": {
+      "success": false,
+      "stats": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "errors": 0,
+        "total": 0,
+        "duration": 0.0
+      },
+      "timestamp": 1753688130.740871
+    },
+    "test_validation": {
+      "success": false,
+      "stats": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "errors": 0,
+        "total": 0,
+        "duration": 0.0
+      },
+      "timestamp": 1753688130.9194639
+    },
+    "test_integration": {
+      "success": false,
+      "stats": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "errors": 0,
+        "total": 0,
+        "duration": 0.0
+      },
+      "timestamp": 1753688131.1065652
+    },
+    "test_examples": {
+      "success": false,
+      "stats": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "errors": 0,
+        "total": 0,
+        "duration": 0.0
+      },
+      "timestamp": 1753688131.28888
+    }
+  },
+  "summary": {
+    "total_modules": 11,
+    "successful_modules": 0,
+    "total_tests": 0,
+    "passed_tests": 0,
+    "failed_tests": 0,
+    "skipped_tests": 0
+  }
+}
