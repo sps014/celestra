@@ -40,7 +40,7 @@ Service accounts provide an identity for processes running in pods.
 ### Basic Usage
 
 ```python
-from src.k8s_gen import ServiceAccount
+from celestra import ServiceAccount
 
 # Simple service account
 sa = ServiceAccount("app-service-account")
@@ -73,7 +73,7 @@ Roles define permissions within a specific namespace.
 ### Basic Permissions
 
 ```python
-from src.k8s_gen import Role
+from celestra import Role
 
 # Basic role with common permissions
 app_role = (Role("app-role")
@@ -132,7 +132,7 @@ ClusterRoles define cluster-wide permissions.
 ### System ClusterRole
 
 ```python
-from src.k8s_gen import ClusterRole
+from celestra import ClusterRole
 
 # Cluster-wide monitoring role
 monitoring_cluster_role = (ClusterRole("cluster-monitoring")
@@ -188,7 +188,7 @@ RoleBindings connect Roles to subjects (users, groups, service accounts) within 
 ### ServiceAccount Binding
 
 ```python
-from src.k8s_gen import RoleBinding
+from celestra import RoleBinding
 
 # Bind role to service account
 app_binding = (RoleBinding("app-role-binding")
@@ -230,7 +230,7 @@ ClusterRoleBindings provide cluster-wide access.
 ### System Binding
 
 ```python
-from src.k8s_gen import ClusterRoleBinding
+from celestra import ClusterRoleBinding
 
 # Cluster-wide monitoring access
 monitoring_binding = (ClusterRoleBinding("cluster-monitoring-binding")
@@ -257,7 +257,7 @@ admin_binding = (ClusterRoleBinding("platform-admins")
 Complete RBAC Setup for Microservices Platform
 """
 
-from src.k8s_gen import (
+from celestra import (
     ServiceAccount, Role, ClusterRole, RoleBinding, ClusterRoleBinding,
     App, KubernetesOutput
 )

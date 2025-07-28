@@ -62,7 +62,7 @@ Before you begin, make sure you have:
 Celestra allows you to define Kubernetes applications using intuitive Python code:
 
 ```python
-from src.k8s_gen import App, StatefulApp
+from celestra import App, StatefulApp
 
 # Define a web application
 web_app = (App("my-web-app")

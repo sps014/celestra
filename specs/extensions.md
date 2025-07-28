@@ -15,7 +15,7 @@ The plugin system is built around three core concepts:
 3. **Validation Extensions** - Add custom validation rules
 
 ```python
-from k8s_gen import PluginManager, Plugin
+from celestra import PluginManager, Plugin
 
 # Initialize plugin manager
 plugins = PluginManager()
@@ -33,7 +33,7 @@ plugins.load_all()
 
 ```python
 # plugins/database_cluster.py
-from k8s_gen import Plugin, StatefulApp, ConfigMap, Secret
+from celestra import Plugin, StatefulApp, ConfigMap, Secret
 
 class DatabaseCluster(Plugin):
     """Custom database cluster with automatic failover and backups."""
@@ -121,7 +121,7 @@ Create domain-specific builders for specialized workloads.
 
 ```python
 # plugins/ml_workloads.py
-from k8s_gen import Plugin, Job, StatefulApp
+from celestra import Plugin, Job, StatefulApp
 
 class MLPipeline(Plugin):
     """Machine Learning training and inference pipeline."""
@@ -206,7 +206,7 @@ app.add_ml_pipeline(ml_pipeline)
 
 ```python
 # plugins/data_pipeline.py
-from k8s_gen import Plugin, Job, CronJob, ConfigMap
+from celestra import Plugin, Job, CronJob, ConfigMap
 
 class DataPipeline(Plugin):
     """Data processing pipeline with Apache Spark or similar."""
@@ -267,7 +267,7 @@ app.add_data_pipeline(etl_pipeline)
 
 ```python
 # plugins/iot_edge.py
-from k8s_gen import Plugin, App, ConfigMap
+from celestra import Plugin, App, ConfigMap
 
 class EdgeDevice(Plugin):
     """IoT edge computing device configuration."""
@@ -491,7 +491,7 @@ networks:
 ### Template Registration
 
 ```python
-from k8s_gen import TemplateManager
+from celestra import TemplateManager
 
 # Register custom templates
 templates = TemplateManager()
@@ -511,7 +511,7 @@ Add custom validation rules and policies.
 
 ```python
 # validators/security_validator.py
-from k8s_gen import Validator, ValidationError
+from celestra import Validator, ValidationError
 
 class SecurityValidator(Validator):
     """Custom security validation rules."""
@@ -563,7 +563,7 @@ app.add_validator(SecurityValidator())
 
 ```python
 # validators/policy_validator.py
-from k8s_gen import Validator, ValidationError
+from celestra import Validator, ValidationError
 
 class PolicyValidator(Validator):
     """Organizational policy validation."""
@@ -620,7 +620,7 @@ Add support for new output formats.
 
 ```python
 # output_formats/terraform.py
-from k8s_gen import OutputFormat
+from celestra import OutputFormat
 
 class TerraformOutput(OutputFormat):
     """Generate Terraform modules from Celestra."""
@@ -703,7 +703,7 @@ app.generate().to_terraform('./terraform/')
 
 ```python
 # output_formats/argo_workflows.py
-from k8s_gen import OutputFormat
+from celestra import OutputFormat
 
 class ArgoWorkflowsOutput(OutputFormat):
     """Generate Argo Workflows from Celestra."""
@@ -775,7 +775,7 @@ Celestra maintains a registry of community-contributed plugins:
 
 ```python
 # Install community plugins
-from k8s_gen import PluginRegistry
+from celestra import PluginRegistry
 
 registry = PluginRegistry()
 
@@ -815,7 +815,7 @@ description: "Automated database clustering with failover and backups"
 author: "Platform Team"
 repository: "https://github.com/company/Celestra-database-plugin"
 license: "MIT"
-k8s_gen_version: ">=1.0.0"
+celestra_version: ">=1.0.0"
 
 dependencies:
   - name: "backup-plugin"

@@ -54,7 +54,7 @@ db_resources = database.generate_kubernetes_resources()
 === "Multiple Outputs"
 
     ```python
-    from k8s_gen.output import KubernetesOutput, HelmOutput, DockerComposeOutput
+    from celestra.output import KubernetesOutput, HelmOutput, DockerComposeOutput
     
     # Generate different formats
     KubernetesOutput().generate(app, "k8s/")

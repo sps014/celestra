@@ -255,7 +255,7 @@ The following components from the original specification can be implemented as n
 ## 📁 **Current File Structure**
 
 ```
-src/k8s_gen/
+src/celestra/
 ├── __init__.py                     ✅ Main package exports
 ├── core/
 │   ├── __init__.py                ✅ Core module exports  

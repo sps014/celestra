@@ -14,7 +14,7 @@ Use `Ingress` for:
 ## Basic Usage
 
 ```python
-from src.k8s_gen import Ingress
+from celestra import Ingress
 
 # Simple HTTP ingress
 ingress = (Ingress("web-ingress")
@@ -128,7 +128,7 @@ advanced_ingress = (Ingress("advanced-app")
 Production Web Application with Ingress
 """
 
-from src.k8s_gen import App, Service, Ingress, Secret, KubernetesOutput
+from celestra import App, Service, Ingress, Secret, KubernetesOutput
 
 def create_web_application():
     # Frontend application

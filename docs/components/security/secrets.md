@@ -14,7 +14,7 @@ Use `Secret` for:
 ## Basic Usage
 
 ```python
-from src.k8s_gen import Secret
+from celestra import Secret
 
 # Simple secret with key-value pairs
 secret = (Secret("app-secret")
@@ -150,7 +150,7 @@ secret = (Secret("production-secrets")
 Database Secret Management
 """
 
-from src.k8s_gen import Secret, App, StatefulApp, KubernetesOutput
+from celestra import Secret, App, StatefulApp, KubernetesOutput
 
 def create_database_secrets():
     # Main database credentials
@@ -318,7 +318,7 @@ app = (App("private-app")
     .image_pull_secret("registry-credentials"))
 
 # Service account with image pull secrets
-from src.k8s_gen import ServiceAccount
+from celestra import ServiceAccount
 
 sa = (ServiceAccount("app-sa")
     .add_image_pull_secret("registry-credentials")

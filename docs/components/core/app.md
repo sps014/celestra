@@ -12,7 +12,7 @@ Use the `App` component for:
 ## Basic Usage
 
 ```python
-from src.k8s_gen import App
+from celestra import App
 
 # Simple web application
 app = (App("my-web-app")
@@ -136,7 +136,7 @@ app = (App("lifecycle-app")
 Complete App Example - E-commerce API Service
 """
 
-from src.k8s_gen import App, Secret, ConfigMap, KubernetesOutput
+from celestra import App, Secret, ConfigMap, KubernetesOutput
 
 def create_ecommerce_api():
     # Configuration

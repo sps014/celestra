@@ -41,7 +41,7 @@ graph TB
 Basic Kafka Cluster Example
 """
 
-from src.k8s_gen import StatefulApp, App, Service, KubernetesOutput
+from celestra import StatefulApp, App, Service, KubernetesOutput
 import os
 
 def create_kafka_cluster():
@@ -150,7 +150,7 @@ def create_ha_kafka():
 def create_secure_kafka():
     """Create Kafka with SASL/SSL security"""
     
-    from src.k8s_gen import Secret, ConfigMap
+    from celestra import Secret, ConfigMap
     
     # JAAS configuration for SASL
     jaas_config = ConfigMap("kafka-jaas")
@@ -234,7 +234,7 @@ def create_kafka_monitoring():
 def create_kafka_topics():
     """Job to create Kafka topics"""
     
-    from src.k8s_gen import Job
+    from celestra import Job
     
     topics_job = (Job("create-topics")
         .image("confluentinc/cp-kafka:7.4.0")
@@ -278,7 +278,7 @@ def create_kafka_topics():
 Complete Kafka Platform Example
 """
 
-from src.k8s_gen import *
+from celestra import *
 import os
 
 def create_complete_kafka_platform():

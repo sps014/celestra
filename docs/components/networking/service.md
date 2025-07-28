@@ -22,7 +22,7 @@ Services provide:
 ## Basic Usage
 
 ```python
-from src.k8s_gen import Service
+from celestra import Service
 
 # Basic ClusterIP service
 service = (Service("api-service")
@@ -154,7 +154,7 @@ headless_service = (Service("postgres-headless")
 Web Application with Multiple Service Types
 """
 
-from src.k8s_gen import App, Service, KubernetesOutput
+from celestra import App, Service, KubernetesOutput
 
 def create_web_services():
     # Web application

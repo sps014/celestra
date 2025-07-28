@@ -46,7 +46,7 @@ frontend.depends_on([api, auth_service])
 ## Quick Start Example
 
 ```python
-from k8s_gen import App, StatefulApp, AppGroup
+from celestra import App, StatefulApp, AppGroup
 
 # Database service
 database = StatefulApp("database").image("database-server:latest").storage("20Gi")

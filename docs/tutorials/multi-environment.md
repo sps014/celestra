@@ -50,7 +50,7 @@ Create a base configuration that all environments inherit from:
 Base Application Configuration
 """
 
-from src.k8s_gen import App, StatefulApp, Service, ConfigMap, Secret
+from celestra import App, StatefulApp, Service, ConfigMap, Secret
 from typing import Dict, Any
 from dataclasses import dataclass
 
@@ -252,7 +252,7 @@ import os
 import argparse
 from base_config import BaseApplication
 from env_configs import DEVELOPMENT, STAGING, PRODUCTION
-from src.k8s_gen import KubernetesOutput, HelmOutput, Secret, ConfigMap
+from celestra import KubernetesOutput, HelmOutput, Secret, ConfigMap
 
 class MultiEnvironmentDeployer:
     """Handles deployment across multiple environments"""

@@ -14,7 +14,7 @@ Use `CronJob` for:
 ## Basic Usage
 
 ```python
-from src.k8s_gen import CronJob
+from celestra import CronJob
 
 # Daily backup job
 backup_job = (CronJob("daily-backup")
@@ -110,7 +110,7 @@ advanced_cronjob = (CronJob("data-sync")
 Database Backup CronJob Example
 """
 
-from src.k8s_gen import CronJob, Secret, ConfigMap, KubernetesOutput
+from celestra import CronJob, Secret, ConfigMap, KubernetesOutput
 
 def create_backup_cronjob():
     # Backup credentials

@@ -13,7 +13,7 @@ Use `Job` for:
 ## Basic Usage
 
 ```python
-from src.k8s_gen import Job
+from celestra import Job
 
 # Simple batch job
 job = (Job("data-migration")
@@ -91,7 +91,7 @@ config_job = (Job("config-processor")
 Database Migration Job Example
 """
 
-from src.k8s_gen import Job, Secret, ConfigMap, KubernetesOutput
+from celestra import Job, Secret, ConfigMap, KubernetesOutput
 
 def create_migration_job():
     # Database credentials

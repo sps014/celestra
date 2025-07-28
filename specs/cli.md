@@ -566,12 +566,12 @@ Configure Celestra using environment variables:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `K8S_GEN_CONFIG` | Path to configuration file | `./Celestra.yaml` |
-| `K8S_GEN_ENVIRONMENT` | Default environment | `development` |
-| `K8S_GEN_NAMESPACE` | Default Kubernetes namespace | `default` |
-| `K8S_GEN_OUTPUT_DIR` | Default output directory | `./output/` |
-| `K8S_GEN_VERBOSE` | Enable verbose output | `false` |
-| `K8S_GEN_DRY_RUN` | Enable dry-run mode | `false` |
+| `celestra_CONFIG` | Path to configuration file | `./Celestra.yaml` |
+| `celestra_ENVIRONMENT` | Default environment | `development` |
+| `celestra_NAMESPACE` | Default Kubernetes namespace | `default` |
+| `celestra_OUTPUT_DIR` | Default output directory | `./output/` |
+| `celestra_VERBOSE` | Enable verbose output | `false` |
+| `celestra_DRY_RUN` | Enable dry-run mode | `false` |
 
 ## Exit Codes
 
@@ -617,7 +617,7 @@ eval "$(Celestra completion bash)"  # or zsh
 
 **1. Import Error**
 ```bash
-Error: ModuleNotFoundError: No module named 'k8s_gen'
+Error: ModuleNotFoundError: No module named 'celestra'
 ```
 Solution: Ensure Celestra is properly installed: `pip install Celestra`
 
@@ -645,7 +645,7 @@ Enable debug mode for detailed troubleshooting:
 
 ```bash
 Celestra --verbose generate app.py
-K8S_GEN_VERBOSE=true Celestra generate app.py
+celestra_VERBOSE=true Celestra generate app.py
 ```
 
 ### Log Files

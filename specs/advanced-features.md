@@ -7,7 +7,7 @@ Production-ready features and enterprise integrations for the Celestra.
 Generate multiple deployment formats from the same DSL code.
 
 ```python
-from k8s_gen import App, StatefulApp
+from celestra import App, StatefulApp
 
 # Define your application once
 app = (App("web-app")
@@ -34,7 +34,7 @@ app.generate().to_all_formats("./output/", formats=["yaml", "helm", "compose"])
 Extend Kubernetes with custom resources and operators.
 
 ```python
-from k8s_gen import CustomResource
+from celestra import CustomResource
 
 # Machine Learning Pipeline Custom Resource
 ml_pipeline = (CustomResource("MLPipeline", "v1", "ml.company.com")
@@ -69,7 +69,7 @@ app.add_custom_resources([ml_pipeline, database_cluster])
 Comprehensive observability stack integration.
 
 ```python
-from k8s_gen import Observability
+from celestra import Observability
 
 app.observability(
     Observability()
@@ -142,7 +142,7 @@ This configuration generates:
 Zero-downtime deployments with sophisticated rollout strategies.
 
 ```python
-from k8s_gen import DeploymentStrategy
+from celestra import DeploymentStrategy
 
 # Blue-Green Deployment
 app.deployment_strategy(
@@ -211,7 +211,7 @@ app.deployment_strategy(
 Connect to cloud services, APIs, and external systems.
 
 ```python
-from k8s_gen import ExternalServices
+from celestra import ExternalServices
 
 app.external_services(
     ExternalServices()
@@ -294,7 +294,7 @@ This generates:
 Enterprise-grade security and compliance features.
 
 ```python
-from k8s_gen import SecurityPolicy
+from celestra import SecurityPolicy
 
 app.security(
     SecurityPolicy()
@@ -340,7 +340,7 @@ app.security(
 Intelligent resource management and cost controls.
 
 ```python
-from k8s_gen import CostOptimization
+from celestra import CostOptimization
 
 app.cost_optimization(
     CostOptimization()
@@ -395,7 +395,7 @@ This creates:
 Extend Celestra with custom functionality and integrations.
 
 ```python
-from k8s_gen import PluginManager
+from celestra import PluginManager
 
 # Register custom plugins
 plugins = PluginManager()
@@ -404,7 +404,7 @@ plugins.register("monitoring_stack", "./plugins/monitoring_plugin.py")
 plugins.register("ml_workflow", "./plugins/ml_plugin.py")
 
 # Use plugin-provided builders
-from k8s_gen.plugins import CustomDatabase, MonitoringStack
+from celestra.plugins import CustomDatabase, MonitoringStack
 
 # Custom database with automatic clustering
 database = (CustomDatabase("postgres-cluster")
@@ -429,7 +429,7 @@ app.add_plugins([database, monitoring])
 
 ```python
 # plugins/database_plugin.py
-from k8s_gen import Plugin, StatefulApp, Secret, ConfigMap
+from celestra import Plugin, StatefulApp, Secret, ConfigMap
 
 class CustomDatabase(Plugin):
     def __init__(self, name):
@@ -501,7 +501,7 @@ jobs:
 
 ```python
 # environments/base.py
-from k8s_gen import App, StatefulApp
+from celestra import App, StatefulApp
 
 def create_app(env_config):
     database = (StatefulApp("database")

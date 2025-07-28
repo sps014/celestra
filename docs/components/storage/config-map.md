@@ -13,7 +13,7 @@ Use `ConfigMap` for:
 ## Basic Usage
 
 ```python
-from src.k8s_gen import ConfigMap
+from celestra import ConfigMap
 
 # Simple key-value configuration
 config = (ConfigMap("app-config")
@@ -162,7 +162,7 @@ binary_config = (ConfigMap("binary-config")
 Complete Web Application Configuration
 """
 
-from src.k8s_gen import ConfigMap, App, KubernetesOutput
+from celestra import ConfigMap, App, KubernetesOutput
 
 def create_web_app_config():
     # Main application configuration

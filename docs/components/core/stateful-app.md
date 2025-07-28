@@ -13,7 +13,7 @@ Use `StatefulApp` for:
 ## Basic Usage
 
 ```python
-from src.k8s_gen import StatefulApp
+from celestra import StatefulApp
 
 # Simple database
 database = (StatefulApp("postgres")
@@ -158,7 +158,7 @@ database = (StatefulApp("postgres")
 Production PostgreSQL Cluster with High Availability
 """
 
-from src.k8s_gen import StatefulApp, Secret, ConfigMap, Service, KubernetesOutput
+from celestra import StatefulApp, Secret, ConfigMap, Service, KubernetesOutput
 
 def create_postgres_cluster():
     # Configuration

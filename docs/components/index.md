@@ -72,7 +72,7 @@ Enterprise and advanced features:
 ### Basic Application
 
 ```python
-from src.k8s_gen import App
+from celestra import App
 
 # Simple web application
 app = (App("my-app")
@@ -85,7 +85,7 @@ app = (App("my-app")
 ### Web App with Database
 
 ```python
-from src.k8s_gen import App, StatefulApp
+from celestra import App, StatefulApp
 
 # Web application
 web = (App("web-app")
@@ -106,7 +106,7 @@ db = (StatefulApp("postgres")
 ### Complete Microservices Platform
 
 ```python
-from src.k8s_gen import App, StatefulApp, Service, Ingress, AppGroup
+from celestra import App, StatefulApp, Service, Ingress, AppGroup
 
 # Create microservices
 user_service = App("user-service").image("user:latest").port(8080)

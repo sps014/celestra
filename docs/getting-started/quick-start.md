@@ -32,7 +32,7 @@ Let's create a simple web application:
 ### 1. Create a Basic Web App
 
 ```python
-from src.k8s_gen import App, KubernetesOutput
+from celestra import App, KubernetesOutput
 
 # Create a simple NGINX web application
 web_app = (App("my-web-app")
@@ -79,7 +79,7 @@ My First Celestra Application
 """
 
 import os
-from src.k8s_gen import App, KubernetesOutput
+from celestra import App, KubernetesOutput
 
 def main():
     print("🚀 Creating your first Celestra application...")
@@ -180,7 +180,7 @@ Expected output:
 ### Web Application with Database
 
 ```python
-from src.k8s_gen import App, StatefulApp, Service
+from celestra import App, StatefulApp, Service
 
 # Web application
 web_app = (App("web-app")

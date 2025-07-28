@@ -176,7 +176,7 @@ TEST_CONFIG = {
 test:
   script:
     - python src/test/test_run_all.py --report ci_report.json
-    - python -m pytest src/test/ --cov=src/k8s_gen --cov-report=xml
+    - python -m pytest src/test/ --cov=src/celestra --cov-report=xml
   artifacts:
     reports:
       junit: ci_report.json

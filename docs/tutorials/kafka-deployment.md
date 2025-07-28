@@ -47,7 +47,7 @@ Let's start with a simple Kafka deployment:
 Basic Kafka Deployment with Celestra
 """
 
-from src.k8s_gen import App, StatefulApp, Service, ConfigMap, KubernetesOutput
+from celestra import App, StatefulApp, Service, ConfigMap, KubernetesOutput
 import os
 
 def create_basic_kafka():
@@ -114,7 +114,7 @@ Now let's create a production-ready cluster with multiple brokers:
 Production Kafka Cluster with Celestra
 """
 
-from src.k8s_gen import (
+from celestra import (
     StatefulApp, Service, ConfigMap, Secret, 
     ServiceAccount, NetworkPolicy, KubernetesOutput
 )
@@ -178,7 +178,7 @@ def create_production_kafka():
 
 def create_kafka_topics_job():
     """Create a Job to initialize Kafka topics"""
-    from src.k8s_gen import Job
+    from celestra import Job
     
     topics_job = (Job("kafka-topics-setup")
         .image("confluentinc/cp-kafka:7.4.0")
@@ -232,7 +232,7 @@ Add security with authentication and encryption:
 Secure Kafka Deployment with SASL/SSL
 """
 
-from src.k8s_gen import StatefulApp, Secret, ConfigMap, KubernetesOutput
+from celestra import StatefulApp, Secret, ConfigMap, KubernetesOutput
 import os
 
 def create_secure_kafka():
@@ -334,7 +334,7 @@ Add comprehensive monitoring to your Kafka cluster:
 Kafka with Monitoring and Observability
 """
 
-from src.k8s_gen import App, StatefulApp, ConfigMap, Service, KubernetesOutput
+from celestra import App, StatefulApp, ConfigMap, Service, KubernetesOutput
 import os
 
 def create_kafka_with_monitoring():
@@ -427,7 +427,7 @@ Here's a complete production example with all features:
 Complete Production Kafka Platform
 """
 
-from src.k8s_gen import *
+from celestra import *
 import os
 
 def create_complete_kafka_platform():

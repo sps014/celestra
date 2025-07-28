@@ -13,7 +13,7 @@ Use `AppGroup` for:
 ## Basic Usage
 
 ```python
-from src.k8s_gen import AppGroup, App, StatefulApp
+from celestra import AppGroup, App, StatefulApp
 
 # Create individual services
 user_service = App("user-service").image("user:latest").port(8080)
@@ -79,7 +79,7 @@ app_group = (AppGroup("production-stack")
 E-commerce Platform with AppGroup
 """
 
-from src.k8s_gen import AppGroup, App, StatefulApp, Service, Secret, ConfigMap, KubernetesOutput
+from celestra import AppGroup, App, StatefulApp, Service, Secret, ConfigMap, KubernetesOutput
 
 def create_ecommerce_platform():
     # Shared configuration

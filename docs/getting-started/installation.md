@@ -138,7 +138,7 @@ For contributors or advanced users:
 
 ### Common Issues
 
-**Import Error: No module named 'k8s_gen'**
+**Import Error: No module named 'celestra'**
 - Ensure you ran `pip install -e src/` from the project root
 - Check your Python path includes the src directory
 

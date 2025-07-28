@@ -9,7 +9,7 @@ Complete reference for the Celestra API with examples and usage patterns.
 The `App` class represents stateless applications that don't require persistent storage.
 
 ```python
-from k8s_gen import App
+from celestra import App
 
 app = (App("my-web-app")
     .image("web-server:latest")
@@ -42,7 +42,7 @@ app = (App("my-web-app")
 The `StatefulApp` class represents applications requiring persistent state like databases.
 
 ```python
-from k8s_gen import StatefulApp
+from celestra import StatefulApp
 
 # Database server
 database = (StatefulApp("database")
@@ -89,7 +89,7 @@ app.connect_to([database, message_queue, cache])
 Secure handling of sensitive data like passwords, API keys, and certificates.
 
 ```python
-from k8s_gen import Secret
+from celestra import Secret
 
 # Database credentials
 db_secret = (Secret("database-credentials")
@@ -135,7 +135,7 @@ app.add_secrets([db_secret, api_secret, vault_secret])
 Flexible configuration management with multiple data sources and formats.
 
 ```python
-from k8s_gen import ConfigMap
+from celestra import ConfigMap
 
 # Simple key-value configuration
 app_config = (ConfigMap("app-config")
@@ -199,7 +199,7 @@ app.add_config([app_config, file_config, env_config])
 Batch processing and scheduled tasks.
 
 ```python
-from k8s_gen import Job, CronJob
+from celestra import Job, CronJob
 
 # Database migration job
 migration = (Job("db-migration")
@@ -266,7 +266,7 @@ app.lifecycle(
 Comprehensive dependency management without relying on init containers or sidecars.
 
 ```python
-from k8s_gen import DependencyManager, WaitCondition
+from celestra import DependencyManager, WaitCondition
 
 # Service-Level Dependencies
 app.dependencies(
@@ -470,7 +470,7 @@ app.expose(
 Sophisticated HTTP routing, SSL, rate limiting, and more.
 
 ```python
-from k8s_gen import Ingress
+from celestra import Ingress
 
 advanced_ingress = (Ingress("api-ingress")
     .host("api.mycompany.com")
@@ -506,7 +506,7 @@ app.add_ingress([advanced_ingress])
 Horizontal and vertical scaling with advanced policies.
 
 ```python
-from k8s_gen import Scaling
+from celestra import Scaling
 
 app.scale(
     Scaling()
@@ -526,7 +526,7 @@ app.scale(
 Comprehensive health checks and observability.
 
 ```python
-from k8s_gen import Health
+from celestra import Health
 
 app.health(
     Health()
@@ -548,7 +548,7 @@ app.health(
 Role-Based Access Control with service accounts and permissions.
 
 ```python
-from k8s_gen import ServiceAccount, Role, ClusterRole, RoleBinding
+from celestra import ServiceAccount, Role, ClusterRole, RoleBinding
 
 # Service account
 service_account = ServiceAccount("app-service-account")
@@ -581,7 +581,7 @@ app.rbac(
 Managing multiple related services together.
 
 ```python
-from k8s_gen import AppGroup
+from celestra import AppGroup
 
 microservices = AppGroup("ecommerce-platform")
 
