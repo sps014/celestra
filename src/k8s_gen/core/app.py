@@ -54,6 +54,9 @@ class App(BaseBuilder):
         self._security_context: Optional[Dict[str, Any]] = None
         self._service_account_name: Optional[str] = None
         self._jobs: List[Any] = []
+        self._build_context: Optional[str] = None
+        self._dockerfile: Optional[str] = None
+        self._build_args: Dict[str, str] = {}
     
     def image(self, image: str) -> "App":
         """
@@ -66,7 +69,63 @@ class App(BaseBuilder):
             App: Self for method chaining
         """
         self._image = image
+        # Clear build context when using pre-built image
+        self._build_context = None
+        self._dockerfile = None
+        self._build_args = {}
         return self
+
+    def build(self, context: str, dockerfile: str = "Dockerfile", **build_args) -> "App":
+        """
+        Build container from local Dockerfile.
+        
+        This method configures the app to build from a local Dockerfile instead
+        of using a pre-built image. Use this for local development or custom builds.
+        
+        Args:
+            context: Build context path (relative to project root)
+            dockerfile: Dockerfile path relative to context (default: "Dockerfile")
+            **build_args: Build arguments to pass to Docker build
+            
+        Example:
+            ```python
+            # Build from current directory with custom Dockerfile
+            app.build(".", "custom.Dockerfile", VERSION="1.0")
+            
+            # Build from subdirectory
+            app.build("./backend", "Dockerfile.dev", ENV="development")
+            ```
+            
+        Returns:
+            App: Self for method chaining
+        """
+        self._build_context = context
+        self._dockerfile = dockerfile
+        self._build_args = dict(build_args)
+        # Clear image when using build context
+        self._image = None
+        return self
+
+    def from_dockerfile(self, dockerfile: str, context: str = ".", **build_args) -> "App":
+        """
+        Build from Dockerfile (alternative syntax).
+        
+        Alternative method for building from Dockerfile with dockerfile-first syntax.
+        
+        Args:
+            dockerfile: Dockerfile path
+            context: Build context path (default: current directory)
+            **build_args: Build arguments
+            
+        Example:
+            ```python
+            app.from_dockerfile("Dockerfile.prod", context="./app", VERSION="2.0")
+            ```
+            
+        Returns:
+            App: Self for method chaining
+        """
+        return self.build(context, dockerfile, **build_args)
     
     def port(self, port: int, name: str = "http", protocol: str = "TCP") -> "App":
         """
