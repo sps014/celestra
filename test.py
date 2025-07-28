@@ -7,12 +7,12 @@ app = (App("hello-world")
     .replicas(2)
     .expose())
 
-# Generate Kubernetes manifests
-print("🚀 Generating Kubernetes manifests...")
+# Generate Docker Compose file
+print("🚀 Generating Docker Compose file...")
 app.generate().to_docker_compose("./docker-compose.yml")
-print("✅ Kubernetes manifests generated in ./k8s/ directory")
+print("✅ Docker Compose file generated: ./docker-compose.yml")
 
 # You can also generate other formats:
-# app.generate().to_docker_compose("./docker-compose.yml")
-# app.generate().to_helm_chart("./charts/")
-# app.generate().to_kustomize("./k8s/base/")
+# app.generate().to_yaml("./k8s/")           # Kubernetes manifests
+# app.generate().to_helm_chart("./charts/")  # Helm chart
+# app.generate().to_kustomize("./k8s/base/")  # Kustomize
