@@ -16,6 +16,17 @@ from .security.security_policy import SecurityPolicy
 
 from .storage.config_map import ConfigMap
 
+from .workloads.job import Job
+from .workloads.cron_job import CronJob
+from .workloads.lifecycle import Lifecycle
+
+from .networking.service import Service
+from .networking.ingress import Ingress
+from .networking.companion import Companion
+from .networking.scaling import Scaling
+from .networking.health import Health
+from .networking.network_policy import NetworkPolicy
+
 from .output.kubernetes_output import KubernetesOutput
 from .output.docker_compose_output import DockerComposeOutput
 
@@ -40,6 +51,19 @@ __all__ = [
     
     # Storage
     "ConfigMap",
+    
+    # Advanced Workloads (Phase 2)
+    "Job",
+    "CronJob",
+    "Lifecycle",
+    
+    # Advanced Networking (Phase 3)
+    "Service",
+    "Ingress", 
+    "Companion",
+    "Scaling",
+    "Health",
+    "NetworkPolicy",
     
     # Output Formats
     "KubernetesOutput",
