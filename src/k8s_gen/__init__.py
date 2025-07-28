@@ -9,6 +9,7 @@ Helm charts, and more.
 from .core.app import App
 from .core.stateful_app import StatefulApp
 from .core.app_group import AppGroup
+from .core.resource_generator import ResourceGenerator
 
 from .security.secret import Secret
 from .security.rbac import ServiceAccount, Role, ClusterRole, RoleBinding, ClusterRoleBinding
@@ -51,84 +52,45 @@ from .plugins.plugin_manager import PluginManager
 from .plugins.plugin_base import PluginBase, PluginType, PluginMetadata
 from .plugins.template_manager import TemplateManager, TemplateEngine
 
-# Phase 9: Validation & Tools
-from .validation.validator import Validator, ValidationLevel, ValidationRule
-from .validation.security_scanner import SecurityScanner, SecurityLevel, SecurityFinding
-from .validation.cost_estimator import CostEstimator, CostBreakdown, CloudProvider
+# Validation
+from .validation.validator import Validator
+from .validation.security_scanner import SecurityScanner
+from .validation.cost_estimator import CostEstimator
 
-__version__ = "1.0.0"
-__author__ = "K8s-Gen Team"
-__email__ = "team@k8s-gen.com"
-
+# Main exports for convenient imports
 __all__ = [
     # Core components
-    "App",
-    "StatefulApp", 
-    "AppGroup",
+    "App", "StatefulApp", "AppGroup", "ResourceGenerator",
     
-    # Security & RBAC
-    "Secret",
-    "ServiceAccount",
-    "Role", 
-    "ClusterRole",
-    "RoleBinding",
-    "ClusterRoleBinding",
+    # Security
+    "Secret", "ServiceAccount", "Role", "ClusterRole", "RoleBinding", "ClusterRoleBinding",
     "SecurityPolicy",
     
     # Storage
     "ConfigMap",
     
-    # Advanced Workloads (Phase 2)
-    "Job",
-    "CronJob",
-    "Lifecycle",
+    # Workloads
+    "Job", "CronJob", "Lifecycle",
     
-    # Advanced Networking (Phase 3)
-    "Service",
-    "Ingress", 
-    "Companion",
-    "Scaling",
-    "Health",
-    "NetworkPolicy",
+    # Networking
+    "Service", "Ingress", "Companion", "Scaling", "Health", "NetworkPolicy",
     
     # Output formats
-    "KubernetesOutput",
-    "DockerComposeOutput",
+    "KubernetesOutput", "DockerComposeOutput", "HelmOutput", "KustomizeOutput", "TerraformOutput",
     
-    # Phase 5: Observability
-    "Observability",
-    "DeploymentStrategy", 
-    "ExternalServices",
+    # Advanced features
+    "Observability", "DeploymentStrategy", "ExternalServices",
+    "DependencyManager", "WaitCondition", "CostOptimization", "OptimizationStrategy",
+    "CustomResource", "CRDScope",
     
-    # Phase 6: Advanced Features
-    "DependencyManager",
-    "WaitCondition",
-    "CostOptimization",
-    "OptimizationStrategy",
-    "CustomResource",
-    "CRDScope",
+    # Plugin system
+    "PluginManager", "PluginBase", "PluginType", "PluginMetadata",
+    "TemplateManager", "TemplateEngine",
     
-    # Phase 7: Output Formats
-    "HelmOutput",
-    "KustomizeOutput",
-    "TerraformOutput",
-    
-    # Phase 8: Plugin System
-    "PluginManager",
-    "PluginBase",
-    "PluginType", 
-    "PluginMetadata",
-    "TemplateManager",
-    "TemplateEngine",
-    
-    # Phase 9: Validation & Tools
-    "Validator",
-    "ValidationLevel",
-    "ValidationRule",
-    "SecurityScanner", 
-    "SecurityLevel",
-    "SecurityFinding",
-    "CostEstimator",
-    "CostBreakdown",
-    "CloudProvider"
-] 
+    # Validation
+    "Validator", "SecurityScanner", "CostEstimator"
+]
+
+# Version info
+__version__ = "1.0.0"
+__author__ = "K8s-Gen Development Team" 

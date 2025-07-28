@@ -5,8 +5,11 @@ This module contains the ResourceGenerator class that handles the generation
 of multiple output formats from DSL builders.
 """
 
-from typing import Dict, List, Any, Optional, Union
+from typing import Dict, List, Any, Optional, Union, TYPE_CHECKING
 from pathlib import Path
+
+if TYPE_CHECKING:
+    from .base_builder import BaseBuilder
 
 from ..utils.helpers import ensure_directory
 
