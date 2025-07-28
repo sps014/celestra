@@ -1,0 +1,188 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "k8s-gen"
+version = "0.0.1"
+description = "A Python DSL for generating Kubernetes manifests with minimal complexity"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Shivendra Pratap Singh", email = "shivendrapsingh014@gmail.com"}
+]
+maintainers = [
+    {name = "Shivendra Pratap Singh", email = "shivendrapsingh014@gmail.com"}
+]
+keywords = [
+    "kubernetes", "yaml", "docker-compose", "helm", "infrastructure-as-code",
+    "dsl", "deployment", "cloud-native", "devops", "containers"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Utilities",
+    "Typing :: Typed",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-json-report>=1.5.0",
+    "black>=23.7.0",
+    "mypy>=1.5.0",
+    "flake8>=6.0.0",
+]
+docs = [
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.1.0",
+    "mkdocs-awesome-pages-plugin>=2.9.0",
+    "mkdocstrings[python]>=0.22.0",
+    "pymdown-extensions>=10.0",
+    "mkdocs-mermaid2-plugin>=1.1.0",
+]
+all = [
+    "k8s-gen[dev,docs]",
+]
+
+[project.urls]
+Homepage = "https://github.com/your-org/k8s-gen"
+Documentation = "https://your-org.github.io/k8s-gen/"
+Repository = "https://github.com/your-org/k8s-gen"
+"Bug Tracker" = "https://github.com/your-org/k8s-gen/issues"
+"Source Code" = "https://github.com/your-org/k8s-gen"
+
+[project.scripts]
+k8s-gen = "k8s_gen.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"k8s_gen" = ["py.typed", "templates/*"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "mkdocs.*",
+    "mkdocstrings.*",
+    "pymdownx.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "7.4.0"
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--cov=k8s_gen",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+    "--json-report",
+    "--json-report-file=test_results.json",
+]
+testpaths = ["src/test", "src/examples"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+
+[tool.coverage.run]
+source = ["src/k8s_gen"]
+omit = [
+    "*/test/*",
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/migrations/*",
+    "*/venv/*",
+    "*/env/*",
+    "*/\\.venv/*",
+    "*/\\.env/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203", "W503"]
+exclude = [
+    ".git",
+    "__pycache__",
+    "build",
+    "dist",
+    ".venv",
+    ".env",
+    "venv",
+    "env",
+]
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["k8s_gen"] 
