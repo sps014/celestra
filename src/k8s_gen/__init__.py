@@ -41,6 +41,16 @@ from .advanced.wait_condition import WaitCondition
 from .advanced.cost_optimization import CostOptimization, OptimizationStrategy
 from .advanced.custom_resource import CustomResource, CRDScope
 
+# Phase 7: Output Formats
+from .output.helm_output import HelmOutput
+from .output.kustomize_output import KustomizeOutput
+from .output.terraform_output import TerraformOutput
+
+# Phase 8: Plugin System
+from .plugins.plugin_manager import PluginManager
+from .plugins.plugin_base import PluginBase, PluginType, PluginMetadata
+from .plugins.template_manager import TemplateManager, TemplateEngine
+
 __version__ = "1.0.0"
 __author__ = "K8s-Gen Team"
 __email__ = "team@k8s-gen.com"
@@ -76,7 +86,7 @@ __all__ = [
     "Health",
     "NetworkPolicy",
     
-    # Output Formats
+    # Output formats
     "KubernetesOutput",
     "DockerComposeOutput",
     
@@ -91,5 +101,18 @@ __all__ = [
     "CostOptimization",
     "OptimizationStrategy",
     "CustomResource",
-    "CRDScope"
+    "CRDScope",
+    
+    # Phase 7: Output Formats
+    "HelmOutput",
+    "KustomizeOutput",
+    "TerraformOutput",
+    
+    # Phase 8: Plugin System
+    "PluginManager",
+    "PluginBase",
+    "PluginType", 
+    "PluginMetadata",
+    "TemplateManager",
+    "TemplateEngine"
 ] 
