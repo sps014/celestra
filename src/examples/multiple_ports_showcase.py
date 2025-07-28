@@ -6,7 +6,7 @@ This example demonstrates the enhanced multiple ports support across all
 components that support ports: App, StatefulApp, Job, CronJob, and Service.
 """
 
-from src.k8s_gen import (
+from ..k8s_gen import (
     App, StatefulApp, Job, CronJob, Service, 
     KubernetesOutput, HelmOutput, Secret, ConfigMap
 )

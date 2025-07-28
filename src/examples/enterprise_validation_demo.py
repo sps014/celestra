@@ -1,30 +1,17 @@
 #!/usr/bin/env python3
 """
-Enterprise Validation & Tools Demo for K8s-Gen DSL Phase 9.
+Enterprise Validation and Security Demo for K8s-Gen DSL.
 
-This demonstration showcases the complete enterprise capabilities of K8s-Gen DSL
-including advanced validation, security scanning, and cost estimation for
-compliance and governance requirements.
+This comprehensive example demonstrates enterprise-grade security, validation,
+and compliance features suitable for production environments.
 """
 
-from src.k8s_gen import (
-    # Core Platform Components
-    App, StatefulApp, AppGroup, Secret, ConfigMap, Service,
-    
-    # Advanced Features  
-    Observability, DeploymentStrategy, ExternalServices,
-    DependencyManager, WaitCondition, CostOptimization, CustomResource,
-    
-    # Security & RBAC
-    ServiceAccount, Role, RoleBinding, SecurityPolicy,
-    
-    # Output Formats
-    KubernetesOutput, HelmOutput, KustomizeOutput, TerraformOutput,
-    
-    # Phase 9: Validation & Tools
-    Validator, ValidationLevel, ValidationRule,
-    SecurityScanner, SecurityLevel, SecurityFinding,
-    CostEstimator, CostBreakdown, CloudProvider
+from ..k8s_gen import (
+    App, StatefulApp, Job, CronJob, Service, Ingress, 
+    Secret, ConfigMap, ServiceAccount, Role, ClusterRole, 
+    RoleBinding, ClusterRoleBinding, SecurityPolicy, NetworkPolicy,
+    Validator, SecurityScanner, CostEstimator,
+    KubernetesOutput, HelmOutput, Observability
 )
 
 

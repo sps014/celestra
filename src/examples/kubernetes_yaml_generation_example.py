@@ -8,7 +8,7 @@ multiple ports are correctly included in all supported components.
 
 import os
 import yaml
-from src.k8s_gen import (
+from ..k8s_gen import (
     App, StatefulApp, Job, CronJob, Service, 
     KubernetesOutput
 )

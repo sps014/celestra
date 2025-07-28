@@ -1,29 +1,14 @@
 #!/usr/bin/env python3
 """
-Comprehensive example demonstrating K8s-Gen DSL Phase 5 and 6 features.
+Advanced Application Demo for K8s-Gen DSL.
 
-This example shows how to build a complete, production-ready microservices application
-with observability, deployment strategies, external services, dependency management,
-wait conditions, cost optimization, and custom resources.
+This example demonstrates advanced application patterns including
+sidecar containers, init containers, lifecycle hooks, and health checks.
 """
 
-from src.k8s_gen import (
-    # Core components
-    App, StatefulApp, AppGroup,
-    Secret, ConfigMap,
-    Service, Ingress,
-    
-    # Security & RBAC
-    ServiceAccount, Role, RoleBinding, SecurityPolicy,
-    
-    # Phase 5: Observability
-    Observability, DeploymentStrategy, ExternalServices,
-    
-    # Phase 6: Advanced Features
-    DependencyManager, WaitCondition, CostOptimization, OptimizationStrategy,
-    CustomResource, CRDScope,
-    
-    # Output
+from ..k8s_gen import (
+    App, StatefulApp, Service, Ingress, Secret, ConfigMap,
+    Companion, Health, Lifecycle, Scaling,
     KubernetesOutput
 )
 

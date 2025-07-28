@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Demo script showcasing Phase 4: Security & RBAC implementation in K8s-Gen DSL.
+RBAC Security Demo for K8s-Gen DSL.
 
-This script demonstrates the complete RBAC functionality including ServiceAccounts,
-Roles, RoleBindings, ClusterRoles, ClusterRoleBindings, and SecurityPolicy.
+This example demonstrates comprehensive Role-Based Access Control (RBAC) 
+configuration for a multi-tenant Kubernetes environment.
 """
 
 import sys
@@ -12,9 +12,10 @@ import os
 # Add the src directory to the Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
-from k8s_gen import (
-    App, ServiceAccount, Role, ClusterRole, RoleBinding, ClusterRoleBinding,
-    SecurityPolicy, Secret, KubernetesOutput
+from ..k8s_gen import (
+    App, Service, ServiceAccount, Role, ClusterRole, 
+    RoleBinding, ClusterRoleBinding, SecurityPolicy,
+    KubernetesOutput
 )
 
 

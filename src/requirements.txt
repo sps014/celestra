@@ -1,0 +1,11 @@
+# K8s-Gen DSL Requirements
+
+# Core Dependencies
+PyYAML>=6.0                # YAML processing (used throughout DSL)
+pytest>=7.4.0              # Testing framework
+pytest-cov>=4.1.0          # Test coverage
+
+# Development Dependencies (optional but recommended)
+black>=23.7.0              # Code formatting
+mypy>=1.5.0                # Type checking
+flake8>=6.0.0              # Linting
