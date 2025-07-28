@@ -9,7 +9,7 @@ app = (App("hello-world")
 
 # Generate Kubernetes manifests
 print("🚀 Generating Kubernetes manifests...")
-app.generate().to_yaml("./k8s/")
+app.generate().to_docker_compose("./docker-compose.yml")
 print("✅ Kubernetes manifests generated in ./k8s/ directory")
 
 # You can also generate other formats:
