@@ -66,6 +66,8 @@ web_app.generate().to_helm_chart("./charts/")           # Helm packaging
 
 ## 🚀 Quick Start
 
+📖 **[📚 Full Documentation](https://sps014.github.io/celestra)** - Complete guides, tutorials, and API reference
+
 ### Installation
 ```bash
 
