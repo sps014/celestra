@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "celestra"
-version = "0.0.1"
+version = "0.0.2"
 description = "A Python DSL for generating Kubernetes manifests with minimal complexity"
 readme = "README.md"
 license = {text = "MIT"}
