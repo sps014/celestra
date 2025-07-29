@@ -75,7 +75,7 @@ web_app.generate().to_helm_chart("./charts/")           # Helm packaging
 pip install celestra
 
 # Or from source (recommended for development)
-git clone https://github.com/your-org/celestra.git
+git clone https://github.com/sps014/celestra.git
 cd celestra
 pip install -e src/
 
