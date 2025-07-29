@@ -1,320 +1,452 @@
 # Core Concepts
 
-Understanding the fundamental concepts of Celestra will help you build cloud-native applications effectively. This guide covers the core principles and components that make up the DSL.
+This guide explains the fundamental concepts behind Celestra and how they work together to simplify Kubernetes application deployment.
 
-## DSL Philosophy
+## 🎯 Design Philosophy
 
-Celestra is built on three core principles:
+Celestra is built around three core principles:
 
-### 🎯 **Simplicity First**
-Write infrastructure as code using intuitive Python syntax that's easy to read and maintain.
+### 1. **Simplicity Over Configuration**
+Instead of writing complex YAML, you write simple Python code:
 
-### 🏗️ **Builder Pattern**
-Use method chaining to configure components step-by-step, making the code self-documenting.
+```python
+# Instead of 50+ lines of YAML...
+app = App("my-app").image("nginx:latest").port(80).expose()
+```
 
-### 📦 **Multiple Outputs**
-Generate various deployment formats (Kubernetes, Helm, Docker Compose, etc.) from the same codebase.
+### 2. **Progressive Disclosure**
+Start simple, add complexity when needed:
 
-## Core Components
+```python
+# Start simple
+app = App("my-app").image("nginx:latest").port(80)
 
-### Applications
+# Add features as needed
+app = (App("my-app")
+    .image("nginx:latest")
+    .port(80)
+    .replicas(3)
+    .resources(cpu="500m", memory="512Mi")
+    .health_check("/health")
+    .expose())
+```
 
-#### App - Stateless Applications
-The `App` class represents stateless applications that can be horizontally scaled without data persistence concerns.
+### 3. **Multi-Format Output**
+Write once, deploy anywhere:
+
+```python
+# Same code, multiple outputs
+app.generate().to_yaml("./k8s/")                    # Kubernetes
+app.generate().to_docker_compose("./docker-compose.yml")  # Local dev
+app.generate().to_helm_chart("./charts/")           # Helm packaging
+```
+
+## 🏗️ Architecture Overview
+
+Celestra provides a layered architecture that abstracts Kubernetes complexity:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Application Layer                       │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐      │
+│  │     App     │  │ StatefulApp │  │     Job     │      │
+│  └─────────────┘  └─────────────┘  └─────────────┘      │
+└─────────────────────────────────────────────────────────────┘
+                              │
+┌─────────────────────────────────────────────────────────────┐
+│                    Celestra Core                           │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐      │
+│  │ Validation  │  │ Templates   │  │   Plugins   │      │
+│  └─────────────┘  └─────────────┘  └─────────────┘      │
+└─────────────────────────────────────────────────────────────┘
+                              │
+┌─────────────────────────────────────────────────────────────┐
+│                    Output Layer                            │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐      │
+│  │ Kubernetes  │  │Docker Compose│  │   Helm      │      │
+│  └─────────────┘  └─────────────┘  └─────────────┘      │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## 🧩 Core Components
+
+### Applications vs. Stateful Services
+
+Celestra distinguishes between two main types of applications:
+
+#### **App** - Stateless Applications
+For applications that can be horizontally scaled without persistent storage concerns:
 
 ```python
 from celestra import App
 
-web_app = (App("web-server")
-    .image("nginx:1.21")
-    .port(8080, "http")
+# Web applications, APIs, microservices
+web_app = (App("web-app")
+    .image("nginx:latest")
+    .port(80)
     .replicas(3)
-    .resources(cpu="500m", memory="512Mi"))
+    .expose())
+
+# API services
+api = (App("api-service")
+    .image("myapp/api:v1.0")
+    .port(8080)
+    .replicas(5)
+    .resources(cpu="500m", memory="1Gi"))
 ```
 
-**Key characteristics:**
+**Characteristics:**
+- Horizontal scaling
+- Rolling updates
+- Load balancing
 - No persistent storage
-- Can be scaled horizontally
-- Suitable for web servers, APIs, microservices
+- Multiple replicas
 
-#### StatefulApp - Stateful Applications
-The `StatefulApp` class represents applications that require persistent storage and stable network identities.
+#### **StatefulApp** - Stateful Applications
+For applications that require persistent storage and stable network identities:
 
 ```python
 from celestra import StatefulApp
 
+# Databases
 database = (StatefulApp("postgres")
-    .image("postgres:13")
-    .port(5432, "database")
-    .storage("/var/lib/postgresql/data", "10Gi")
-    .env("POSTGRES_DB", "myapp"))
+    .image("postgres:15")
+    .port(5432)
+    .storage("20Gi")
+    .replicas(3))
+
+# Message queues
+kafka = (StatefulApp("kafka")
+    .image("confluentinc/cp-kafka:7.4.0")
+    .kafka_port(9092)
+    .storage("100Gi")
+    .replicas(3))
 ```
 
-**Key characteristics:**
-- Persistent storage with volumes
+**Characteristics:**
+- Persistent storage
 - Stable network identities
-- Ordered deployment and scaling
-- Suitable for databases, message queues
+- Ordered deployment
+- Database-specific helpers
+- Backup scheduling
 
-### Workloads
+## 🔗 Service Discovery and Dependencies
 
-#### Job - One-time Tasks
-Execute batch processing tasks that run to completion.
+### Automatic Service Discovery
 
-```python
-from celestra import Job
-
-data_job = (Job("data-migration")
-    .image("migrator:1.0")
-    .command(["python", "migrate.py"])
-    .resources(cpu="1", memory="2Gi"))
-```
-
-#### CronJob - Scheduled Tasks
-Run jobs on a schedule using cron syntax.
+Celestra automatically handles service discovery between components:
 
 ```python
-from celestra import CronJob
+from celestra import App, StatefulApp
 
-backup_job = (CronJob("daily-backup")
-    .schedule("0 2 * * *")  # Daily at 2 AM
-    .image("backup-tool:1.0")
-    .command(["backup.sh"]))
-```
+# Database
+database = StatefulApp("postgres").image("postgres:15").port(5432)
 
-### Networking
+# API that connects to database
+api = (App("api")
+    .image("myapp/api:latest")
+    .port(8080)
+    .connect_to([database]))  # Automatic service discovery
 
-#### Service - Service Discovery
-Expose applications within the cluster or externally.
-
-```python
-from celestra import Service
-
-service = (Service("web-service")
-    .selector({"app": "web-server"})
-    .add_port("http", 80, 8080)
-    .type("LoadBalancer"))
-```
-
-#### Ingress - External Access
-Configure external HTTP/HTTPS access to services.
-
-```python
-from celestra import Ingress
-
-ingress = (Ingress("web-ingress")
-    .host("myapp.example.com")
-    .route("/", "web-service", 80)
-    .tls("myapp-tls"))
-```
-
-### Security
-
-#### RBAC - Role-Based Access Control
-Configure fine-grained permissions for applications.
-
-```python
-from celestra import ServiceAccount, Role, RoleBinding
-
-service_account = ServiceAccount("app-sa")
-role = (Role("app-role")
-    .allow_get("configmaps", "secrets")
-    .allow_list("services"))
-binding = RoleBinding("app-binding", role, service_account)
-```
-
-#### Secrets - Sensitive Data
-Manage sensitive information like passwords and API keys.
-
-```python
-from celestra import Secret
-
-secret = (Secret("app-secrets")
-    .add_data("database_url", "postgres://...")
-    .add_data("api_key", "secret-key"))
-```
-
-### Storage
-
-#### ConfigMap - Configuration Data
-Store non-sensitive configuration data.
-
-```python
-from celestra import ConfigMap
-
-config = (ConfigMap("app-config")
-    .add_data("app.properties", "debug=false\nport=8080")
-    .add_data("database.conf", "host=localhost"))
-```
-
-## Builder Pattern
-
-Celestra uses the builder pattern extensively, allowing you to chain methods to configure components:
-
-```python
-app = (App("my-app")                    # Start with component name
-    .image("my-app:1.0")                # Set container image
-    .port(8080, "http")                 # Add a port
-    .port(9090, "metrics")              # Add another port
-    .env("LOG_LEVEL", "info")           # Set environment variable
-    .resources(cpu="500m", memory="1Gi") # Set resource requests
-    .replicas(3)                        # Set replica count
-    .health_check("/health", 8080)      # Add health check
-    .expose())                          # Create service
-```
-
-### Method Chaining Benefits
-
-1. **Readable**: Code reads like natural language
-2. **Flexible**: Add or remove configuration as needed
-3. **Type-safe**: Methods are strongly typed
-4. **Self-documenting**: Method names explain their purpose
-
-## Configuration Patterns
-
-### Environment Variables
-Set environment variables for application configuration:
-
-```python
-app = (App("config-demo")
-    .image("app:1.0")
-    .env("DATABASE_URL", "postgres://db:5432/app")
-    .env("REDIS_URL", "redis://cache:6379")
-    .env("LOG_LEVEL", "info"))
-```
-
-### Resource Management
-Define CPU and memory requirements:
-
-```python
-app = (App("resource-demo")
-    .image("app:1.0")
-    .resources(
-        cpu="500m",           # 0.5 CPU cores
-        memory="1Gi",         # 1 GB memory
-        cpu_limit="1",        # Max 1 CPU core
-        memory_limit="2Gi"    # Max 2 GB memory
-    ))
-```
-
-### Port Configuration
-Configure multiple ports for different purposes:
-
-```python
-app = (App("multi-port-app")
-    .image("app:1.0")
-    .http_port(8080, "api")           # HTTP API
-    .https_port(8443, "secure-api")   # HTTPS API
-    .metrics_port(9090, "prometheus") # Metrics endpoint
-    .health_port(8081, "health"))     # Health check endpoint
-```
-
-## Output Generation
-
-### Kubernetes YAML
-Generate standard Kubernetes manifests:
-
-```python
-from celestra import KubernetesOutput
-
-# Generate resources
-resources = app.generate_kubernetes_resources()
-
-# Save to files
-output = KubernetesOutput()
-output.generate(app, "manifests/")
-```
-
-### Multiple Formats
-Generate different deployment formats:
-
-```python
-from celestra import HelmOutput, DockerComposeOutput
-
-# Helm chart
-helm = HelmOutput("my-app-chart")
-helm.add_resource(app).generate("helm/")
-
-# Docker Compose
-compose = DockerComposeOutput()
-compose.generate(app, "docker-compose.yml")
-```
-
-## Advanced Features
-
-### Observability
-Add monitoring and tracing capabilities:
-
-```python
-from celestra import Observability
-
-observability = (Observability("monitoring")
-    .enable_metrics()
-    .enable_tracing()
-    .enable_logging())
-
-app.add_observability(observability)
+# Frontend that connects to API
+frontend = (App("frontend")
+    .image("myapp/frontend:latest")
+    .port(80)
+    .connect_to([api]))  # Chained dependencies
 ```
 
 ### Dependency Management
-Define dependencies between components:
 
 ```python
-from celestra import DependencyManager
+from celestra import AppGroup
 
-deps = (DependencyManager()
-    .add_dependency(web_app, database)
-    .add_dependency(web_app, cache))
+# Create an application group
+platform = AppGroup("my-platform")
+
+# Add components with dependencies
+platform.add([
+    database,  # Database first
+    api,       # API depends on database
+    frontend   # Frontend depends on API
+])
+
+# Generate with proper dependency order
+platform.generate().to_yaml("./k8s/")
+```
+
+## 🔒 Security by Default
+
+### Built-in Security Features
+
+Celestra includes security features by default:
+
+```python
+from celestra import App, Secret, ServiceAccount, Role
+
+# Secure application with RBAC
+secure_app = (App("secure-app")
+    .image("myapp:latest")
+    .port(8080)
+    .add_service_account(ServiceAccount("app-sa"))
+    .add_role(Role("app-role").add_policy("read", "pods"))
+    .add_secret(Secret("app-secret").add("api_key", "secret-value"))
+    .add_network_policy(NetworkPolicy("app-policy").deny_all()))
+```
+
+### Security Components
+
+- **Secrets** - Manage sensitive data
+- **ServiceAccounts** - Identity for applications
+- **Roles/RoleBindings** - Access control
+- **NetworkPolicies** - Network security
+- **SecurityPolicies** - Pod security standards
+
+## 📊 Resource Management
+
+### Resource Allocation
+
+Celestra provides intelligent resource management:
+
+```python
+# Automatic resource allocation
+app = App("my-app").image("nginx:latest").port(80)
+
+# Manual resource specification
+app = (App("my-app")
+    .image("nginx:latest")
+    .port(80)
+    .resources(
+        cpu="500m",           # CPU request
+        memory="512Mi",        # Memory request
+        cpu_limit="1000m",     # CPU limit
+        memory_limit="1Gi"     # Memory limit
+    ))
 ```
 
 ### Cost Optimization
-Optimize resource usage and costs:
 
 ```python
 from celestra import CostOptimization
 
-optimizer = (CostOptimization("cost-optimizer")
-    .resource_optimization()
-    .enable_vertical_scaling()
-    .enable_spot_instances())
+# Enable cost optimization
+optimizer = CostOptimization("optimizer")
+optimizer.resource_optimization()
+optimizer.spot_instance_recommendation()
+optimizer.storage_optimization()
 ```
 
-## Best Practices
+## 🔄 Deployment Strategies
 
-### 🏷️ **Naming Conventions**
-- Use lowercase with hyphens: `web-server`, `user-service`
-- Be descriptive: `postgres-database` instead of `db`
-- Include environment if needed: `web-server-prod`
+### Rolling Updates
 
-### 📊 **Resource Planning**
-- Set resource requests for scheduling
-- Set resource limits to prevent resource hogging
-- Monitor actual usage and adjust accordingly
+```python
+# Default rolling update
+app = App("my-app").image("nginx:latest").port(80)
 
-### 🔒 **Security**
-- Use RBAC with least privilege principle
-- Store sensitive data in Secrets, not ConfigMaps
-- Enable security policies and scanning
+# Custom rolling update
+app = (App("my-app")
+    .image("nginx:latest")
+    .port(80)
+    .rolling_update(
+        max_surge=1,
+        max_unavailable=0,
+        min_ready_seconds=30
+    ))
+```
 
-### 📈 **Scalability**
-- Design stateless applications when possible
-- Use horizontal scaling for stateless apps
-- Plan storage requirements for stateful apps
+### Blue-Green Deployment
 
-### 🧪 **Testing**
-- Test configurations with validation tools
-- Use examples and demos to verify functionality
-- Validate generated manifests before deployment
+```python
+# Blue-green deployment
+app = (App("my-app")
+    .image("nginx:latest")
+    .port(80)
+    .deployment_strategy("blue-green")
+    .health_check("/health")
+    .rollback_on_failure())
+```
 
-## Next Steps
+### Canary Deployment
 
-Now that you understand the core concepts:
+```python
+# Canary deployment
+app = (App("my-app")
+    .image("nginx:latest")
+    .port(80)
+    .deployment_strategy("canary")
+    .canary_percentage(10)
+    .promotion_criteria("success_rate > 95%"))
+```
 
-1. **[First App](first-app.md)** - Build your first complete application
-2. **[Quick Start](quick-start.md)** - Get hands-on experience
-3. **[Examples](../examples/index.md)** - Explore real-world patterns
-4. **[Tutorials](../tutorials/index.md)** - Follow detailed guides
+## 🔍 Observability
 
----
+### Built-in Monitoring
 
-**Ready to build?** Move on to creating your [first application](first-app.md) or jump into the [quick start guide](quick-start.md)!
+```python
+from celestra import Observability
+
+# Enable observability
+observability = Observability("monitoring")
+observability.enable_metrics()
+observability.enable_tracing()
+observability.enable_logging()
+
+# Add to application
+app = (App("my-app")
+    .image("nginx:latest")
+    .port(80)
+    .add_observability(observability))
+```
+
+### Health Checks
+
+```python
+# Health checks
+app = (App("my-app")
+    .image("nginx:latest")
+    .port(80)
+    .health_check("/health")
+    .liveness_probe("/health")
+    .readiness_probe("/ready")
+    .startup_probe("/startup"))
+```
+
+## 🎨 Configuration Management
+
+### Environment Variables
+
+```python
+# Environment variables
+app = (App("my-app")
+    .image("nginx:latest")
+    .port(80)
+    .env("DEBUG", "false")
+    .env("ENVIRONMENT", "production")
+    .env("DATABASE_URL", "postgresql://localhost:5432/myapp"))
+```
+
+### ConfigMaps and Secrets
+
+```python
+from celestra import ConfigMap, Secret
+
+# Configuration
+config = (ConfigMap("app-config")
+    .add("debug", "false")
+    .add_json("features", {"new_ui": True})
+    .from_file("nginx.conf", "configs/nginx.conf"))
+
+# Secrets
+secret = (Secret("app-secret")
+    .add("api_key", "sk_live_...")
+    .add("database_password", "secure-password"))
+
+# Mount in application
+app = (App("my-app")
+    .image("nginx:latest")
+    .port(80)
+    .add_config(config)
+    .add_secret(secret))
+```
+
+## 🔧 Extensibility
+
+### Plugin System
+
+Celestra supports custom plugins:
+
+```python
+from celestra import Plugin
+
+# Custom plugin
+class CustomPlugin(Plugin):
+    def apply(self, app):
+        # Custom logic
+        app.add_annotation("custom/plugin", "enabled")
+        return app
+
+# Use plugin
+app = App("my-app").image("nginx:latest").port(80)
+app.add_plugin(CustomPlugin())
+```
+
+### Custom Resources
+
+```python
+from celestra import CustomResource
+
+# Custom resource
+custom_crd = CustomResource("MyCustomResource")
+custom_crd.add_field("spec", {"replicas": 3})
+custom_crd.add_field("status", {"ready": True})
+
+# Generate
+custom_crd.generate().to_yaml("./k8s/")
+```
+
+## 🎯 Best Practices
+
+### 1. **Use Appropriate Components**
+
+```python
+# ✅ Good: Use StatefulApp for databases
+db = StatefulApp("postgres").storage("20Gi")
+
+# ❌ Bad: Use App for databases
+db = App("postgres")  # No persistent storage
+```
+
+### 2. **Environment-Specific Configuration**
+
+```python
+# Development
+dev_app = App("myapp-dev").for_environment("development")
+dev_app.resources(cpu="100m", memory="256Mi").replicas(1)
+
+# Production
+prod_app = App("myapp").for_environment("production")
+prod_app.resources(cpu="500m", memory="1Gi").replicas(5)
+```
+
+### 3. **Security First**
+
+```python
+# ✅ Good: Use secrets for sensitive data
+app = App("secure-app").add_secret(Secret("api-secret").add("key", "secret-value"))
+
+# ❌ Bad: Use ConfigMaps for secrets
+app = App("insecure-app").add_config(ConfigMap("api-config").add("key", "secret-value"))
+```
+
+### 4. **Resource Management**
+
+```python
+# ✅ Good: Set appropriate resources
+app = App("myapp").resources(cpu="500m", memory="1Gi", cpu_limit="1000m", memory_limit="2Gi")
+
+# ❌ Bad: No resource limits
+app = App("myapp")  # No resource limits
+```
+
+### 5. **Use External Configuration**
+
+```python
+# ✅ Good: Load from external files
+config = ConfigMap("app-config").from_file("config.json", "configs/app.json")
+secret = Secret("db-secret").from_file("password", "secrets/password.txt")
+
+# ❌ Bad: Hardcode in code
+config = ConfigMap("app-config").add("config", '{"debug": true}')
+secret = Secret("db-secret").add("password", "hardcoded-password")
+```
+
+## 🚀 Next Steps
+
+Now that you understand the core concepts, explore:
+
+- **[Components Guide](../components/index.md)** - Learn about all available components
+- **[Examples](../examples/index.md)** - Real-world examples
+- **[Tutorials](../tutorials/index.md)** - Step-by-step guides
+- **[Examples](../examples/index.md)** - Real-world examples
+
+Ready to build something? Check out the [Quick Start Guide](quick-start.md) or jump into the [Components Guide](../components/index.md)! 

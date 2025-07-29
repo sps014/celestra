@@ -1,317 +1,260 @@
-# Components Overview
+# Components
 
-Celestra provides a comprehensive set of components for building Kubernetes applications. Each component is designed to be intuitive, powerful, and production-ready.
+Celestra provides a comprehensive set of components for building Kubernetes applications. Each component is designed with a fluent API for easy configuration and deployment.
 
-## Component Categories
+## Core Components
 
-### 🏗️ Core Components
-
-The foundational building blocks for your applications:
-
-| Component | Purpose | Use Cases |
-|-----------|---------|-----------|
-| [**App**](core/app.md) | Stateless applications | Web services, APIs, microservices |
-| [**StatefulApp**](core/stateful-app.md) | Stateful applications | Databases, message queues, storage |
-| [**AppGroup**](core/app-group.md) | Application grouping | Microservices, related services |
-
-### ⚙️ Workloads
-
-Specialized workload types for different execution patterns:
-
-| Component | Purpose | Use Cases |
-|-----------|---------|-----------|
-| [**Job**](workloads/job.md) | One-time tasks | Data migrations, batch processing |
-| [**CronJob**](workloads/cron-job.md) | Scheduled tasks | Backups, periodic cleanup |
-| [**Lifecycle**](workloads/lifecycle.md) | Container lifecycle | Startup/shutdown hooks |
-
-### 🌐 Networking
-
-Network communication and traffic management:
-
-| Component | Purpose | Use Cases |
-|-----------|---------|-----------|
-| [**Service**](networking/service.md) | Service discovery | Load balancing, service mesh |
-| [**Ingress**](networking/ingress.md) | External access | HTTPS termination, routing |
-| [**Scaling**](networking/scaling.md) | Auto-scaling | HPA, VPA, scaling policies |
-| [**Health**](networking/health.md) | Health monitoring | Probes, health checks |
-| [**NetworkPolicy**](networking/network-policy.md) | Network security | Traffic filtering, isolation |
-
-### 🔐 Security
-
-Security, authentication, and access control:
-
-| Component | Purpose | Use Cases |
-|-----------|---------|-----------|
-| [**RBAC**](security/rbac.md) | Access control | Users, roles, permissions |
-| [**Secrets**](security/secrets.md) | Secret management | Passwords, certificates, keys |
-| [**SecurityPolicy**](security/security-policy.md) | Security policies | Pod security, compliance |
-
-### 💾 Storage
-
-Data persistence and configuration management:
-
-| Component | Purpose | Use Cases |
-|-----------|---------|-----------|
-| [**ConfigMap**](storage/config-map.md) | Configuration | App settings, environment config |
-| [**Volumes**](storage/volumes.md) | Data persistence | File storage, shared data |
-
-### 🚀 Advanced
-
-Enterprise and advanced features:
-
-| Component | Purpose | Use Cases |
-|-----------|---------|-----------|
-| [**Observability**](advanced/observability.md) | Monitoring | Metrics, logging, tracing |
-| [**DeploymentStrategy**](advanced/deployment-strategy.md) | Deployment patterns | Blue-green, canary, rolling |
-| [**DependencyManager**](advanced/dependency-manager.md) | Service dependencies | Startup ordering, health checks |
-| [**CostOptimization**](advanced/cost-optimization.md) | Cost management | Resource optimization |
-| [**CustomResources**](advanced/custom-resources.md) | Custom CRDs | Operators, custom resources |
-
-## Quick Start Guide
-
-### Basic Application
+### [App](core/app.md)
+Stateless applications that can be horizontally scaled without persistent storage concerns.
 
 ```python
 from celestra import App
 
-# Simple web application
-app = (App("my-app")
+app = (App("web-app")
     .image("nginx:latest")
     .port(8080)
     .replicas(3)
+    .resources(cpu="500m", memory="1Gi")
     .expose())
 ```
 
-### Web App with Database
+**Key Features:**
+- Horizontal scaling
+- Rolling updates
+- Load balancing
+- Multiple port support
+- Environment configuration
+- Resource management
+
+### [StatefulApp](core/stateful-app.md)
+Stateful applications that require persistent storage and stable network identities.
 
 ```python
-from celestra import App, StatefulApp
+from celestra import StatefulApp
 
-# Web application
-web = (App("web-app")
-    .image("myapp:latest")
-    .port(8080)
-    .env("DB_HOST", "postgres")
-    .replicas(2)
-    .expose())
+db = (StatefulApp("postgres")
+    .image("postgres:14")
+    .port(5432)
+    .storage("10Gi")
+    .replicas(3)
+    .backup_schedule("0 2 * * *"))
+```
+
+**Key Features:**
+- Persistent storage
+- Stable network identities
+- Ordered deployment
+- Database-specific port helpers
+- Backup scheduling
+- Cluster mode support
+
+## Security Components
+
+### [Secret](security/secrets.md)
+Manage sensitive data like passwords, API keys, and certificates.
+
+```python
+from celestra import Secret
+
+secret = (Secret("db-secret")
+    .add("username", "admin")
+    .add("password", "secure-password")
+    .mount_as_env_vars(prefix="DB_"))
+```
+
+**Key Features:**
+- Multiple data sources (files, environment, Vault, cloud)
+- Automatic secret generation
+- Binary data support
+- Environment variable mounting
+- Cloud integration (AWS, GCP, Azure)
+
+## Storage Components
+
+### [ConfigMap](storage/config-map.md)
+Manage configuration data and application settings.
+
+```python
+from celestra import ConfigMap
+
+config = (ConfigMap("app-config")
+    .add("debug", "false")
+    .add_json("features", {"new_ui": True})
+    .from_file("nginx.conf", "configs/nginx.conf")
+    .mount_as_env_vars(prefix="APP_"))
+```
+
+**Key Features:**
+- Multiple format support (JSON, YAML, Properties, INI, TOML)
+- File and directory loading
+- Template rendering
+- Hot reload support
+- Environment variable mounting
+
+## Workload Components
+
+### [Job](workloads/job.md)
+Batch processing workloads that run to completion.
+
+```python
+from celestra import Job
+
+job = (Job("data-migration")
+    .image("migrator:latest")
+    .command(["python", "migrate.py"])
+    .resources(cpu="1000m", memory="2Gi")
+    .timeout("2h")
+    .retry_limit(3))
+```
+
+**Key Features:**
+- Parallel execution
+- Completion tracking
+- Retry policies
+- Timeout management
+- Resource allocation
+- Volume mounting
+
+## Usage Patterns
+
+### Web Application Stack
+
+```python
+from celestra import App, StatefulApp, Secret, ConfigMap
 
 # Database
 db = (StatefulApp("postgres")
-    .image("postgres:13")
+    .image("postgres:14")
     .port(5432)
-    .env("POSTGRES_DB", "myapp")
-    .storage("/var/lib/postgresql/data", "10Gi"))
-```
+    .storage("10Gi")
+    .add_secret(Secret("db-secret").add("password", "secret123")))
 
-### Complete Microservices Platform
-
-```python
-from celestra import App, StatefulApp, Service, Ingress, AppGroup
-
-# Create microservices
-user_service = App("user-service").image("user:latest").port(8080)
-order_service = App("order-service").image("order:latest").port(8080)
-payment_service = App("payment-service").image("payment:latest").port(8080)
-
-# Database
-database = StatefulApp("postgres").image("postgres:13").storage("10Gi")
-
-# Group them together
-platform = (AppGroup("ecommerce")
-    .add_service(user_service)
-    .add_service(order_service)
-    .add_service(payment_service)
-    .add_service(database))
-
-# External access
-ingress = (Ingress("platform-ingress")
-    .host("myapp.com")
-    .path("/users", "user-service", 8080)
-    .path("/orders", "order-service", 8080)
-    .path("/payments", "payment-service", 8080))
-```
-
-## Component Features Matrix
-
-| Feature | App | StatefulApp | Job | CronJob | Service | Ingress |
-|---------|-----|-------------|-----|---------|---------|---------|
-| **Replicas** | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Ports** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Environment Variables** | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
-| **Resource Limits** | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
-| **Persistent Storage** | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
-| **Health Checks** | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Scaling** | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Load Balancing** | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
-| **SSL/TLS** | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
-| **Scheduling** | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
-
-## Common Patterns
-
-### Pattern 1: Three-Tier Web Application
-
-```python
-# Frontend
-frontend = (App("frontend")
-    .image("nginx:latest")
-    .port(80)
-    .replicas(2)
-    .expose())
-
-# Backend API
-backend = (App("backend")
-    .image("api:latest")
+# Web Application
+web = (App("web-app")
+    .image("webapp:latest")
     .port(8080)
-    .env("DB_HOST", "database")
-    .replicas(3))
-
-# Database
-database = (StatefulApp("database")
-    .image("postgres:13")
-    .port(5432)
-    .storage("/data", "50Gi"))
-
-# Connect them
-Service("backend-service").target(backend)
-Service("database-service").target(database)
+    .replicas(3)
+    .add_secret(Secret("api-secret").add("api_key", "sk_live_..."))
+    .add_config(ConfigMap("app-config").add("debug", "false"))
+    .expose())
 ```
 
-### Pattern 2: Event-Driven Architecture
+### Microservices Architecture
 
 ```python
-# Message queue
+from celestra import App, StatefulApp, Secret, ConfigMap
+
+# Message Queue
 kafka = (StatefulApp("kafka")
-    .image("confluentinc/cp-kafka:latest")
-    .port(9092)
-    .storage("/data", "20Gi")
+    .image("confluentinc/cp-kafka:7.4.0")
+    .kafka_port(9092)
+    .storage("100Gi")
     .replicas(3))
 
-# Event producer
-producer = (App("producer")
-    .image("producer:latest")
-    .env("KAFKA_BROKERS", "kafka:9092")
-    .replicas(2))
+# API Service
+api = (App("api-service")
+    .image("api:v1.0")
+    .port(8080)
+    .replicas(5)
+    .add_secret(Secret("api-secret").add("jwt_secret", "jwt-key"))
+    .add_config(ConfigMap("api-config").add_json("endpoints", {"users": "/api/users"})))
 
-# Event consumer
-consumer = (App("consumer")
-    .image("consumer:latest")
-    .env("KAFKA_BROKERS", "kafka:9092")
-    .replicas(5))
+# Worker Service
+worker = (App("worker-service")
+    .image("worker:v1.0")
+    .port(8080)
+    .replicas(3)
+    .add_secret(Secret("worker-secret").add("queue_password", "queue-pass")))
 ```
 
-### Pattern 3: Batch Processing
+### Data Processing Pipeline
 
 ```python
-# Scheduled data processing
-data_processor = (CronJob("data-processor")
-    .schedule("0 2 * * *")  # Daily at 2 AM
-    .image("processor:latest")
-    .env("S3_BUCKET", "data-lake")
-    .resources(cpu="2", memory="4Gi"))
+from celestra import Job, StatefulApp, ConfigMap
 
-# One-time migration
-migration = (Job("migration")
-    .image("migrator:latest")
-    .command(["python", "migrate.py"])
-    .resources(cpu="1", memory="2Gi"))
+# Data Storage
+storage = (StatefulApp("elasticsearch")
+    .image("elasticsearch:8.8.0")
+    .elasticsearch_port(9200)
+    .storage("200Gi")
+    .replicas(3))
+
+# Data Processing Job
+processor = (Job("data-processor")
+    .image("processor:v1.0")
+    .command(["python", "process.py"])
+    .resources(cpu="2000m", memory="4Gi")
+    .parallelism(5)
+    .timeout("6h")
+    .add_config(ConfigMap("processor-config").add("batch_size", "1000")))
 ```
-
-## Output Formats
-
-All components support multiple output formats:
-
-=== "Kubernetes YAML"
-
-    ```python
-    from src.celestra.output import KubernetesOutput
-    
-    output = KubernetesOutput()
-    output.generate(app, "k8s/")
-    ```
-
-=== "Helm Charts"
-
-    ```python
-    from src.celestra.output import HelmOutput
-    
-    helm = HelmOutput("my-chart")
-    helm.add_resource(app)
-    helm.generate("charts/")
-    ```
-
-=== "Docker Compose"
-
-    ```python
-    from src.celestra.output import DockerComposeOutput
-    
-    compose = DockerComposeOutput()
-    compose.generate(app, "docker-compose.yml")
-    ```
-
-=== "Kustomize"
-
-    ```python
-    from src.celestra.output import KustomizeOutput
-    
-    kustomize = KustomizeOutput("base")
-    kustomize.add_resource(app)
-    kustomize.generate("kustomize/")
-    ```
-
-=== "Terraform"
-
-    ```python
-    from src.celestra.output import TerraformOutput
-    
-    terraform = TerraformOutput("infrastructure")
-    terraform.add_resource(app)
-    terraform.generate("terraform/")
-    ```
 
 ## Best Practices
 
-!!! tip "Component Design Principles"
+### 1. Use External Configuration
 
-    **Single Responsibility**: Each component has a clear, focused purpose
-    
-    **Composability**: Components work together seamlessly
-    
-    **Production Ready**: Built-in best practices and security
-    
-    **Extensibility**: Easy to extend and customize
+```python
+# ✅ Good: Load from external files
+config = ConfigMap("app-config").from_file("config.json", "configs/app.json")
+secret = Secret("db-secret").from_file("password", "secrets/password.txt")
 
-!!! warning "Common Pitfalls"
+# ❌ Bad: Hardcode in code
+config = ConfigMap("app-config").add("config", '{"debug": true}')
+secret = Secret("db-secret").add("password", "hardcoded-password")
+```
 
-    **Over-Engineering**: Start simple, add complexity as needed
-    
-    **Resource Limits**: Always set appropriate resource limits
-    
-    **Security**: Enable security features in production
-    
-    **Monitoring**: Include observability from the start
+### 2. Environment-Specific Configuration
+
+```python
+# Development
+dev_app = App("myapp-dev").for_environment("development")
+dev_app.resources(cpu="100m", memory="256Mi").replicas(1)
+
+# Production
+prod_app = App("myapp").for_environment("production")
+prod_app.resources(cpu="500m", memory="1Gi").replicas(5)
+```
+
+### 3. Security First
+
+```python
+# ✅ Good: Use secrets for sensitive data
+app = App("secure-app").add_secret(Secret("api-secret").add("key", "secret-value"))
+
+# ❌ Bad: Use ConfigMaps for secrets
+app = App("insecure-app").add_config(ConfigMap("api-config").add("key", "secret-value"))
+```
+
+### 4. Resource Management
+
+```python
+# ✅ Good: Set appropriate resources
+app = App("myapp").resources(cpu="500m", memory="1Gi", cpu_limit="1000m", memory_limit="2Gi")
+
+# ❌ Bad: No resource limits
+app = App("myapp")  # No resource limits
+```
+
+### 5. Use Appropriate Components
+
+```python
+# ✅ Good: Use StatefulApp for databases
+db = StatefulApp("postgres").storage("10Gi")
+
+# ❌ Bad: Use App for databases
+db = App("postgres")  # No persistent storage
+```
 
 ## Next Steps
 
-<div class="grid cards" markdown>
+- **Explore [App](core/app.md)** - Learn about stateless applications
+- **Check [StatefulApp](core/stateful-app.md)** - Understand stateful applications
+- **Review [Secret](security/secrets.md)** - Manage sensitive data
+- **Study [ConfigMap](storage/config-map.md)** - Handle configuration
+- **Examine [Job](workloads/job.md)** - Create batch processing workloads
 
--   **[Quick Start Tutorial](../getting-started/quick-start.md)**
-    
-    Build your first application in minutes
+## Getting Help
 
--   **[Kafka Deployment](../tutorials/kafka-deployment.md)**
-    
-    Deploy a production Kafka cluster
-
--   **[Multi-Environment Setup](../tutorials/multi-environment.md)**
-    
-    Configure dev/staging/production
-
--   **[API Reference](../api-reference/index.md)**
-    
-    Complete API documentation
-
-</div>
-
----
-
-**Ready to dive deeper?** Explore specific components or check out our [tutorials](../tutorials/index.md) for hands-on examples! 
+- **Documentation**: Browse the [complete documentation](../index.md)
+- **Examples**: Check out [example applications](../examples/index.md)
+- **Issues**: Report problems on [GitHub Issues](https://github.com/your-username/Celestra/issues) 

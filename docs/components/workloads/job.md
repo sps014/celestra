@@ -1,504 +1,588 @@
-# Job Component
+# Job Class
 
-The `Job` component is designed for running batch jobs and one-time tasks in Kubernetes. It ensures that a specified number of pods successfully complete their work.
+The `Job` class manages Kubernetes Jobs for batch processing workloads that run to completion.
 
 ## Overview
-
-Use `Job` for:
-- **Data Processing** - ETL jobs, data migrations
-- **Batch Operations** - Image processing, report generation
-- **Maintenance Tasks** - Database cleanup, backup operations
-- **One-time Setup** - Initial configuration, database seeding
-
-## Basic Usage
 
 ```python
 from celestra import Job
 
-# Simple batch job
-job = (Job("data-migration")
-    .image("migrator:latest")
-    .command(["python", "migrate.py"])
-    .timeout(3600)  # 1 hour timeout
-    .retry_limit(3))
+# Basic usage
+job = Job("data-migration").image("migrator:latest").command(["python", "migrate.py"])
 ```
 
-## Configuration Methods
+## Functions
 
-### Basic Job Setup
+### image(image: str) -> Job
+Set the container image for the job.
 
 ```python
-# Basic job configuration
-job = (Job("backup-job")
-    .image("backup:v1.0.0")
-    .command(["sh", "-c", "pg_dump mydb > /backup/backup.sql"])
-    .working_dir("/app")
-    .timeout(1800)  # 30 minutes
-    .retry_limit(2))
+# Basic image
+job = Job("migration").image("migrator:latest")
+
+# Specific version
+job = Job("backup").image("backup-tool:v1.2.0")
+
+# Custom registry
+job = Job("processor").image("gcr.io/myproject/processor:latest")
 ```
 
-### Parallel Jobs
+### command(command: List[str]) -> Job
+Set the command to run in the container.
 
 ```python
-# Parallel processing job
-parallel_job = (Job("parallel-processor")
-    .image("processor:latest")
-    .parallelism(5)  # Run 5 pods in parallel
-    .completions(100)  # Process 100 items total
-    .completion_mode("Indexed")  # Each pod gets an index
-    .timeout(7200))  # 2 hours total
+# Simple command
+job = Job("migration").command(["python", "migrate.py"])
+
+# Complex command
+job = Job("backup").command(["bash", "-c", "pg_dump | gzip > backup.sql.gz"])
+
+# Shell command
+job = Job("cleanup").command(["sh", "-c", "rm -rf /tmp/* && echo 'Cleanup complete'"])
 ```
 
-### Resource Management
+### args(args: List[str]) -> Job
+Set the arguments for the command.
 
 ```python
-# Resource-intensive job
-heavy_job = (Job("ml-training")
-    .image("tensorflow:latest")
-    .command(["python", "train_model.py"])
+# Command with arguments
+job = Job("migration").command(["python"]).args(["migrate.py", "--env", "production"])
+
+# Multiple arguments
+job = Job("backup").command(["pg_dump"]).args(["--host", "postgres", "--port", "5432", "myapp"])
+```
+
+### environment(env_vars: Dict[str, str]) -> Job
+Set multiple environment variables at once.
+
+```python
+# Bulk environment variables
+env_config = {
+    "DATABASE_URL": "postgres://localhost:5432/myapp",
+    "BACKUP_PATH": "/backups",
+    "LOG_LEVEL": "info"
+}
+job = Job("backup").environment(env_config)
+```
+
+### env(key: str, value: str) -> Job
+Add a single environment variable.
+
+```python
+# Single environment variable
+job = Job("migration").env("DATABASE_URL", "postgres://localhost:5432/myapp")
+
+# Multiple individual variables
+job = (Job("backup")
+    .env("BACKUP_PATH", "/backups")
+    .env("RETENTION_DAYS", "30")
+    .env("COMPRESSION", "gzip"))
+```
+
+### resources(cpu: str = None, memory: str = None, cpu_limit: str = None, memory_limit: str = None, gpu: int = None) -> Job
+Set resource requests and limits for the job.
+
+```python
+# Basic resources
+job = Job("migration").resources(cpu="500m", memory="1Gi")
+
+# With limits
+job = (Job("backup")
     .resources(
-        cpu="4000m",
-        memory="8Gi",
-        cpu_limit="8000m",
-        memory_limit="16Gi"
-    )
-    .gpu_resources(nvidia_gpu=2)  # Request 2 GPUs
-    .timeout(14400))  # 4 hours
+        cpu="1000m", 
+        memory="2Gi",
+        cpu_limit="2000m",
+        memory_limit="4Gi"
+    ))
+
+# GPU-enabled job
+job = Job("ml-training").resources(cpu="4", memory="16Gi", gpu=2)
 ```
 
-### Environment and Configuration
+### parallelism(count: int) -> Job
+Set the number of parallel pods to run.
 
 ```python
-# Job with environment configuration
-config_job = (Job("config-processor")
-    .image("processor:latest")
-    .env("BATCH_SIZE", "1000")
-    .env("OUTPUT_FORMAT", "json")
-    .env("LOG_LEVEL", "info")
-    .env_from_secret("db-secret", "DATABASE_URL", "connection-string")
-    .env_from_configmap("app-config", "API_ENDPOINT", "api.url")
-    .storage("/data", "10Gi")  # Temporary storage
-    .config_volume("/config", "job-config"))
+# Single pod
+job = Job("migration").parallelism(1)
+
+# Parallel processing
+job = Job("data-processing").parallelism(5)
+
+# High parallelism
+job = Job("batch-processing").parallelism(20)
 ```
 
-## Complete Examples
+### completions(count: int) -> Job
+Set the number of successful completions required.
 
-### Database Migration Job
+```python
+# Single completion
+job = Job("migration").completions(1)
+
+# Multiple completions
+job = Job("data-processing").completions(10)
+
+# All pods must complete
+job = Job("batch-job").completions(100)
+```
+
+### retry_limit(limit: int) -> Job
+Set the number of retries for failed pods.
+
+```python
+# No retries
+job = Job("critical-job").retry_limit(0)
+
+# Default retries
+job = Job("migration").retry_limit(6)
+
+# Many retries
+job = Job("unreliable-job").retry_limit(10)
+```
+
+### timeout(timeout: Union[str, int]) -> Job
+Set the timeout for the job.
+
+```python
+# Timeout in seconds
+job = Job("migration").timeout(3600)
+
+# Timeout as string
+job = Job("backup").timeout("2h")
+
+# Short timeout
+job = Job("quick-job").timeout("5m")
+
+# Long timeout
+job = Job("long-job").timeout("24h")
+```
+
+### restart_policy(policy: str) -> Job
+Set the restart policy for the job.
+
+```python
+# On failure (default)
+job = Job("migration").restart_policy("OnFailure")
+
+# Never restart
+job = Job("critical-job").restart_policy("Never")
+
+# Always restart
+job = Job("monitoring-job").restart_policy("Always")
+```
+
+### port(port: int, name: str = "http", protocol: str = "TCP") -> Job
+Add a port to the job.
+
+```python
+# Basic port
+job = Job("web-job").port(8080, "http")
+
+# Multiple ports
+job = (Job("api-job")
+    .port(8080, "http")
+    .port(8443, "https")
+    .port(9090, "metrics"))
+```
+
+### add_port(port: int, name: str = "http", protocol: str = "TCP") -> Job
+Add a port to the job (alias for port()).
+
+```python
+# Add multiple ports
+job = (Job("multi-port-job")
+    .add_port(8080, "http")
+    .add_port(8443, "https")
+    .add_port(9090, "metrics"))
+```
+
+### ports(ports: List[Dict[str, Any]]) -> Job
+Add multiple ports at once.
+
+```python
+# Bulk port configuration
+ports_config = [
+    {"port": 8080, "name": "http"},
+    {"port": 8443, "name": "https"},
+    {"port": 9090, "name": "metrics"}
+]
+job = Job("api-job").ports(ports_config)
+```
+
+### Convenience Port Methods
+
+#### Metrics Port
+```python
+job = Job("monitoring-job").metrics_port(9090)
+```
+
+#### Web Port
+```python
+job = Job("web-job").web_port(8080)
+```
+
+#### Status Port
+```python
+job = Job("status-job").status_port(8081)
+```
+
+### add_secret(secret: Secret) -> Job
+Add a secret to the job.
+
+```python
+# Add database secret
+db_secret = Secret("db-secret").add("password", "secret123")
+job = Job("migration").add_secret(db_secret)
+
+# Add API key secret
+api_secret = Secret("api-keys").add("stripe_key", "sk_live_...")
+job = Job("payment-job").add_secret(api_secret)
+```
+
+### add_config(config_map: ConfigMap) -> Job
+Add a ConfigMap to the job.
+
+```python
+# Add configuration
+app_config = ConfigMap("app-config").add("debug", "true")
+job = Job("migration").add_config(app_config)
+
+# Add configuration file
+config_map = ConfigMap("migration-config").from_file("migrate.conf", "configs/migrate.conf")
+job = Job("migration").add_config(config_map)
+```
+
+### add_volume(name: str, volume_spec: Dict[str, Any]) -> Job
+Add a volume to the job.
+
+```python
+# Add persistent volume
+job = Job("backup").add_volume("backup-storage", {
+    "persistentVolumeClaim": {
+        "claimName": "backup-pvc"
+    }
+})
+
+# Add empty directory
+job = Job("temp-job").add_volume("temp-dir", {
+    "emptyDir": {}
+})
+```
+
+### mount_volume(volume_name: str, mount_path: str, read_only: bool = False) -> Job
+Mount a volume in the job.
+
+```python
+# Mount volume
+job = Job("backup").mount_volume("backup-storage", "/backups")
+
+# Read-only mount
+job = Job("read-job").mount_volume("config-volume", "/config", read_only=True)
+```
+
+### security_context(context: Dict[str, Any]) -> Job
+Set security context for the job.
+
+```python
+# Non-root user
+job = Job("secure-job").security_context({
+    "runAsNonRoot": True,
+    "runAsUser": 1000,
+    "fsGroup": 1000
+})
+```
+
+### node_selector(selector: Dict[str, str]) -> Job
+Set node selectors for pod placement.
+
+```python
+# GPU nodes
+job = Job("ml-job").node_selector({"accelerator": "gpu"})
+
+# High-memory nodes
+job = Job("memory-job").node_selector({"node-type": "high-memory"})
+```
+
+### toleration(key: str, operator: str = "Equal", value: str = "", effect: str = "NoSchedule") -> Job
+Add a toleration for node taints.
+
+```python
+# Tolerate GPU taints
+job = Job("ml-job").toleration("nvidia.com/gpu", "Equal", "present", "NoSchedule")
+
+# Tolerate spot instances
+job = Job("batch-job").toleration("spot", "Equal", "true", "NoSchedule")
+```
+
+### affinity(affinity_spec: Dict[str, Any]) -> Job
+Set pod affinity rules.
+
+```python
+# Prefer nodes with SSD
+job = Job("io-job").affinity({
+    "nodeAffinity": {
+        "preferredDuringSchedulingIgnoredDuringExecution": [{
+            "weight": 100,
+            "preference": {
+                "matchExpressions": [{
+                    "key": "disk-type",
+                    "operator": "In",
+                    "values": ["ssd"]
+                }]
+            }
+        }]
+    }
+})
+```
+
+## Complete Example
 
 ```python
 #!/usr/bin/env python3
 """
-Database Migration Job Example
+Complete Job Example - Production Data Migration
 """
 
+import os
 from celestra import Job, Secret, ConfigMap, KubernetesOutput
 
-def create_migration_job():
-    # Database credentials
-    db_secret = (Secret("migration-secret")
-        .add_data("source-db-url", "postgresql://user:pass@source:5432/olddb")
-        .add_data("target-db-url", "postgresql://user:pass@target:5432/newdb")
-        .add_data("migration-key", "secret-migration-key"))
+def load_config(config_path: str) -> str:
+    """Load configuration from external file."""
+    with open(f"configs/{config_path}", "r") as f:
+        return f.read()
+
+def create_production_jobs():
+    """Create production-ready jobs."""
     
-    # Migration configuration
-    migration_config = (ConfigMap("migration-config")
-        .add_data("BATCH_SIZE", "1000")
-        .add_data("PARALLEL_WORKERS", "4")
-        .add_data("MIGRATION_MODE", "incremental")
-        .add_file("migration.sql", """
--- Migration script
-ALTER TABLE users ADD COLUMN created_at TIMESTAMP DEFAULT NOW();
-UPDATE users SET created_at = NOW() WHERE created_at IS NULL;
-CREATE INDEX idx_users_created_at ON users(created_at);
-"""))
+    # Load external configurations
+    migration_config = load_config("jobs/migration.conf")
     
-    # Migration job
+    # Database migration job
     migration_job = (Job("database-migration")
-        .image("migration-tool:v2.1.0")
+        .image("migrator:v2.1.0")
         .command(["python", "migrate.py"])
-        .args(["--mode", "full", "--verify", "true"])
-        
-        # Environment
-        .env_from_secret("migration-secret", "SOURCE_DB_URL", "source-db-url")
-        .env_from_secret("migration-secret", "TARGET_DB_URL", "target-db-url")
-        .env_from_secret("migration-secret", "MIGRATION_KEY", "migration-key")
-        .env_from_configmap("migration-config", "BATCH_SIZE")
-        .env_from_configmap("migration-config", "PARALLEL_WORKERS")
-        .env_from_configmap("migration-config", "MIGRATION_MODE")
-        
-        # Resources
-        .resources(cpu="2000m", memory="4Gi")
-        .storage("/temp", "20Gi")  # Temporary storage for migration
-        .config_volume("/scripts", "migration-config")
-        
-        # Job configuration
-        .timeout(7200)  # 2 hours
-        .retry_limit(1)  # Don't retry migrations
-        .restart_policy("Never")
-        
-        # Cleanup
-        .ttl_after_finished(86400)  # Clean up after 24 hours
-        
-        # Metadata
-        .label("type", "migration")
-        .label("version", "v2.1.0")
-        .annotation("migration.io/source", "olddb")
-        .annotation("migration.io/target", "newdb"))
+        .args(["--env", "production", "--dry-run", "false"])
+        .env("DATABASE_URL", "postgres://postgres-service:5432/myapp")
+        .env("MIGRATION_PATH", "/migrations")
+        .env("LOG_LEVEL", "info")
+        .resources(cpu="1000m", memory="2Gi", cpu_limit="2000m", memory_limit="4Gi")
+        .parallelism(1)
+        .completions(1)
+        .retry_limit(3)
+        .timeout("2h")
+        .restart_policy("OnFailure")
+        .add_secret(Secret("db-secret").add("password", "secure-password"))
+        .add_config(ConfigMap("migration-config").add_data("migration.conf", migration_config))
+        .security_context({
+            "runAsNonRoot": True,
+            "runAsUser": 1000,
+            "fsGroup": 1000
+        })
+        .node_selector({"node-type": "database"})
+        .toleration("database", "Equal", "true", "NoSchedule"))
     
-    return db_secret, migration_config, migration_job
+    # Data backup job
+    backup_job = (Job("data-backup")
+        .image("backup-tool:v1.0.0")
+        .command(["bash", "-c", "pg_dump $DATABASE_URL | gzip > /backups/backup-$(date +%Y%m%d).sql.gz"])
+        .env("DATABASE_URL", "postgres://postgres-service:5432/myapp")
+        .env("BACKUP_RETENTION", "30")
+        .resources(cpu="500m", memory="1Gi")
+        .parallelism(1)
+        .completions(1)
+        .retry_limit(5)
+        .timeout("1h")
+        .add_secret(Secret("backup-secret").add("password", "backup-password"))
+        .add_volume("backup-storage", {
+            "persistentVolumeClaim": {
+                "claimName": "backup-pvc"
+            }
+        })
+        .mount_volume("backup-storage", "/backups"))
+    
+    # Batch processing job
+    batch_job = (Job("batch-processing")
+        .image("processor:v3.0.0")
+        .command(["python", "process.py"])
+        .args(["--input", "/data/input", "--output", "/data/output"])
+        .env("BATCH_SIZE", "1000")
+        .env("WORKERS", "4")
+        .resources(cpu="2000m", memory="4Gi", cpu_limit="4000m", memory_limit="8Gi")
+        .parallelism(5)
+        .completions(10)
+        .retry_limit(3)
+        .timeout("6h")
+        .add_volume("input-data", {
+            "persistentVolumeClaim": {
+                "claimName": "input-pvc"
+            }
+        })
+        .add_volume("output-data", {
+            "persistentVolumeClaim": {
+                "claimName": "output-pvc"
+            }
+        })
+        .mount_volume("input-data", "/data/input", read_only=True)
+        .mount_volume("output-data", "/data/output"))
+    
+    # Monitoring job
+    monitoring_job = (Job("health-check")
+        .image("monitor:v1.0.0")
+        .command(["python", "health_check.py"])
+        .env("CHECK_INTERVAL", "30")
+        .env("TIMEOUT", "10")
+        .resources(cpu="100m", memory="256Mi")
+        .parallelism(1)
+        .completions(1)
+        .retry_limit(2)
+        .timeout("5m")
+        .restart_policy("Never")
+        .metrics_port(9090)
+        .web_port(8080))
+    
+    return [migration_job, backup_job, batch_job, monitoring_job]
 
 if __name__ == "__main__":
-    secret, config, job = create_migration_job()
+    jobs = create_production_jobs()
     
-    components = [secret, config, job]
+    # Generate Kubernetes resources
     output = KubernetesOutput()
-    for component in components:
-        output.generate(component, "migration-job/")
+    for job in jobs:
+        output.generate(job, "production-jobs/")
     
-    print("✅ Migration job generated!")
-    print("🚀 Deploy: kubectl apply -f migration-job/")
+    print("✅ Production jobs generated!")
+    print("🚀 Deploy: kubectl apply -f production-jobs/")
 ```
 
-### Data Processing Pipeline
+## Generated Kubernetes Resources
+
+The Job class generates the following Kubernetes resources:
+
+- **Job** - Kubernetes Job with the specified configuration
+- **Secret** - Secrets (if configured)
+- **ConfigMap** - ConfigMaps (if configured)
+- **Volume** - Volumes (if configured)
+
+## Usage Patterns
+
+### Database Migration Jobs
 
 ```python
-def create_data_pipeline():
-    """Create a multi-stage data processing pipeline"""
-    
-    # Stage 1: Data extraction
-    extract_job = (Job("data-extract")
-        .image("extractor:latest")
-        .command(["python", "extract.py"])
-        .env("SOURCE_API", "https://api.example.com/data")
-        .env("OUTPUT_PATH", "/shared/raw-data")
-        .storage("/shared", "50Gi", storage_class="fast-ssd")
-        .resources(cpu="1000m", memory="2Gi")
-        .timeout(3600)
-        .retry_limit(3))
-    
-    # Stage 2: Data transformation (parallel)
-    transform_job = (Job("data-transform")
-        .image("transformer:latest")
-        .command(["python", "transform.py"])
-        .env("INPUT_PATH", "/shared/raw-data")
-        .env("OUTPUT_PATH", "/shared/processed-data")
-        .storage("/shared", "50Gi", storage_class="fast-ssd")
-        .parallelism(5)  # Process in parallel
-        .completions(10)  # 10 transformation tasks
-        .resources(cpu="2000m", memory="4Gi")
-        .timeout(7200)
-        .retry_limit(2))
-    
-    # Stage 3: Data loading
-    load_job = (Job("data-load")
-        .image("loader:latest")
-        .command(["python", "load.py"])
-        .env("INPUT_PATH", "/shared/processed-data")
-        .env("TARGET_DB", "postgresql://warehouse:5432/analytics")
-        .storage("/shared", "50Gi", storage_class="fast-ssd")
-        .resources(cpu="500m", memory="1Gi")
-        .timeout(1800)
-        .retry_limit(2))
-    
-    return extract_job, transform_job, load_job
+# Database migration
+migration_job = (Job("db-migration")
+    .image("migrator:latest")
+    .command(["python", "migrate.py"])
+    .env("DATABASE_URL", "postgres://localhost:5432/myapp")
+    .resources(cpu="1000m", memory="2Gi")
+    .timeout("1h")
+    .retry_limit(3))
 ```
 
-### Machine Learning Training Job
+### Backup Jobs
 
 ```python
-def create_ml_training_job():
-    """Create a machine learning training job"""
-    
-    # Training configuration
-    training_config = (ConfigMap("ml-config")
-        .add_data("MODEL_TYPE", "neural_network")
-        .add_data("EPOCHS", "100")
-        .add_data("BATCH_SIZE", "32")
-        .add_data("LEARNING_RATE", "0.001")
-        .add_file("model_config.yaml", """
-model:
-  type: neural_network
-  layers:
-    - type: dense
-      units: 128
-      activation: relu
-    - type: dropout
-      rate: 0.2
-    - type: dense
-      units: 64
-      activation: relu
-    - type: dense
-      units: 10
-      activation: softmax
-  
-training:
-  optimizer: adam
-  loss: categorical_crossentropy
-  metrics: [accuracy]
-"""))
-    
-    # Training job
-    training_job = (Job("ml-model-training")
-        .image("tensorflow/tensorflow:2.12.0-gpu")
-        .command(["python", "train_model.py"])
-        .args(["--config", "/config/model_config.yaml"])
-        
-        # Environment
-        .env("CUDA_VISIBLE_DEVICES", "0,1")  # Use 2 GPUs
-        .env("TF_CPP_MIN_LOG_LEVEL", "1")
-        .env_from_configmap("ml-config", "MODEL_TYPE")
-        .env_from_configmap("ml-config", "EPOCHS")
-        .env_from_configmap("ml-config", "BATCH_SIZE")
-        
-        # Resources
-        .resources(
-            cpu="8000m",
-            memory="32Gi",
-            cpu_limit="16000m",
-            memory_limit="64Gi"
-        )
-        .gpu_resources(nvidia_gpu=2)  # 2 NVIDIA GPUs
-        
-        # Storage
-        .storage("/data", "100Gi", storage_class="fast-ssd")  # Training data
-        .storage("/models", "50Gi", storage_class="standard")  # Model output
-        .config_volume("/config", "ml-config")
-        
-        # Job settings
-        .timeout(28800)  # 8 hours
-        .retry_limit(1)  # Don't retry training jobs
-        .restart_policy("Never")
-        
-        # Cleanup
-        .ttl_after_finished(172800)  # Clean up after 48 hours
-        
-        # Metadata
-        .label("workload", "ml-training")
-        .label("model-version", "v1.0")
-        .annotation("ml.io/experiment", "experiment-123")
-        .annotation("ml.io/framework", "tensorflow"))
-    
-    return training_config, training_job
-```
-
-## Job Patterns
-
-### Batch Processing with Work Queue
-
-```python
-# Work queue pattern
-work_queue_job = (Job("work-queue-processor")
-    .image("queue-worker:latest")
-    .parallelism(10)  # 10 workers
-    .completions(100)  # Process 100 items
-    .completion_mode("NonIndexed")  # Workers pull from queue
-    .env("QUEUE_URL", "redis://queue:6379")
-    .env("WORKER_ID", "$(POD_NAME)")
+# Database backup
+backup_job = (Job("db-backup")
+    .image("backup-tool:latest")
+    .command(["pg_dump", "myapp", "|", "gzip", ">", "/backups/backup.sql.gz"])
+    .env("DATABASE_URL", "postgres://localhost:5432/myapp")
     .resources(cpu="500m", memory="1Gi")
-    .timeout(3600))
+    .timeout("30m")
+    .add_volume("backup-storage", {"persistentVolumeClaim": {"claimName": "backup-pvc"}})
+    .mount_volume("backup-storage", "/backups"))
 ```
 
-### Indexed Jobs
+### Batch Processing Jobs
 
 ```python
-# Indexed job pattern (each pod processes specific slice)
-indexed_job = (Job("indexed-processor")
+# Batch data processing
+batch_job = (Job("data-processing")
     .image("processor:latest")
+    .command(["python", "process.py"])
+    .env("BATCH_SIZE", "1000")
+    .resources(cpu="2000m", memory="4Gi")
     .parallelism(5)
-    .completions(20)  # 20 items total
-    .completion_mode("Indexed")  # Each pod gets JOB_COMPLETION_INDEX
-    .env("TOTAL_ITEMS", "20")
-    .env("ITEMS_PER_POD", "4")  # 20/5 = 4 items per pod
-    .command(["python", "process_slice.py"])
-    .resources(cpu="1000m", memory="2Gi"))
+    .completions(10)
+    .timeout("6h"))
 ```
 
-### Cleanup Jobs
+### Monitoring Jobs
 
 ```python
-# Cleanup job with cron-like behavior
-cleanup_job = (Job("nightly-cleanup")
-    .image("cleanup:latest")
-    .command(["sh", "-c", """
-        # Clean up old files
-        find /data -name '*.tmp' -mtime +7 -delete
-        find /logs -name '*.log' -mtime +30 -delete
-        
-        # Compact databases
-        vacuumdb --all
-        
-        echo 'Cleanup completed'
-    """])
-    .storage("/data", "10Gi")
-    .storage("/logs", "5Gi")
-    .resources(cpu="200m", memory="256Mi")
-    .timeout(1800)
-    .ttl_after_finished(3600))  # Clean up job after 1 hour
+# Health check job
+health_job = (Job("health-check")
+    .image("monitor:latest")
+    .command(["python", "health_check.py"])
+    .env("CHECK_INTERVAL", "30")
+    .resources(cpu="100m", memory="256Mi")
+    .timeout("5m")
+    .restart_policy("Never"))
 ```
 
-## Generated YAML
+### ML Training Jobs
 
-### Basic Job
-
-```yaml
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: data-migration
-spec:
-  backoffLimit: 3
-  activeDeadlineSeconds: 3600
-  template:
-    spec:
-      restartPolicy: Never
-      containers:
-      - name: data-migration
-        image: migrator:latest
-        command: ["python", "migrate.py"]
-        resources:
-          requests:
-            cpu: 2000m
-            memory: 4Gi
-  ttlSecondsAfterFinished: 86400
-```
-
-### Parallel Job
-
-```yaml
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: parallel-processor
-spec:
-  parallelism: 5
-  completions: 100
-  completionMode: Indexed
-  activeDeadlineSeconds: 7200
-  template:
-    spec:
-      restartPolicy: Never
-      containers:
-      - name: parallel-processor
-        image: processor:latest
-        env:
-        - name: JOB_COMPLETION_INDEX
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.annotations['batch.kubernetes.io/job-completion-index']
+```python
+# Machine learning training
+ml_job = (Job("ml-training")
+    .image("ml-trainer:latest")
+    .command(["python", "train.py"])
+    .env("MODEL_TYPE", "transformer")
+    .env("EPOCHS", "100")
+    .resources(cpu="4000m", memory="16Gi", gpu=2)
+    .timeout("24h")
+    .node_selector({"accelerator": "gpu"})
+    .toleration("nvidia.com/gpu", "Equal", "present", "NoSchedule"))
 ```
 
 ## Best Practices
 
-!!! tip "Job Design Guidelines"
-    
-    **Resource Management:**
-    - Set appropriate CPU and memory limits
-    - Use resource requests for scheduling
-    - Consider GPU requirements for ML workloads
-    
-    **Timeout and Retries:**
-    - Set realistic timeouts for job completion
-    - Use retry limits carefully (some jobs shouldn't retry)
-    - Consider using exponential backoff for retries
-    
-    **Storage:**
-    - Use appropriate storage classes for performance
-    - Plan for temporary storage needs
-    - Consider shared storage for multi-stage pipelines
-    
-    **Cleanup:**
-    - Set TTL for automatic job cleanup
-    - Clean up associated resources (PVCs, secrets)
-    - Monitor job completion and failures
-
-## Common Patterns
-
-### Multi-Stage Pipeline
+### 1. Set Appropriate Timeouts
 
 ```python
-# Pipeline with dependencies
-stage1 = Job("extract").timeout(3600)
-stage2 = Job("transform").depends_on(stage1).timeout(7200)
-stage3 = Job("load").depends_on(stage2).timeout(1800)
+# ✅ Good: Set reasonable timeouts
+job = Job("migration").timeout("2h")
+
+# ❌ Bad: No timeout (may run forever)
+job = Job("migration")  # No timeout
 ```
 
-### Fan-out/Fan-in Pattern
+### 2. Use Resource Limits
 
 ```python
-# Fan-out: One job creates work for many
-coordinator = Job("coordinator").parallelism(1).completions(1)
+# ✅ Good: Set resource limits
+job = Job("processing").resources(cpu="1000m", memory="2Gi", cpu_limit="2000m", memory_limit="4Gi")
 
-# Many workers process the work
-workers = Job("workers").parallelism(10).completions(100)
-
-# Fan-in: Aggregate results
-aggregator = Job("aggregator").depends_on(workers)
+# ❌ Bad: No resource limits
+job = Job("processing")  # No resource limits
 ```
 
-## Troubleshooting
+### 3. Set Retry Limits
 
-### Common Job Issues
+```python
+# ✅ Good: Set retry limits
+job = Job("migration").retry_limit(3)
 
-!!! warning "Job Not Starting"
-    ```bash
-    # Check job status
-    kubectl get jobs
-    kubectl describe job <job-name>
-    
-    # Check pod status
-    kubectl get pods -l job-name=<job-name>
-    kubectl describe pod <pod-name>
-    ```
-
-!!! warning "Job Timeout"
-    ```bash
-    # Check job events
-    kubectl get events --field-selector involvedObject.name=<job-name>
-    
-    # Check pod logs
-    kubectl logs -l job-name=<job-name>
-    ```
-
-!!! warning "Failed Jobs"
-    ```bash
-    # Check failed pods
-    kubectl get pods -l job-name=<job-name> --field-selector=status.phase=Failed
-    
-    # Get failure reason
-    kubectl describe pod <failed-pod-name>
-    kubectl logs <failed-pod-name> --previous
-    ```
-
-### Debug Commands
-
-```bash
-# Monitor job progress
-kubectl get jobs -w
-
-# Check job completion
-kubectl wait --for=condition=complete job/<job-name> --timeout=3600s
-
-# View job logs
-kubectl logs -l job-name=<job-name> -f
-
-# Clean up completed jobs
-kubectl delete jobs --field-selector status.successful=1
+# ❌ Bad: Too many retries
+job = Job("migration").retry_limit(100)  # May cause infinite loops
 ```
 
-## API Reference
+### 4. Use Appropriate Restart Policies
 
-::: src.celestra.workloads.job.Job
-    options:
-      show_source: false
-      heading_level: 3
+```python
+# ✅ Good: Use appropriate restart policy
+job = Job("migration").restart_policy("OnFailure")
 
-## Related Components
+# ❌ Bad: Always restart for batch jobs
+job = Job("migration").restart_policy("Always")  # Not suitable for batch jobs
+```
 
-- **[CronJob](cron-job.md)** - Scheduled jobs
-- **[App](../core/app.md)** - Long-running applications
-- **[ConfigMap](../storage/config-map.md)** - Job configuration
-- **[Secret](../security/secrets.md)** - Job credentials
+### 5. Use Parallelism Wisely
 
----
+```python
+# ✅ Good: Use appropriate parallelism
+job = Job("batch-processing").parallelism(5).completions(10)
 
-**Next:** Learn about [CronJob](cron-job.md) for scheduled batch jobs. 
+# ❌ Bad: Too much parallelism
+job = Job("batch-processing").parallelism(1000)  # May overwhelm cluster
+``` 

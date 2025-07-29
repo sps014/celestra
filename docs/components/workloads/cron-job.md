@@ -1,576 +1,506 @@
-# CronJob Component
+# CronJob Class
 
-The `CronJob` component runs jobs on a scheduled basis using cron syntax. It's perfect for recurring tasks like backups, reports, and maintenance operations.
+The `CronJob` class manages Kubernetes CronJobs for scheduled batch workloads that run on a time-based schedule.
 
 ## Overview
-
-Use `CronJob` for:
-- **Scheduled Backups** - Database and file system backups
-- **Data Processing** - ETL jobs, report generation
-- **Maintenance Tasks** - Log cleanup, cache warming
-- **Monitoring Jobs** - Health checks, data validation
-- **Recurring Reports** - Daily/weekly/monthly reports
-
-## Basic Usage
 
 ```python
 from celestra import CronJob
 
-# Daily backup job
-backup_job = (CronJob("daily-backup")
-    .schedule("0 2 * * *")  # Every day at 2 AM
-    .image("backup-tool:latest")
-    .command(["sh", "-c", "pg_dump mydb > /backup/$(date +%Y%m%d).sql"])
-    .timeout(3600)  # 1 hour timeout
-    .history_limits(success=3, failed=1))
+# Basic usage
+backup_job = CronJob("daily-backup").schedule("0 2 * * *").image("backup-tool:latest")
 ```
 
-## Schedule Configuration
+## Functions
 
-### Cron Schedule Syntax
+### schedule(cron_schedule: str) -> CronJob
+Set the cron schedule for the job.
 
 ```python
-# Common schedule patterns
-daily = CronJob("daily-task").schedule("0 2 * * *")        # Daily at 2 AM
-hourly = CronJob("hourly-task").schedule("0 * * * *")      # Every hour
-weekly = CronJob("weekly-task").schedule("0 2 * * 0")      # Sunday at 2 AM
-monthly = CronJob("monthly-task").schedule("0 2 1 * *")    # 1st of month at 2 AM
-workdays = CronJob("workday-task").schedule("0 9 * * 1-5") # Weekdays at 9 AM
+# Daily at 2 AM
+backup_job = CronJob("backup").schedule("0 2 * * *")
 
-# Complex schedules
-every_15_min = CronJob("frequent-task").schedule("*/15 * * * *")  # Every 15 minutes
-twice_daily = CronJob("twice-daily").schedule("0 6,18 * * *")     # 6 AM and 6 PM
+# Every 5 minutes
+monitor_job = CronJob("monitor").schedule("*/5 * * * *")
+
+# Weekly on Sunday at 3 AM
+weekly_job = CronJob("weekly").schedule("0 3 * * 0")
 ```
 
-### Schedule Examples
+### Convenience Schedule Methods
 
-| Schedule | Cron Expression | Description |
-|----------|-----------------|-------------|
-| Every minute | `* * * * *` | Testing only |
-| Every 5 minutes | `*/5 * * * *` | Frequent monitoring |
-| Every hour | `0 * * * *` | Hourly tasks |
-| Daily at midnight | `0 0 * * *` | Daily maintenance |
-| Daily at 2:30 AM | `30 2 * * *` | Backup window |
-| Every Sunday | `0 0 * * 0` | Weekly reports |
-| First of month | `0 0 1 * *` | Monthly billing |
-| Weekdays at 9 AM | `0 9 * * 1-5` | Business hours |
+#### Daily Schedule
+```python
+# Daily at midnight (default)
+job = CronJob("daily-job").daily()
 
-## Configuration Methods
+# Daily at 2:30 AM
+job = CronJob("backup").daily(hour=2, minute=30)
+```
 
-### Basic CronJob Setup
+#### Weekly Schedule
+```python
+# Weekly on Sunday at midnight (default)
+job = CronJob("weekly-job").weekly()
+
+# Weekly on Monday at 9 AM
+job = CronJob("report").weekly(day_of_week=1, hour=9)
+```
+
+#### Monthly Schedule
+```python
+# Monthly on 1st at midnight (default)
+job = CronJob("monthly-job").monthly()
+
+# Monthly on 15th at 6 PM
+job = CronJob("billing").monthly(day=15, hour=18)
+```
+
+#### Every Minutes
+```python
+# Every 5 minutes
+job = CronJob("monitor").every_minutes(5)
+
+# Every 30 minutes
+job = CronJob("check").every_minutes(30)
+```
+
+#### Every Hours
+```python
+# Every 2 hours
+job = CronJob("sync").every_hours(2)
+
+# Every 6 hours
+job = CronJob("backup").every_hours(6)
+```
+
+### image(image: str) -> CronJob
+Set the container image for the cron job.
 
 ```python
-# Basic scheduled job
-cronjob = (CronJob("log-cleanup")
-    .schedule("0 3 * * *")  # Daily at 3 AM
-    .image("busybox:latest")
-    .command(["sh", "-c", "find /logs -name '*.log' -mtime +7 -delete"])
-    .timeout(1800)  # 30 minutes
-    .restart_policy("OnFailure")
-    .concurrency_policy("Forbid"))  # Don't run concurrent jobs
+# Basic image
+job = CronJob("backup").image("backup-tool:latest")
+
+# Specific version
+job = CronJob("cleanup").image("cleanup:v1.2.0")
 ```
 
-### Advanced Configuration
+### command(command: List[str]) -> CronJob
+Set the command to run in the container.
 
 ```python
-# Advanced CronJob with full configuration
-advanced_cronjob = (CronJob("data-sync")
-    .schedule("0 */6 * * *")  # Every 6 hours
-    .timezone("America/New_York")  # Specific timezone
-    .image("data-sync:v2.1.0")
-    .command(["python", "sync_data.py"])
-    .args(["--mode", "incremental", "--verify"])
-    
-    # Job behavior
-    .concurrency_policy("Replace")  # Replace running job if new one starts
-    .starting_deadline_seconds(300)  # Start within 5 minutes or skip
-    .suspend(False)  # Job is active
-    
-    # History management
-    .history_limits(success=5, failed=3)
-    
-    # Resource management
-    .resources(cpu="1000m", memory="2Gi")
-    .timeout(7200)  # 2 hours
-    .retry_limit(2)
-    
-    # Storage and configuration
-    .storage("/data", "50Gi")
-    .env("SYNC_MODE", "incremental")
-    .env_from_secret("api-credentials", "API_KEY", "sync-api-key"))
+# Simple command
+job = CronJob("backup").command(["backup.sh"])
+
+# Complex command
+job = CronJob("cleanup").command(["bash", "-c", "rm -rf /tmp/* && echo 'Cleanup complete'"])
 ```
 
-## Complete Examples
+### args(args: List[str]) -> CronJob
+Set the arguments for the command.
 
-### Database Backup CronJob
+```python
+# Command with arguments
+job = CronJob("backup").command(["pg_dump"]).args(["--host", "postgres", "myapp"])
+
+# Multiple arguments
+job = CronJob("report").command(["python"]).args(["generate_report.py", "--env", "production"])
+```
+
+### environment(env_vars: Dict[str, str]) -> CronJob
+Set multiple environment variables at once.
+
+```python
+# Bulk environment variables
+env_config = {
+    "DATABASE_URL": "postgres://localhost:5432/myapp",
+    "BACKUP_PATH": "/backups",
+    "LOG_LEVEL": "info"
+}
+job = CronJob("backup").environment(env_config)
+```
+
+### env(key: str, value: str) -> CronJob
+Add a single environment variable.
+
+```python
+# Single environment variable
+job = CronJob("backup").env("DATABASE_URL", "postgres://localhost:5432/myapp")
+
+# Multiple individual variables
+job = (CronJob("backup")
+    .env("BACKUP_PATH", "/backups")
+    .env("RETENTION_DAYS", "30")
+    .env("COMPRESSION", "gzip"))
+```
+
+### resources(cpu: str = None, memory: str = None, cpu_limit: str = None, memory_limit: str = None, gpu: int = None) -> CronJob
+Set resource requests and limits for the cron job.
+
+```python
+# Basic resources
+job = CronJob("backup").resources(cpu="500m", memory="1Gi")
+
+# With limits
+job = (CronJob("backup")
+    .resources(
+        cpu="500m", 
+        memory="1Gi",
+        cpu_limit="1000m",
+        memory_limit="2Gi"
+    ))
+```
+
+### concurrency_policy(policy: str) -> CronJob
+Set the concurrency policy for the cron job.
+
+```python
+# Allow concurrent jobs (default)
+job = CronJob("backup").concurrency_policy("Allow")
+
+# Forbid concurrent jobs
+job = CronJob("backup").concurrency_policy("Forbid")
+
+# Replace running jobs
+job = CronJob("backup").concurrency_policy("Replace")
+```
+
+### suspend(suspended: bool = True) -> CronJob
+Suspend or resume the cron job.
+
+```python
+# Suspend the job
+job = CronJob("backup").suspend(True)
+
+# Resume the job
+job = CronJob("backup").suspend(False)
+```
+
+### history_limits(successful: int = 3, failed: int = 1) -> CronJob
+Set the number of successful and failed jobs to keep.
+
+```python
+# Keep 5 successful and 2 failed jobs
+job = CronJob("backup").history_limits(successful=5, failed=2)
+
+# Keep only 1 successful job
+job = CronJob("backup").history_limits(successful=1, failed=1)
+```
+
+### starting_deadline(deadline_seconds: int) -> CronJob
+Set the deadline for starting the job.
+
+```python
+# 5 minute deadline
+job = CronJob("backup").starting_deadline(300)
+
+# 1 hour deadline
+job = CronJob("backup").starting_deadline(3600)
+```
+
+### timeout(timeout: Union[str, int]) -> CronJob
+Set the timeout for the job.
+
+```python
+# Timeout in seconds
+job = CronJob("backup").timeout(1800)
+
+# Timeout as string
+job = CronJob("backup").timeout("30m")
+
+# Long timeout
+job = CronJob("backup").timeout("2h")
+```
+
+### retry_limit(limit: int) -> CronJob
+Set the number of retries for failed jobs.
+
+```python
+# No retries
+job = CronJob("critical").retry_limit(0)
+
+# Default retries
+job = CronJob("backup").retry_limit(6)
+
+# Many retries
+job = CronJob("unreliable").retry_limit(10)
+```
+
+### timezone(tz: str) -> CronJob
+Set the timezone for the cron schedule.
+
+```python
+# UTC timezone
+job = CronJob("backup").timezone("UTC")
+
+# Local timezone
+job = CronJob("backup").timezone("America/New_York")
+
+# Custom timezone
+job = CronJob("backup").timezone("Europe/London")
+```
+
+### restart_policy(policy: str) -> CronJob
+Set the restart policy for the job.
+
+```python
+# On failure (default)
+job = CronJob("backup").restart_policy("OnFailure")
+
+# Never restart
+job = CronJob("critical").restart_policy("Never")
+
+# Always restart
+job = CronJob("monitoring").restart_policy("Always")
+```
+
+### port(port: int, name: str = "http", protocol: str = "TCP") -> CronJob
+Add a port to the cron job.
+
+```python
+# Basic port
+job = CronJob("web-job").port(8080, "http")
+
+# Multiple ports
+job = (CronJob("api-job")
+    .port(8080, "http")
+    .port(8443, "https")
+    .port(9090, "metrics"))
+```
+
+### Convenience Port Methods
+
+#### Metrics Port
+```python
+job = CronJob("monitoring-job").metrics_port(9090)
+```
+
+#### Web Port
+```python
+job = CronJob("web-job").web_port(8080)
+```
+
+#### Status Port
+```python
+job = CronJob("status-job").status_port(8081)
+```
+
+### add_secret(secret: Secret) -> CronJob
+Add a secret to the cron job.
+
+```python
+# Add database secret
+db_secret = Secret("db-secret").add("password", "secret123")
+job = CronJob("backup").add_secret(db_secret)
+```
+
+### add_config(config_map: ConfigMap) -> CronJob
+Add a ConfigMap to the cron job.
+
+```python
+# Add configuration
+config = ConfigMap("backup-config").add("retention", "30")
+job = CronJob("backup").add_config(config)
+```
+
+## Complete Example
 
 ```python
 #!/usr/bin/env python3
 """
-Database Backup CronJob Example
+Complete CronJob Example - Production Scheduled Jobs
 """
 
+import os
 from celestra import CronJob, Secret, ConfigMap, KubernetesOutput
 
-def create_backup_cronjob():
-    # Backup credentials
-    backup_secret = (Secret("backup-credentials")
-        .add_data("db-url", "postgresql://backup_user:secret@postgres:5432/myapp")
-        .add_data("s3-access-key", "AKIA...")
-        .add_data("s3-secret-key", "secret...")
-        .add_data("encryption-key", "backup-encryption-key"))
+def load_config(config_path: str) -> str:
+    """Load configuration from external file."""
+    with open(f"configs/{config_path}", "r") as f:
+        return f.read()
+
+def create_production_cronjobs():
+    """Create production-ready cron jobs."""
     
-    # Backup configuration
-    backup_config = (ConfigMap("backup-config")
-        .add_data("S3_BUCKET", "company-db-backups")
-        .add_data("S3_REGION", "us-west-2")
-        .add_data("RETENTION_DAYS", "30")
-        .add_data("COMPRESSION", "gzip")
-        .add_file("backup.sh", """#!/bin/bash
-set -e
-
-echo "Starting backup at $(date)"
-
-# Create timestamped backup
-TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-BACKUP_FILE="backup_${TIMESTAMP}.sql"
-
-# Dump database
-pg_dump "${DATABASE_URL}" > "/tmp/${BACKUP_FILE}"
-
-# Compress backup
-gzip "/tmp/${BACKUP_FILE}"
-BACKUP_FILE="${BACKUP_FILE}.gz"
-
-# Encrypt backup
-gpg --symmetric --cipher-algo AES256 --compress-algo 1 --s2k-mode 3 \\
-    --s2k-digest-algo SHA512 --s2k-count 65536 --force-mdc \\
-    --passphrase "${ENCRYPTION_KEY}" \\
-    --output "/tmp/${BACKUP_FILE}.gpg" "/tmp/${BACKUP_FILE}"
-
-# Upload to S3
-aws s3 cp "/tmp/${BACKUP_FILE}.gpg" "s3://${S3_BUCKET}/daily/${BACKUP_FILE}.gpg"
-
-# Cleanup old backups
-aws s3 ls "s3://${S3_BUCKET}/daily/" | \\
-    awk '{print $4}' | \\
-    head -n -${RETENTION_DAYS} | \\
-    xargs -I {} aws s3 rm "s3://${S3_BUCKET}/daily/{}"
-
-# Cleanup local files
-rm -f "/tmp/${BACKUP_FILE}" "/tmp/${BACKUP_FILE}.gpg"
-
-echo "Backup completed successfully at $(date)"
-"""))
+    # Load external configurations
+    backup_config = load_config("jobs/backup.conf")
     
-    # Daily backup CronJob
-    backup_cronjob = (CronJob("database-backup")
+    # Daily database backup
+    backup_job = (CronJob("daily-backup")
         .schedule("0 2 * * *")  # Daily at 2 AM
-        .timezone("UTC")
-        .image("backup-tool:v1.2.0")
-        .command(["sh", "/scripts/backup.sh"])
-        
-        # Environment
-        .env_from_secret("backup-credentials", "DATABASE_URL", "db-url")
-        .env_from_secret("backup-credentials", "AWS_ACCESS_KEY_ID", "s3-access-key")
-        .env_from_secret("backup-credentials", "AWS_SECRET_ACCESS_KEY", "s3-secret-key")
-        .env_from_secret("backup-credentials", "ENCRYPTION_KEY", "encryption-key")
-        .env_from_configmap("backup-config", "S3_BUCKET")
-        .env_from_configmap("backup-config", "S3_REGION")
-        .env_from_configmap("backup-config", "RETENTION_DAYS")
-        
-        # Resources
-        .resources(cpu="500m", memory="1Gi")
-        .storage("/tmp", "10Gi")  # Temporary storage for backup files
-        .config_volume("/scripts", "backup-config")
-        
-        # Job configuration
-        .timeout(3600)  # 1 hour timeout
+        .image("backup-tool:v2.1.0")
+        .command(["backup.sh"])
+        .args(["--database", "myapp", "--compress"])
+        .env("DATABASE_URL", "postgres://postgres-service:5432/myapp")
+        .env("BACKUP_PATH", "/backups")
+        .env("RETENTION_DAYS", "30")
+        .resources(cpu="500m", memory="1Gi", cpu_limit="1000m", memory_limit="2Gi")
+        .timeout("1h")
+        .retry_limit(3)
+        .concurrency_policy("Forbid")
+        .history_limits(successful=7, failed=3)
+        .add_secret(Secret("backup-secret").add("password", "backup-password"))
+        .add_config(ConfigMap("backup-config").add_data("backup.conf", backup_config)))
+    
+    # Weekly cleanup job
+    cleanup_job = (CronJob("weekly-cleanup")
+        .weekly(day_of_week=0, hour=3)  # Sunday at 3 AM
+        .image("cleanup-tool:v1.0.0")
+        .command(["cleanup.sh"])
+        .env("CLEANUP_PATH", "/tmp")
+        .env("MAX_AGE_DAYS", "7")
+        .resources(cpu="200m", memory="512Mi")
+        .timeout("30m")
         .retry_limit(2)
-        .restart_policy("OnFailure")
-        .concurrency_policy("Forbid")  # Don't run overlapping backups
-        .starting_deadline_seconds(300)  # Start within 5 minutes
-        
-        # History
-        .history_limits(success=7, failed=3)  # Keep 7 successful, 3 failed
-        
-        # Metadata
-        .label("type", "backup")
-        .label("database", "postgresql")
-        .annotation("backup.io/schedule", "daily")
-        .annotation("backup.io/retention", "30-days"))
+        .concurrency_policy("Allow"))
     
-    return backup_secret, backup_config, backup_cronjob
-
-if __name__ == "__main__":
-    secret, config, cronjob = create_backup_cronjob()
-    
-    components = [secret, config, cronjob]
-    output = KubernetesOutput()
-    for component in components:
-        output.generate(component, "backup-cronjob/")
-    
-    print("✅ Backup CronJob generated!")
-    print("🚀 Deploy: kubectl apply -f backup-cronjob/")
-```
-
-### Report Generation CronJob
-
-```python
-def create_report_cronjobs():
-    """Create multiple report generation CronJobs"""
-    
-    # Daily sales report
-    daily_report = (CronJob("daily-sales-report")
-        .schedule("0 6 * * *")  # 6 AM daily
-        .image("reporter:latest")
-        .command(["python", "generate_report.py"])
-        .args(["--type", "sales", "--period", "daily"])
-        .env("OUTPUT_FORMAT", "pdf")
-        .env("EMAIL_RECIPIENTS", "sales@company.com,management@company.com")
-        .env_from_secret("email-config", "SMTP_PASSWORD", "smtp-password")
-        .resources(cpu="500m", memory="1Gi")
-        .timeout(1800)  # 30 minutes
-        .concurrency_policy("Forbid"))
-    
-    # Weekly analytics report
-    weekly_report = (CronJob("weekly-analytics-report")
-        .schedule("0 8 * * 1")  # Monday at 8 AM
-        .image("analytics:latest")
-        .command(["python", "analytics_report.py"])
-        .args(["--period", "weekly", "--include-trends"])
-        .env("DATABASE_POOL_SIZE", "10")
-        .env("CACHE_TTL", "3600")
-        .resources(cpu="2000m", memory="4Gi")  # More resources for analytics
-        .timeout(7200)  # 2 hours
-        .storage("/cache", "20Gi")  # Cache for analytics data
+    # Hourly monitoring check
+    monitor_job = (CronJob("hourly-monitor")
+        .every_hours(1)
+        .image("monitor:v1.0.0")
+        .command(["health_check.py"])
+        .env("CHECK_INTERVAL", "3600")
+        .env("TIMEOUT", "300")
+        .resources(cpu="100m", memory="256Mi")
+        .timeout("10m")
+        .retry_limit(1)
         .concurrency_policy("Forbid"))
     
     # Monthly billing report
-    monthly_report = (CronJob("monthly-billing-report")
-        .schedule("0 9 1 * *")  # 1st of month at 9 AM
-        .image("billing:latest")
-        .command(["python", "billing_report.py"])
-        .args(["--month", "previous"])
-        .env("BILLING_SYSTEM", "stripe")
-        .env("CURRENCY", "USD")
-        .env_from_secret("billing-secret", "STRIPE_API_KEY", "api-key")
+    billing_job = (CronJob("monthly-billing")
+        .monthly(day=1, hour=6)  # 1st of month at 6 AM
+        .image("billing:v1.0.0")
+        .command(["generate_billing_report.py"])
+        .args(["--month", "previous", "--format", "pdf"])
+        .env("BILLING_API_URL", "https://billing-api.example.com")
+        .env("REPORT_PATH", "/reports")
         .resources(cpu="1000m", memory="2Gi")
-        .timeout(3600)
+        .timeout("2h")
+        .retry_limit(5)
         .concurrency_policy("Forbid")
-        .starting_deadline_seconds(86400))  # Can start within 24 hours
+        .add_secret(Secret("billing-secret").add("api_key", "billing-api-key")))
     
-    return daily_report, weekly_report, monthly_report
+    return [backup_job, cleanup_job, monitor_job, billing_job]
+
+if __name__ == "__main__":
+    cronjobs = create_production_cronjobs()
+    
+    # Generate Kubernetes resources
+    output = KubernetesOutput()
+    for job in cronjobs:
+        output.generate(job, "production-cronjobs/")
+    
+    print("✅ Production cron jobs generated!")
+    print("🚀 Deploy: kubectl apply -f production-cronjobs/")
 ```
 
-### Maintenance CronJobs
+## Generated Kubernetes Resources
+
+The CronJob class generates the following Kubernetes resources:
+
+- **CronJob** - Kubernetes CronJob with the specified schedule and configuration
+- **Secret** - Secrets (if configured)
+- **ConfigMap** - ConfigMaps (if configured)
+
+## Usage Patterns
+
+### Database Backup Jobs
 
 ```python
-def create_maintenance_cronjobs():
-    """Create system maintenance CronJobs"""
-    
-    # Log cleanup (daily)
-    log_cleanup = (CronJob("log-cleanup")
-        .schedule("0 1 * * *")  # 1 AM daily
-        .image("busybox:latest")
-        .command(["sh", "-c", """
-            echo "Starting log cleanup..."
-            
-            # Remove logs older than 7 days
-            find /var/log -name "*.log" -mtime +7 -delete
-            find /var/log -name "*.log.*" -mtime +7 -delete
-            
-            # Compress logs older than 1 day
-            find /var/log -name "*.log" -mtime +1 -exec gzip {} \\;
-            
-            echo "Log cleanup completed"
-        """])
-        .storage("/var/log", "10Gi")
-        .resources(cpu="100m", memory="128Mi")
-        .timeout(900)  # 15 minutes
-        .concurrency_policy("Forbid"))
-    
-    # Database maintenance (weekly)
-    db_maintenance = (CronJob("database-maintenance")
-        .schedule("0 3 * * 0")  # Sunday at 3 AM
-        .image("postgres:13")
-        .command(["sh", "-c", """
-            echo "Starting database maintenance..."
-            
-            # Vacuum and analyze all databases
-            vacuumdb --all --analyze --verbose
-            
-            # Reindex if needed
-            reindexdb --all --verbose
-            
-            echo "Database maintenance completed"
-        """])
-        .env_from_secret("db-credentials", "PGPASSWORD", "postgres-password")
-        .env("PGHOST", "postgres")
-        .env("PGUSER", "postgres")
-        .resources(cpu="1000m", memory="2Gi")
-        .timeout(7200)  # 2 hours
-        .concurrency_policy("Forbid"))
-    
-    # Cache warming (every 4 hours)
-    cache_warming = (CronJob("cache-warming")
-        .schedule("0 */4 * * *")  # Every 4 hours
-        .image("cache-warmer:latest")
-        .command(["python", "warm_cache.py"])
-        .env("REDIS_URL", "redis://redis:6379")
-        .env("CACHE_PATTERNS", "user_sessions,product_catalog,search_indexes")
-        .resources(cpu="200m", memory="512Mi")
-        .timeout(1800)  # 30 minutes
-        .concurrency_policy("Replace"))  # Replace if still running
-    
-    return log_cleanup, db_maintenance, cache_warming
-```
-
-## CronJob Patterns
-
-### Concurrency Policies
-
-```python
-# Allow concurrent runs
-concurrent_job = (CronJob("data-processor")
-    .schedule("*/5 * * * *")
-    .concurrency_policy("Allow")  # Multiple instances can run
-    .image("processor:latest"))
-
-# Forbid concurrent runs
-exclusive_job = (CronJob("critical-backup")
+# Daily backup
+backup_job = (CronJob("daily-backup")
     .schedule("0 2 * * *")
-    .concurrency_policy("Forbid")  # Wait for previous to complete
-    .image("backup:latest"))
-
-# Replace running job
-replace_job = (CronJob("status-checker")
-    .schedule("* * * * *")
-    .concurrency_policy("Replace")  # Kill old, start new
-    .image("checker:latest"))
+    .image("backup-tool:latest")
+    .command(["pg_dump"])
+    .env("DATABASE_URL", "postgres://localhost:5432/myapp")
+    .timeout("1h")
+    .concurrency_policy("Forbid"))
 ```
 
-### Error Handling
+### Cleanup Jobs
 
 ```python
-# Retry on failure
-retry_job = (CronJob("flaky-task")
-    .schedule("0 * * * *")
-    .retry_limit(3)  # Retry up to 3 times
-    .restart_policy("OnFailure")
-    .image("flaky:latest"))
-
-# No retries for one-shot tasks
-oneshot_job = (CronJob("report-sender")
-    .schedule("0 9 * * *")
-    .retry_limit(0)  # Don't retry
-    .restart_policy("Never")
-    .image("mailer:latest"))
+# Weekly cleanup
+cleanup_job = (CronJob("weekly-cleanup")
+    .weekly(day_of_week=0, hour=3)
+    .image("cleanup-tool:latest")
+    .command(["cleanup.sh"])
+    .env("CLEANUP_PATH", "/tmp")
+    .timeout("30m"))
 ```
 
-### Timezone Handling
+### Monitoring Jobs
 
 ```python
-# Use specific timezone
-eastern_job = (CronJob("eastern-report")
-    .schedule("0 9 * * 1-5")  # 9 AM weekdays
-    .timezone("America/New_York")
-    .image("reporter:latest"))
-
-# UTC (default)
-utc_job = (CronJob("global-sync")
-    .schedule("0 0 * * *")  # Midnight UTC
-    .timezone("UTC")  # Explicit UTC
-    .image("sync:latest"))
+# Hourly monitoring
+monitor_job = (CronJob("hourly-monitor")
+    .every_hours(1)
+    .image("monitor:latest")
+    .command(["health_check.py"])
+    .env("CHECK_INTERVAL", "3600")
+    .timeout("10m"))
 ```
 
-## Generated YAML
+### Report Generation Jobs
 
-### Basic CronJob
-
-```yaml
-apiVersion: batch/v1
-kind: CronJob
-metadata:
-  name: daily-backup
-spec:
-  schedule: "0 2 * * *"
-  concurrencyPolicy: Forbid
-  successfulJobsHistoryLimit: 3
-  failedJobsHistoryLimit: 1
-  jobTemplate:
-    spec:
-      activeDeadlineSeconds: 3600
-      backoffLimit: 2
-      template:
-        spec:
-          restartPolicy: OnFailure
-          containers:
-          - name: daily-backup
-            image: backup-tool:latest
-            command: ["sh", "-c", "pg_dump mydb > /backup/$(date +%Y%m%d).sql"]
-```
-
-### Advanced CronJob
-
-```yaml
-apiVersion: batch/v1
-kind: CronJob
-metadata:
-  name: data-sync
-spec:
-  schedule: "0 */6 * * *"
-  timeZone: "America/New_York"
-  concurrencyPolicy: Replace
-  startingDeadlineSeconds: 300
-  suspend: false
-  successfulJobsHistoryLimit: 5
-  failedJobsHistoryLimit: 3
-  jobTemplate:
-    spec:
-      activeDeadlineSeconds: 7200
-      backoffLimit: 2
-      template:
-        spec:
-          restartPolicy: OnFailure
-          containers:
-          - name: data-sync
-            image: data-sync:v2.1.0
-            command: ["python", "sync_data.py"]
-            args: ["--mode", "incremental", "--verify"]
-            resources:
-              requests:
-                cpu: 1000m
-                memory: 2Gi
+```python
+# Monthly report
+report_job = (CronJob("monthly-report")
+    .monthly(day=1, hour=6)
+    .image("report-generator:latest")
+    .command(["generate_report.py"])
+    .env("REPORT_TYPE", "monthly")
+    .timeout("2h"))
 ```
 
 ## Best Practices
 
-!!! tip "CronJob Best Practices"
-    
-    **Scheduling:**
-    - Use UTC timezone for global applications
-    - Avoid overlapping schedules for resource-intensive jobs
-    - Consider business hours and maintenance windows
-    
-    **Concurrency:**
-    - Use "Forbid" for exclusive operations (backups, migrations)
-    - Use "Replace" for status checks and monitoring
-    - Use "Allow" only when jobs are truly independent
-    
-    **Resource Management:**
-    - Set appropriate timeouts for job completion
-    - Monitor resource usage patterns
-    - Use resource requests and limits
-    
-    **Error Handling:**
-    - Set retry limits based on job idempotency
-    - Monitor failed jobs and alerts
-    - Implement proper logging and error reporting
-
-## Monitoring and Observability
-
-### Health Checks
+### 1. Use Appropriate Schedules
 
 ```python
-# CronJob with health monitoring
-monitored_job = (CronJob("health-monitor")
-    .schedule("*/5 * * * *")  # Every 5 minutes
-    .image("health-checker:latest")
-    .command(["python", "check_health.py"])
-    .env("SLACK_WEBHOOK", "https://hooks.slack.com/...")
-    .env("ALERT_THRESHOLD", "3")  # Alert after 3 failures
-    .timeout(300)  # 5 minutes
-    .concurrency_policy("Replace")
-    .history_limits(success=1, failed=5))  # Keep failure history
+# ✅ Good: Use descriptive schedules
+backup_job = CronJob("backup").daily(hour=2)  # Daily at 2 AM
+
+# ❌ Bad: Unclear schedule
+backup_job = CronJob("backup").schedule("0 2 * * *")
 ```
 
-### Alerting
+### 2. Set Concurrency Policies
 
 ```python
-# CronJob with alerting on failure
-alerting_job = (CronJob("critical-sync")
-    .schedule("0 */2 * * *")  # Every 2 hours
-    .image("sync:latest")
-    .env("ALERT_ON_FAILURE", "true")
-    .env("ALERT_EMAIL", "ops@company.com")
-    .annotation("alert.io/critical", "true")
-    .annotation("alert.io/runbook", "https://wiki.company.com/runbook/sync"))
+# ✅ Good: Set appropriate concurrency policy
+backup_job = CronJob("backup").concurrency_policy("Forbid")
+
+# ❌ Bad: Allow concurrent backups
+backup_job = CronJob("backup").concurrency_policy("Allow")
 ```
 
-## Troubleshooting
+### 3. Set Timeouts
 
-### Common CronJob Issues
+```python
+# ✅ Good: Set reasonable timeouts
+backup_job = CronJob("backup").timeout("1h")
 
-!!! warning "Jobs Not Running"
-    ```bash
-    # Check CronJob status
-    kubectl get cronjobs
-    kubectl describe cronjob <cronjob-name>
-    
-    # Check recent jobs
-    kubectl get jobs -l job-name=<cronjob-name>
-    
-    # Check if suspended
-    kubectl get cronjob <cronjob-name> -o yaml | grep suspend
-    ```
-
-!!! warning "Schedule Issues"
-    ```bash
-    # Validate cron expression
-    # Use online cron validators or:
-    # https://crontab.guru/
-    
-    # Check timezone settings
-    kubectl get cronjob <cronjob-name> -o yaml | grep timeZone
-    
-    # Check starting deadline
-    kubectl describe cronjob <cronjob-name> | grep "Starting Deadline"
-    ```
-
-!!! warning "Concurrent Job Issues"
-    ```bash
-    # Check for running jobs
-    kubectl get jobs -l job-name=<cronjob-name> --field-selector=status.successful!=1
-    
-    # Check concurrency policy
-    kubectl get cronjob <cronjob-name> -o yaml | grep concurrencyPolicy
-    ```
-
-### Debug Commands
-
-```bash
-# Monitor CronJob executions
-kubectl get cronjobs -w
-
-# Check job history
-kubectl get jobs -l job-name=<cronjob-name> --sort-by=.metadata.creationTimestamp
-
-# View job logs
-kubectl logs -l job-name=<cronjob-name> --tail=100
-
-# Manually trigger a job
-kubectl create job --from=cronjob/<cronjob-name> <manual-job-name>
-
-# Suspend/resume CronJob
-kubectl patch cronjob <cronjob-name> -p '{"spec":{"suspend":true}}'
-kubectl patch cronjob <cronjob-name> -p '{"spec":{"suspend":false}}'
+# ❌ Bad: No timeout (may run forever)
+backup_job = CronJob("backup")
 ```
 
-## API Reference
+### 4. Set Retry Limits
 
-::: src.celestra.workloads.cron_job.CronJob
-    options:
-      show_source: false
-      heading_level: 3
+```python
+# ✅ Good: Set retry limits
+backup_job = CronJob("backup").retry_limit(3)
 
-## Related Components
+# ❌ Bad: Too many retries
+backup_job = CronJob("backup").retry_limit(100)
+```
 
-- **[Job](job.md)** - One-time batch jobs
-- **[App](../core/app.md)** - Long-running applications
-- **[ConfigMap](../storage/config-map.md)** - Job configuration
-- **[Secret](../security/secrets.md)** - Job credentials
+### 5. Use History Limits
 
----
+```python
+# ✅ Good: Set history limits
+backup_job = CronJob("backup").history_limits(successful=7, failed=3)
 
-**Next:** Learn about [Lifecycle](lifecycle.md) for container lifecycle management. 
+# ❌ Bad: Keep too many jobs
+backup_job = CronJob("backup").history_limits(successful=100, failed=100)
+``` 

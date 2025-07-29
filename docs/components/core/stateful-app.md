@@ -1,445 +1,804 @@
-# StatefulApp Component
+# StatefulApp Class
 
-The `StatefulApp` component is designed for stateful applications that require persistent storage, stable network identities, and ordered deployment. It generates Kubernetes StatefulSets and associated resources.
+The `StatefulApp` class represents stateful applications that require persistent storage and stable network identities. It's designed for databases, message queues, and other stateful workloads that need ordered deployment and stable storage.
 
 ## Overview
-
-Use `StatefulApp` for:
-- **Databases** - PostgreSQL, MySQL, MongoDB
-- **Message Queues** - Kafka, RabbitMQ, NATS
-- **Data Stores** - Elasticsearch, Redis clusters
-- **Stateful Services** - Any app requiring persistent identity
-
-## Basic Usage
 
 ```python
 from celestra import StatefulApp
 
-# Simple database
-database = (StatefulApp("postgres")
-    .image("postgres:13")
-    .port(5432, "postgres")
-    .env("POSTGRES_DB", "myapp")
-    .storage("/var/lib/postgresql/data", "20Gi"))
+# Basic usage
+db = StatefulApp("postgres").image("postgres:15").port(5432).storage("20Gi")
+
+# Production-ready database
+db = (StatefulApp("production-db")
+    .image("postgres:15")
+    .port(5432)
+    .storage("100Gi")
+    .replicas(3)
+    .resources(cpu="1000m", memory="4Gi")
+    .backup_schedule("0 2 * * *"))
 ```
 
-## Key Differences from App
+## Core API Functions
 
-| Feature | App (Deployment) | StatefulApp (StatefulSet) |
-|---------|------------------|---------------------------|
-| **Pod Identity** | Random names | Stable, predictable names |
-| **Storage** | Ephemeral by default | Persistent by design |
-| **Network** | Service-based | Stable hostname per pod |
-| **Scaling** | Parallel | Ordered (one at a time) |
-| **Updates** | Rolling update | Ordered update |
+### Container Configuration
 
-## Configuration Methods
-
-### Basic Setup
+#### Image
+Set the container image for the application.
 
 ```python
-db = (StatefulApp("mongodb")
-    .image("mongo:5.0")
-    .port(27017, "mongodb")
-    .replicas(3)                    # Creates 3 pods: mongodb-0, mongodb-1, mongodb-2
-    .service_name("mongodb"))       # Headless service name
+db = StatefulApp("postgres").image("postgres:15")
+cache = StatefulApp("redis").image("redis:7-alpine")
+kafka = StatefulApp("kafka").image("confluentinc/cp-kafka:7.4.0")
 ```
 
-### Persistent Storage
+#### Build
+Build container from local Dockerfile instead of using pre-built image.
 
 ```python
-# Single volume
-db = (StatefulApp("mysql")
-    .storage("/var/lib/mysql", "50Gi")
-    .storage_class("fast-ssd"))
+# Build from current directory
+db = StatefulApp("custom-db").build(".", "Dockerfile", VERSION="1.0")
+
+# Build from subdirectory with custom Dockerfile
+db = StatefulApp("custom-cache").build("./cache", "Dockerfile.prod", ENV="production")
+```
+
+#### From Dockerfile
+Use a custom Dockerfile for building the container.
+
+```python
+# Use custom Dockerfile
+db = StatefulApp("custom-db").from_dockerfile("Dockerfile.prod", ".", ENV="production")
+
+# Multi-stage build
+db = StatefulApp("optimized-db").from_dockerfile("Dockerfile.multi", ".", TARGET="production")
+```
+
+#### Command
+Set the command to run in the container.
+
+```python
+db = StatefulApp("postgres").image("postgres:15").command(["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"])
+```
+
+#### Arguments
+Set the arguments for the container command.
+
+```python
+db = StatefulApp("postgres").image("postgres:15").args(["--config-file=/etc/postgresql/postgresql.conf"])
+```
+
+### Port Configuration
+
+#### Port
+Add a port to the application.
+
+```python
+# Basic database port
+db = StatefulApp("postgres").port(5432, "postgres")
+
+# Multiple ports
+kafka = (StatefulApp("kafka")
+    .port(9092, "kafka")
+    .port(9093, "kafka-internal")
+    .port(9094, "kafka-external"))
+```
+
+#### Add Port
+Add a port to the application (alias for port()).
+
+```python
+# Add multiple ports
+kafka = (StatefulApp("kafka")
+    .add_port(9092, "kafka")
+    .add_port(9093, "kafka-internal")
+    .add_port(9094, "kafka-external"))
+```
+
+#### Ports
+Add multiple ports at once.
+
+```python
+# Bulk port configuration
+ports_config = [
+    {"port": 9092, "name": "kafka"},
+    {"port": 9093, "name": "kafka-internal"},
+    {"port": 9094, "name": "kafka-external"}
+]
+kafka = StatefulApp("kafka").ports(ports_config)
+```
+
+### Database-Specific Port Methods
+
+#### Postgres Port
+```python
+db = StatefulApp("postgres").postgres_port(5432)
+```
+
+#### MySQL Port
+```python
+db = StatefulApp("mysql").mysql_port(3306)
+```
+
+#### MongoDB Port
+```python
+db = StatefulApp("mongodb").mongodb_port(27017)
+```
+
+#### Redis Port
+```python
+cache = StatefulApp("redis").redis_port(6379)
+```
+
+#### Kafka Port
+```python
+kafka = StatefulApp("kafka").kafka_port(9092)
+```
+
+#### Elasticsearch Port
+```python
+es = StatefulApp("elasticsearch").elasticsearch_port(9200)
+```
+
+### Storage Configuration
+
+#### Storage
+Configure persistent storage for the application.
+
+```python
+# Basic storage
+db = StatefulApp("postgres").storage("20Gi")
+
+# With mount path
+db = StatefulApp("postgres").storage("20Gi", "/var/lib/postgresql/data")
+
+# With storage class
+db = StatefulApp("postgres").storage("20Gi", "/var/lib/postgresql/data", "fast-ssd")
+```
+
+#### Add Volume
+Add a custom volume to the application.
+
+```python
+from celestra import Volume
+
+# Add additional volume
+config_volume = Volume("config-volume").config_map("db-config")
+db = StatefulApp("postgres").add_volume(config_volume)
+```
+
+#### Add Volumes
+Add multiple volumes to the application.
+
+```python
+from celestra import Volume
 
 # Multiple volumes
-app = (StatefulApp("elasticsearch")
-    .storage("/usr/share/elasticsearch/data", "100Gi", "es-data")
-    .storage("/usr/share/elasticsearch/logs", "10Gi", "es-logs")
-    .storage_class("fast-ssd"))
+volumes = [
+    Volume("data-volume").persistent_volume_claim("20Gi"),
+    Volume("config-volume").config_map("db-config"),
+    Volume("backup-volume").persistent_volume_claim("50Gi")
+]
+db = StatefulApp("postgres").add_volumes(volumes)
 ```
 
-### Database-Specific Helpers
+#### Mount Path
+Set the mount path for the primary storage volume.
 
 ```python
-# PostgreSQL
-postgres = (StatefulApp("postgres")
-    .postgres_port(5432, "database")
-    .postgres_config(
-        database="myapp",
-        user="app_user", 
-        password_secret="postgres-secret"
-    ))
-
-# MySQL
-mysql = (StatefulApp("mysql")
-    .mysql_port(3306, "database")
-    .mysql_config(
-        database="wordpress",
-        user="wp_user",
-        password_secret="mysql-secret"
-    ))
-
-# MongoDB
-mongo = (StatefulApp("mongodb")
-    .mongo_port(27017, "mongodb")
-    .mongo_config(
-        database="app_db",
-        auth_secret="mongo-secret"
-    ))
+db = StatefulApp("postgres").storage("20Gi").mount_path("/var/lib/postgresql/data")
 ```
 
-### Clustering and Replication
+#### Storage Class
+Set the storage class for persistent volumes.
 
 ```python
-# Redis cluster
-redis = (StatefulApp("redis")
-    .image("redis:7-alpine")
-    .port(6379, "redis")
-    .port(16379, "cluster")
-    .replicas(6)                    # 3 masters + 3 replicas
-    .cluster_mode(True)
-    .storage("/data", "5Gi"))
-
-# Kafka cluster
-kafka = (StatefulApp("kafka")
-    .image("confluentinc/cp-kafka:7.4.0")
-    .port(9092, "kafka")
-    .port(9093, "external")
-    .replicas(3)
-    .env("KAFKA_ZOOKEEPER_CONNECT", "zookeeper:2181")
-    .env("KAFKA_ADVERTISED_LISTENERS", "PLAINTEXT://kafka:9092")
-    .storage("/var/lib/kafka/data", "100Gi"))
+db = StatefulApp("postgres").storage("20Gi").storage_class("fast-ssd")
 ```
 
-## Advanced Configuration
+### Environment Configuration
 
-### Network Identity
+#### Environment
+Set multiple environment variables at once.
 
 ```python
-# Each pod gets: cassandra-0.cassandra.default.svc.cluster.local
-cassandra = (StatefulApp("cassandra")
-    .image("cassandra:3.11")
-    .port(9042, "cql")
-    .port(7000, "internode")
-    .replicas(3)
-    .service_name("cassandra")     # Controls DNS names
-    .pod_management_policy("Parallel"))  # Allow parallel startup
+# Database environment variables
+db_env = {
+    "POSTGRES_DB": "myapp",
+    "POSTGRES_USER": "admin",
+    "POSTGRES_PASSWORD": "password",
+    "POSTGRES_INITDB_ARGS": "--encoding=UTF-8"
+}
+db = StatefulApp("postgres").environment(db_env)
 ```
 
-### Initialization and Lifecycle
+#### Environment Variable
+Add a single environment variable.
 
 ```python
+# Single environment variable
+db = StatefulApp("postgres").env("POSTGRES_DB", "myapp")
+
+# Multiple individual variables
 db = (StatefulApp("postgres")
-    .image("postgres:13")
-    .init_container("init-db", "postgres:13")
-    .init_command(["sh", "-c", "createdb myapp"])
-    .post_start_exec(["pg_isready"])
-    .pre_stop_exec(["pg_ctl", "stop", "-m", "fast"]))
+    .env("POSTGRES_DB", "myapp")
+    .env("POSTGRES_USER", "admin")
+    .env("POSTGRES_PASSWORD", "password"))
+```
+
+#### Environment from Secret
+Load environment variables from a Secret.
+
+```python
+db = StatefulApp("postgres").env_from_secret("db-secret")
+```
+
+#### Environment from ConfigMap
+Load environment variables from a ConfigMap.
+
+```python
+db = StatefulApp("postgres").env_from_config_map("db-config")
+```
+
+### Resource Management
+
+#### Resources
+Set resource requests and limits for the application.
+
+```python
+# Basic resources
+db = StatefulApp("postgres").resources(cpu="500m", memory="1Gi")
+
+# With limits
+db = (StatefulApp("postgres")
+    .resources(
+        cpu="1000m", 
+        memory="4Gi",
+        cpu_limit="2000m",
+        memory_limit="8Gi"
+    ))
+
+# High-performance database
+db = StatefulApp("postgres").resources(cpu="4000m", memory="16Gi", cpu_limit="8000m", memory_limit="32Gi")
+```
+
+#### Replicas
+Set the number of replicas for the application.
+
+```python
+# Single instance
+db = StatefulApp("postgres").replicas(1)
+
+# High availability
+db = StatefulApp("postgres").replicas(3)
+
+# Read replicas
+db = StatefulApp("postgres").replicas(5)
+```
+
+### Database-Specific Configuration
+
+#### Postgres Config
+Configure PostgreSQL-specific settings.
+
+```python
+postgres_config = {
+    "max_connections": "200",
+    "shared_buffers": "256MB",
+    "effective_cache_size": "1GB",
+    "maintenance_work_mem": "64MB"
+}
+db = StatefulApp("postgres").postgres_config(postgres_config)
+```
+
+#### MySQL Config
+Configure MySQL-specific settings.
+
+```python
+mysql_config = {
+    "innodb_buffer_pool_size": "1G",
+    "max_connections": "200",
+    "query_cache_size": "64M"
+}
+db = StatefulApp("mysql").mysql_config(mysql_config)
+```
+
+#### Redis Config
+Configure Redis-specific settings.
+
+```python
+redis_config = {
+    "maxmemory": "2gb",
+    "maxmemory-policy": "allkeys-lru",
+    "save": "900 1 300 10 60 10000"
+}
+cache = StatefulApp("redis").redis_config(redis_config)
+```
+
+#### Kafka Config
+Configure Kafka-specific settings.
+
+```python
+kafka_config = {
+    "num.partitions": "3",
+    "default.replication.factor": "3",
+    "min.insync.replicas": "2",
+    "offsets.topic.replication.factor": "3"
+}
+kafka = StatefulApp("kafka").kafka_config(kafka_config)
 ```
 
 ### Backup and Recovery
 
-```python
-database = (StatefulApp("postgres")
-    .image("postgres:13")
-    .storage("/var/lib/postgresql/data", "100Gi")
-    .backup_schedule("0 2 * * *")        # Daily at 2 AM
-    .backup_retention(30)                # Keep 30 days
-    .backup_storage("backup-bucket"))
-```
-
-## Complete Example - PostgreSQL Cluster
+#### Backup Schedule
+Configure automated backup scheduling.
 
 ```python
-#!/usr/bin/env python3
-"""
-Production PostgreSQL Cluster with High Availability
-"""
+# Daily backup at 2 AM
+db = StatefulApp("postgres").backup_schedule("0 2 * * *")
 
-from celestra import StatefulApp, Secret, ConfigMap, Service, KubernetesOutput
+# Weekly backup on Sunday at 3 AM
+db = StatefulApp("postgres").backup_schedule("0 3 * * 0")
 
-def create_postgres_cluster():
-    # Configuration
-    postgres_config = ConfigMap("postgres-config")
-    postgres_config.add_data("postgresql.conf", """
-# PostgreSQL Configuration
-max_connections = 100
-shared_buffers = 256MB
-effective_cache_size = 1GB
-maintenance_work_mem = 64MB
-checkpoint_completion_target = 0.9
-wal_buffers = 16MB
-default_statistics_target = 100
-random_page_cost = 1.1
-effective_io_concurrency = 200
-work_mem = 4MB
-min_wal_size = 1GB
-max_wal_size = 4GB
-""")
-    
-    postgres_config.add_data("pg_hba.conf", """
-# PostgreSQL HBA Configuration
-local   all             all                                     trust
-host    all             all             127.0.0.1/32            md5
-host    all             all             ::1/128                 md5
-host    replication     postgres        0.0.0.0/0               md5
-host    all             all             0.0.0.0/0               md5
-""")
-    
-    # Secrets
-    postgres_secret = Secret("postgres-secret")
-    postgres_secret.add_data("username", "postgres")
-    postgres_secret.add_data("password", "supersecret123")
-    postgres_secret.add_data("replication-password", "replicationsecret")
-    
-    # PostgreSQL StatefulSet
-    postgres = (StatefulApp("postgres")
-        .image("postgres:15.2")
-        .replicas(3)
-        
-        # Networking
-        .postgres_port(5432, "database")
-        .port(5433, "replication")
-        
-        # Environment
-        .env("POSTGRES_DB", "myapp")
-        .env("POSTGRES_USER", "postgres")
-        .env_from_secret("postgres-secret", "POSTGRES_PASSWORD", "password")
-        .env_from_secret("postgres-secret", "POSTGRES_REPLICATION_PASSWORD", "replication-password")
-        .env("PGDATA", "/var/lib/postgresql/data/pgdata")
-        
-        # Storage
-        .storage("/var/lib/postgresql/data", "100Gi")
-        .storage_class("fast-ssd")
-        
-        # Configuration volumes
-        .config_volume("/etc/postgresql", "postgres-config")
-        
-        # Resources
-        .resources(
-            cpu="2000m",
-            memory="4Gi",
-            cpu_limit="4000m", 
-            memory_limit="8Gi"
-        )
-        
-        # Health checks
-        .liveness_probe("/", port=5432, initial_delay=60)
-        .readiness_probe("/", port=5432, initial_delay=30)
-        
-        # Lifecycle
-        .post_start_exec([
-            "sh", "-c", 
-            "until pg_isready -h localhost -p 5432; do sleep 1; done"
-        ])
-        .pre_stop_exec([
-            "sh", "-c",
-            "pg_ctl stop -D /var/lib/postgresql/data/pgdata -m fast"
-        ])
-        
-        # Metadata
-        .label("app", "postgres")
-        .label("component", "database")
-        .annotation("backup.io/enabled", "true")
-        .annotation("monitoring.io/scrape", "true")
-        
-        # Security
-        .service_account("postgres-sa"))
-    
-    # Headless service for StatefulSet
-    postgres_headless = (Service("postgres-headless")
-        .cluster_ip("None")  # Headless service
-        .selector({"app": "postgres"})
-        .add_port("database", 5432, 5432))
-    
-    # Load balancer service for read replicas
-    postgres_read = (Service("postgres-read")
-        .type("ClusterIP")
-        .selector({"app": "postgres"})
-        .add_port("database", 5432, 5432))
-    
-    return postgres_config, postgres_secret, postgres, postgres_headless, postgres_read
-
-if __name__ == "__main__":
-    components = create_postgres_cluster()
-    
-    output = KubernetesOutput()
-    for component in components:
-        output.generate(component, "postgres-cluster/")
-    
-    print("✅ PostgreSQL cluster generated!")
-    print("🚀 Deploy: kubectl apply -f postgres-cluster/")
-    print("🔗 Connect: postgres-0.postgres-headless:5432")
+# Multiple backups per day
+db = StatefulApp("postgres").backup_schedule("0 */6 * * *")  # Every 6 hours
 ```
 
-## Kafka Cluster Example
+#### Backup Retention
+Set backup retention period.
 
 ```python
-def create_kafka_cluster():
-    # ZooKeeper (required for Kafka)
-    zookeeper = (StatefulApp("zookeeper")
-        .image("confluentinc/cp-zookeeper:7.4.0")
-        .port(2181, "client")
-        .port(2888, "follower")
-        .port(3888, "election")
-        .replicas(3)
-        .env("ZOOKEEPER_CLIENT_PORT", "2181")
-        .env("ZOOKEEPER_SERVERS", 
-             "zookeeper-0.zookeeper:2888:3888;zookeeper-1.zookeeper:2888:3888;zookeeper-2.zookeeper:2888:3888")
-        .storage("/var/lib/zookeeper/data", "10Gi")
-        .storage("/var/lib/zookeeper/log", "5Gi", mount_path="/var/lib/zookeeper/log"))
-    
-    # Kafka brokers
-    kafka = (StatefulApp("kafka")
-        .image("confluentinc/cp-kafka:7.4.0")
-        .port(9092, "kafka")
-        .port(9101, "jmx")
-        .replicas(3)
-        .env("KAFKA_ZOOKEEPER_CONNECT", "zookeeper:2181")
-        .env("KAFKA_ADVERTISED_LISTENERS", "PLAINTEXT://kafka:9092")
-        .env("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "3")
-        .env("KAFKA_DEFAULT_REPLICATION_FACTOR", "3")
-        .env("KAFKA_MIN_INSYNC_REPLICAS", "2")
-        .storage("/var/lib/kafka/data", "100Gi")
-        .resources(cpu="1000m", memory="2Gi"))
-    
-    return zookeeper, kafka
+db = StatefulApp("postgres").backup_retention(30)  # Keep backups for 30 days
 ```
 
-## Generated Resources
+#### Backup Location
+Set backup storage location.
 
-### StatefulSet
-
-```yaml
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: postgres
-spec:
-  serviceName: postgres-headless
-  replicas: 3
-  selector:
-    matchLabels:
-      app: postgres
-  template:
-    spec:
-      containers:
-      - name: postgres
-        image: postgres:15.2
-        ports:
-        - containerPort: 5432
-          name: database
-  volumeClaimTemplates:
-  - metadata:
-      name: data
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      resources:
-        requests:
-          storage: 100Gi
+```python
+db = StatefulApp("postgres").backup_location("s3://my-backups/postgres")
+db = StatefulApp("postgres").backup_location("gcs://my-backups/postgres")
 ```
 
-### Headless Service
+#### Enable Point-in-Time Recovery
+Enable point-in-time recovery for databases.
 
-```yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: postgres-headless
-spec:
-  clusterIP: None
-  selector:
-    app: postgres
-  ports:
-  - port: 5432
-    name: database
+```python
+db = StatefulApp("postgres").enable_point_in_time_recovery()
+```
+
+### Clustering and Replication
+
+#### Cluster Mode
+Enable cluster mode for distributed databases.
+
+```python
+# Enable clustering
+db = StatefulApp("postgres").cluster_mode(True)
+
+# Disable clustering (single instance)
+db = StatefulApp("postgres").cluster_mode(False)
+```
+
+#### Replication Factor
+Set replication factor for distributed systems.
+
+```python
+kafka = StatefulApp("kafka").replication_factor(3)
+es = StatefulApp("elasticsearch").replication_factor(2)
+```
+
+#### Quorum Size
+Set quorum size for distributed consensus.
+
+```python
+db = StatefulApp("postgres").quorum_size(3)
+```
+
+### Health Checks and Monitoring
+
+#### Health Check
+Add a health check endpoint.
+
+```python
+db = StatefulApp("postgres").health_check("/health")
+kafka = StatefulApp("kafka").health_check("/health", port=9092)
+```
+
+#### Liveness Probe
+Configure liveness probe.
+
+```python
+db = StatefulApp("postgres").liveness_probe("/health")
+```
+
+#### Readiness Probe
+Configure readiness probe.
+
+```python
+db = StatefulApp("postgres").readiness_probe("/ready")
+```
+
+#### Startup Probe
+Configure startup probe.
+
+```python
+db = StatefulApp("postgres").startup_probe("/startup")
+```
+
+### Security and RBAC
+
+#### Add Service Account
+Add a service account to the application.
+
+```python
+from celestra import ServiceAccount
+sa = ServiceAccount("db-sa")
+db = StatefulApp("postgres").add_service_account(sa)
+```
+
+#### Add Role
+Add a role to the application.
+
+```python
+from celestra import Role
+role = Role("db-role").add_policy("get", "pods")
+db = StatefulApp("postgres").add_role(role)
+```
+
+#### Add Network Policy
+Add a network policy to the application.
+
+```python
+from celestra import NetworkPolicy
+policy = NetworkPolicy("db-policy").allow_pods_with_label("app", "api")
+db = StatefulApp("postgres").add_network_policy(policy)
+```
+
+#### Add Security Policy
+Add a security policy to the application.
+
+```python
+from celestra import SecurityPolicy
+policy = SecurityPolicy("restricted").pod_security_standards("restricted")
+db = StatefulApp("postgres").add_security_policy(policy)
+```
+
+### Configuration Management
+
+#### Add Secret
+Add a secret to the application.
+
+```python
+from celestra import Secret
+db_secret = Secret("db-secret").add("password", "secure-password")
+db = StatefulApp("postgres").add_secret(db_secret)
+```
+
+#### Add Secrets
+Add multiple secrets to the application.
+
+```python
+from celestra import Secret
+secrets = [
+    Secret("db-secret").add("password", "secure-password"),
+    Secret("tls-cert").from_file("cert.pem"),
+    Secret("ca-cert").from_file("ca.pem")
+]
+db = StatefulApp("postgres").add_secrets(secrets)
+```
+
+#### Add Config
+Add a ConfigMap to the application.
+
+```python
+from celestra import ConfigMap
+db_config = ConfigMap("db-config").add("max_connections", "200")
+db = StatefulApp("postgres").add_config(db_config)
+```
+
+#### Add Configs
+Add multiple ConfigMaps to the application.
+
+```python
+from celestra import ConfigMap
+configs = [
+    ConfigMap("db-config").add("max_connections", "200"),
+    ConfigMap("postgres-config").from_file("postgresql.conf"),
+    ConfigMap("pg_hba-config").from_file("pg_hba.conf")
+]
+db = StatefulApp("postgres").add_configs(configs)
+```
+
+### Deployment Strategy
+
+#### Deployment Strategy
+Configure deployment strategy.
+
+```python
+# Rolling update (default for StatefulSets)
+db = StatefulApp("postgres").deployment_strategy("rolling")
+
+# OnDelete strategy
+db = StatefulApp("postgres").deployment_strategy("on-delete")
+```
+
+#### Rolling Update
+Configure rolling update strategy for StatefulSets.
+
+```python
+db = StatefulApp("postgres").rolling_update(partition=0)
+```
+
+#### On Delete Strategy
+Configure on-delete update strategy.
+
+```python
+db = StatefulApp("postgres").on_delete_strategy()
+```
+
+### Networking and Exposure
+
+#### Expose
+Expose the application via Service.
+
+```python
+# Internal service only
+db = StatefulApp("postgres").expose()
+
+# External service (for development)
+db = StatefulApp("postgres").expose(external=True)
+```
+
+#### Add Service
+Add a custom service configuration.
+
+```python
+from celestra import Service
+service = Service("postgres-service").type("ClusterIP")
+db = StatefulApp("postgres").add_service(service)
+```
+
+### Observability
+
+#### Add Observability
+Add observability configuration.
+
+```python
+from celestra import Observability
+obs = Observability("db-monitoring").enable_metrics().enable_logging()
+db = StatefulApp("postgres").add_observability(obs)
+```
+
+#### Enable Metrics
+Enable metrics collection.
+
+```python
+db = StatefulApp("postgres").enable_metrics(port=9090)
+```
+
+#### Enable Logging
+Enable structured logging.
+
+```python
+db = StatefulApp("postgres").enable_logging(log_format="json")
+```
+
+### Advanced Configuration
+
+#### Namespace
+Set the namespace for the application.
+
+```python
+db = StatefulApp("postgres").namespace("databases")
+```
+
+#### Add Label
+Add a label to the application.
+
+```python
+db = StatefulApp("postgres").add_label("environment", "production")
+db = StatefulApp("postgres").add_label("tier", "database")
+```
+
+#### Add Labels
+Add multiple labels to the application.
+
+```python
+labels = {
+    "environment": "production",
+    "tier": "database",
+    "team": "data-platform"
+}
+db = StatefulApp("postgres").add_labels(labels)
+```
+
+#### Add Annotation
+Add an annotation to the application.
+
+```python
+db = StatefulApp("postgres").add_annotation("description", "Primary database")
+```
+
+#### Add Annotations
+Add multiple annotations to the application.
+
+```python
+annotations = {
+    "description": "Primary database",
+    "owner": "data-team",
+    "backup-schedule": "daily"
+}
+db = StatefulApp("postgres").add_annotations(annotations)
+```
+
+#### Node Selector
+Set node selector for pod placement.
+
+```python
+db = StatefulApp("postgres").node_selector({"node-type": "database"})
+```
+
+#### Tolerations
+Set tolerations for pod scheduling.
+
+```python
+tolerations = [{"key": "dedicated", "operator": "Equal", "value": "database", "effect": "NoSchedule"}]
+db = StatefulApp("postgres").tolerations(tolerations)
+```
+
+#### Affinity
+Set pod affinity rules.
+
+```python
+affinity = {
+    "podAntiAffinity": {
+        "preferredDuringSchedulingIgnoredDuringExecution": [{
+            "weight": 100,
+            "podAffinityTerm": {
+                "labelSelector": {"matchExpressions": [{"key": "app", "operator": "In", "values": ["postgres"]}]},
+                "topologyKey": "kubernetes.io/hostname"
+            }
+        }]
+    }
+}
+db = StatefulApp("postgres").affinity(affinity)
+```
+
+### Output Generation
+
+#### Generate Configuration
+Generate the application configuration.
+
+```python
+# Generate Kubernetes YAML
+db.generate().to_yaml("./k8s/")
+
+# Generate Docker Compose
+db.generate().to_docker_compose("./docker-compose.yml")
+
+# Generate Helm Chart
+db.generate().to_helm_chart("./charts/")
+
+# Generate Kustomize
+db.generate().to_kustomize("./kustomize/")
+```
+
+## Complete Example
+
+Here's a complete example of a production-ready PostgreSQL database:
+
+```python
+from celestra import StatefulApp, Secret, ConfigMap, ServiceAccount, Role, NetworkPolicy
+
+# Create secrets
+db_secret = Secret("postgres-secret").add("password", "secure-password")
+
+# Create configuration
+db_config = ConfigMap("postgres-config").add("max_connections", "200")
+
+# Create service account and role
+sa = ServiceAccount("postgres-sa")
+role = Role("postgres-role").add_policy("get", "pods")
+
+# Create network policy
+network_policy = NetworkPolicy("postgres-policy").allow_pods_with_label("app", "api")
+
+# Create the database
+db = (StatefulApp("postgres")
+    .image("postgres:15")
+    .postgres_port(5432)
+    .storage("100Gi", "/var/lib/postgresql/data", "fast-ssd")
+    .replicas(3)
+    .resources(cpu="2000m", memory="8Gi", cpu_limit="4000m", memory_limit="16Gi")
+    .env("POSTGRES_DB", "myapp")
+    .env("POSTGRES_USER", "admin")
+    .add_secret(db_secret)
+    .add_config(db_config)
+    .add_service_account(sa)
+    .add_role(role)
+    .add_network_policy(network_policy)
+    .backup_schedule("0 2 * * *")
+    .backup_retention(30)
+    .backup_location("s3://my-backups/postgres")
+    .health_check("/health")
+    .liveness_probe("/health")
+    .readiness_probe("/ready")
+    .expose())
+
+# Generate manifests
+db.generate().to_yaml("./k8s/")
 ```
 
 ## Best Practices
 
-!!! tip "StatefulSet Guidelines"
-    
-    **Storage:**
-    - Use high-performance storage classes (SSD)
-    - Plan storage capacity carefully (hard to resize)
-    - Consider backup and disaster recovery
-    
-    **Networking:**
-    - Use headless services for pod-to-pod communication
-    - Create regular services for client access
-    - Plan for both internal and external connectivity
-    
-    **Scaling:**
-    - Scale StatefulSets carefully (ordered operation)
-    - Test scaling procedures in staging
-    - Monitor resource usage during scaling
-    
-    **Updates:**
-    - Use rolling updates with appropriate strategy
-    - Test update procedures thoroughly
-    - Plan for rollback scenarios
-
-## Common Use Cases
-
-### Database Patterns
-
+### 1. **Storage Configuration**
 ```python
-# Primary-replica setup
-primary = StatefulApp("postgres-primary").replicas(1).env("ROLE", "primary")
-replica = StatefulApp("postgres-replica").replicas(2).env("ROLE", "replica")
+# ✅ Good: Use appropriate storage class and size
+db = StatefulApp("postgres").storage("100Gi", "/var/lib/postgresql/data", "fast-ssd")
 
-# Sharded database
-for shard in range(3):
-    shard_db = StatefulApp(f"postgres-shard-{shard}").env("SHARD_ID", str(shard))
+# ❌ Bad: No storage configuration
+db = StatefulApp("postgres")  # No persistent storage
 ```
 
-### Message Queue Patterns
-
+### 2. **Backup Strategy**
 ```python
-# Kafka with external access
-kafka = (StatefulApp("kafka")
-    .port(9092, "internal")
-    .port(9093, "external")
-    .env("KAFKA_LISTENERS", "INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:9093"))
+# ✅ Good: Configure automated backups
+db = (StatefulApp("postgres")
+    .backup_schedule("0 2 * * *")
+    .backup_retention(30)
+    .backup_location("s3://backups/postgres"))
+
+# ❌ Bad: No backup configuration
+db = StatefulApp("postgres")  # No backups
 ```
 
-## Troubleshooting
+### 3. **Resource Allocation**
+```python
+# ✅ Good: Set appropriate resources for databases
+db = StatefulApp("postgres").resources(cpu="2000m", memory="8Gi", cpu_limit="4000m", memory_limit="16Gi")
 
-### Common Issues
+# ❌ Bad: Insufficient resources
+db = StatefulApp("postgres").resources(cpu="100m", memory="256Mi")  # Too small for production
+```
 
-!!! warning "StatefulSet Problems"
-    
-    **Pods Stuck in Pending:**
-    - Check PVC creation and storage availability
-    - Verify storage class exists and is default
-    - Check node capacity and resource requests
-    
-    **Pods Not Starting in Order:**
-    - Verify readiness probes are configured
-    - Check for resource constraints
-    - Review StatefulSet events
-    
-    **Storage Issues:**
-    - PVCs not binding to PVs
-    - Storage class misconfiguration
-    - Insufficient storage capacity
+### 4. **Security**
+```python
+# ✅ Good: Use secrets and RBAC
+secret = Secret("db-secret").add("password", "secure-password")
+sa = ServiceAccount("db-sa")
+role = Role("db-role").add_policy("get", "pods")
+db = StatefulApp("postgres").add_secret(secret).add_service_account(sa).add_role(role)
 
-## API Reference
+# ❌ Bad: No security configuration
+db = StatefulApp("postgres")  # No security
+```
 
-::: src.celestra.core.stateful_app.StatefulApp
-    options:
-      show_source: false
-      heading_level: 3
+### 5. **High Availability**
+```python
+# ✅ Good: Multiple replicas with proper configuration
+db = (StatefulApp("postgres")
+    .replicas(3)
+    .cluster_mode(True)
+    .quorum_size(3))
+
+# ❌ Bad: Single instance
+db = StatefulApp("postgres").replicas(1)  # No high availability
+```
 
 ## Related Components
 
 - **[App](app.md)** - For stateless applications
-- **[Service](../networking/service.md)** - Network services
-- **[ConfigMap](../storage/config-map.md)** - Configuration
-- **[Secret](../security/secrets.md)** - Secrets management
+- **[Job](../workloads/job.md)** - For batch processing workloads
+- **[CronJob](../workloads/cron-job.md)** - For scheduled batch jobs
+- **[Secret](../security/secrets.md)** - For managing sensitive data
+- **[ConfigMap](../storage/config-map.md)** - For managing configuration data
+- **[ServiceAccount](../security/service-account.md)** - For RBAC identity
+- **[Role](../security/role.md)** - For access control policies
 
----
+## Next Steps
 
-**Next:** Learn about [AppGroup](app-group.md) for managing multiple services together. 
+- **[App](app.md)** - Learn about stateless applications
+- **[Components Overview](index.md)** - Explore all available components
+- **[Examples](../examples/index.md)** - See real-world examples
+- **[Tutorials](../tutorials/index.md)** - Step-by-step guides 

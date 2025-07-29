@@ -1,569 +1,645 @@
-# Ingress Component
+# Ingress Class
 
-The `Ingress` component provides HTTP and HTTPS routing to services within your cluster, acting as a smart load balancer with SSL termination, path-based routing, and host-based routing capabilities.
+The `Ingress` class manages external access to services by creating Kubernetes Ingress resources. It provides HTTP/HTTPS routing, SSL termination, and load balancing for web applications.
 
 ## Overview
-
-Use `Ingress` for:
-- **HTTP/HTTPS Routing** - External access to cluster services
-- **SSL Termination** - TLS certificate management
-- **Load Balancing** - Traffic distribution across pods
-- **Virtual Hosting** - Multiple domains on one IP
-- **Path-Based Routing** - Route by URL path
-
-## Basic Usage
 
 ```python
 from celestra import Ingress
 
-# Simple HTTP ingress
-ingress = (Ingress("web-ingress")
-    .host("myapp.example.com")
-    .path("/", "web-service", 80)
-    .path("/api", "api-service", 8080))
+# Basic usage
+ingress = Ingress("web-ingress").route("/", "web-service")
+
+# Production ingress with TLS
+ingress = (Ingress("api-ingress")
+    .route("/api", "api-service")
+    .route("/docs", "docs-service")
+    .tls("api.example.com", "tls-secret")
+    .annotations({"nginx.ingress.kubernetes.io/ssl-redirect": "true"}))
 ```
 
-## Configuration Methods
+## Core API Functions
 
-### Host-Based Routing
+### Route Configuration
+
+#### Adding Routes
+Add a route to the ingress.
 
 ```python
-# Single host
-single_host = (Ingress("single-host")
-    .host("app.example.com")
-    .path("/", "frontend-service", 80)
-    .path("/api", "backend-service", 8080)
-    .path("/admin", "admin-service", 9000))
+# Basic route
+ingress = Ingress("web-ingress").route("/", "web-service")
 
-# Multiple hosts
-multi_host = (Ingress("multi-host")
-    .host("app.example.com")
-    .path("/", "app-service", 80)
-    .host("admin.example.com") 
-    .path("/", "admin-service", 80)
-    .host("api.example.com")
-    .path("/", "api-service", 8080))
+# Route with custom port
+ingress = Ingress("api-ingress").route("/api", "api-service", 8080)
+
+# Multiple routes
+ingress = (Ingress("multi-ingress")
+    .route("/", "web-service")
+    .route("/api", "api-service", 8080)
+    .route("/docs", "docs-service", 3000))
 ```
 
-### Path-Based Routing
+#### Alternative Route Method
+Add a route to the ingress (alias for route()).
 
 ```python
-# Different path types
-path_routing = (Ingress("path-routing")
-    .host("myapp.com")
-    .path("/", "frontend", 80, path_type="Prefix")           # Default
-    .path("/api/v1", "api-v1", 8080, path_type="Prefix")
-    .path("/api/v2", "api-v2", 8080, path_type="Prefix")
-    .path("/exact-match", "special", 80, path_type="Exact")
-    .path("/health", "health", 8080, path_type="Exact"))
+ingress = Ingress("api-ingress").add_route("/api", "api-service", 8080)
 ```
 
-### HTTPS and TLS
+#### Bulk Route Configuration
+Add multiple routes at once.
 
 ```python
-# HTTPS with TLS certificate
-https_ingress = (Ingress("https-app")
-    .host("secure.example.com")
-    .tls("secure.example.com", "tls-secret")  # TLS certificate
-    .path("/", "app-service", 80)
-    .path("/api", "api-service", 8080))
+# Bulk route configuration
+routes_config = [
+    {"path": "/", "service": "web-service", "port": 80},
+    {"path": "/api", "service": "api-service", "port": 8080},
+    {"path": "/docs", "service": "docs-service", "port": 3000}
+]
+ingress = Ingress("multi-ingress").routes(routes_config)
+```
 
-# Multiple TLS certificates
-multi_tls = (Ingress("multi-tls")
-    .host("app.example.com")
-    .tls("app.example.com", "app-tls-cert")
-    .path("/", "app-service", 80)
-    .host("api.example.com")
-    .tls("api.example.com", "api-tls-cert")
-    .path("/", "api-service", 8080))
+### Host Configuration
 
-# Wildcard certificate
-wildcard_tls = (Ingress("wildcard")
-    .host("app.example.com")
-    .host("api.example.com") 
-    .host("admin.example.com")
-    .tls("*.example.com", "wildcard-cert")  # Covers all subdomains
-    .path("/", "default-service", 80))
+#### Single Hostname
+Set the hostname for the ingress.
+
+```python
+ingress = Ingress("api-ingress").host("api.example.com")
+```
+
+#### Multiple Hostnames
+Set multiple hostnames for the ingress.
+
+```python
+ingress = Ingress("multi-host-ingress").hosts(["api.example.com", "www.example.com"])
+```
+
+### TLS Configuration
+
+#### TLS Setup
+Configure TLS for the ingress.
+
+```python
+ingress = Ingress("secure-ingress").tls("api.example.com", "tls-secret")
+```
+
+#### Multiple TLS Hosts
+Configure TLS for multiple hostnames.
+
+```python
+ingress = Ingress("multi-tls-ingress").tls_multiple(
+    ["api.example.com", "www.example.com"], 
+    "tls-secret"
+)
+```
+
+#### TLS Redirect
+Enable TLS redirect.
+
+```python
+ingress = Ingress("secure-ingress").tls_redirect(True)
+```
+
+#### TLS Termination Types
+Configure TLS termination type.
+
+```python
+# Edge termination (default)
+ingress = Ingress("api-ingress").tls_termination("edge")
+
+# Passthrough termination
+ingress = Ingress("api-ingress").tls_termination("passthrough")
+
+# Re-encrypt termination
+ingress = Ingress("api-ingress").tls_termination("reencrypt")
+```
+
+### Path Configuration
+
+#### Path Type
+Set the path type for routes.
+
+```python
+# Exact match
+ingress = Ingress("api-ingress").path_type("Exact")
+
+# Prefix match (default)
+ingress = Ingress("api-ingress").path_type("Prefix")
+
+# Implementation specific
+ingress = Ingress("api-ingress").path_type("ImplementationSpecific")
+```
+
+#### Exact Path
+Add an exact path match.
+
+```python
+ingress = Ingress("api-ingress").exact_path("/api/v1", "api-v1-service")
+```
+
+#### Prefix Path
+Add a prefix path match.
+
+```python
+ingress = Ingress("api-ingress").prefix_path("/api", "api-service")
+```
+
+#### Regex Path
+Add a regex path match.
+
+```python
+ingress = Ingress("api-ingress").regex_path("/api/v[0-9]+", "api-service")
+```
+
+### Load Balancing
+
+#### Load Balancer Method
+Set the load balancer method.
+
+```python
+# Round robin (default)
+ingress = Ingress("api-ingress").load_balancer_method("round_robin")
+
+# Least connections
+ingress = Ingress("api-ingress").load_balancer_method("least_conn")
+
+# IP hash
+ingress = Ingress("api-ingress").load_balancer_method("ip_hash")
+```
+
+#### Session Affinity
+Configure session affinity.
+
+```python
+# Cookie-based affinity
+ingress = Ingress("api-ingress").session_affinity("cookie")
+
+# IP-based affinity
+ingress = Ingress("api-ingress").session_affinity("ip")
+```
+
+#### Sticky Sessions
+Enable sticky sessions.
+
+```python
+# Enable sticky sessions
+ingress = Ingress("api-ingress").sticky_sessions(True)
+
+# Enable with custom cookie name
+ingress = Ingress("api-ingress").sticky_sessions(True, "sessionid")
+```
+
+### Rate Limiting
+
+#### Rate Limit
+Configure rate limiting.
+
+```python
+ingress = Ingress("api-ingress").rate_limit(100)
+```
+
+#### Rate Limit Burst
+Configure rate limit burst size.
+
+```python
+ingress = Ingress("api-ingress").rate_limit_burst(200)
+```
+
+#### Rate Limit by IP
+Enable IP-based rate limiting.
+
+```python
+ingress = Ingress("api-ingress").rate_limit_by_ip(True)
+```
+
+### Security
+
+#### CORS
+Configure CORS.
+
+```python
+# Basic CORS
+ingress = Ingress("api-ingress").cors()
+
+# Custom CORS
+ingress = Ingress("api-ingress").cors(
+    origins=["https://example.com", "https://www.example.com"],
+    methods=["GET", "POST", "PUT", "DELETE"],
+    headers=["Authorization", "Content-Type"]
+)
+```
+
+#### Basic Auth
+Configure basic authentication.
+
+```python
+ingress = Ingress("protected-ingress").basic_auth("auth-secret")
+```
+
+#### OAuth2
+Configure OAuth2 authentication.
+
+```python
+ingress = Ingress("oauth-ingress").oauth2("google", "client-id", "client-secret")
+```
+
+#### IP Whitelist
+Configure IP whitelist.
+
+```python
+ingress = Ingress("restricted-ingress").ip_whitelist(["203.0.113.0/24", "10.0.0.0/8"])
+```
+
+#### IP Blacklist
+Configure IP blacklist.
+
+```python
+ingress = Ingress("protected-ingress").ip_blacklist(["192.168.1.100", "10.0.0.50"])
+```
+
+### Annotations
+
+#### Annotation
+Add an annotation to the ingress.
+
+```python
+ingress = Ingress("api-ingress").annotation("nginx.ingress.kubernetes.io/ssl-redirect", "true")
+```
+
+#### Annotations
+Add multiple annotations to the ingress.
+
+```python
+annotations = {
+    "nginx.ingress.kubernetes.io/ssl-redirect": "true",
+    "nginx.ingress.kubernetes.io/force-ssl-redirect": "true",
+    "nginx.ingress.kubernetes.io/proxy-body-size": "8m"
+}
+ingress = Ingress("api-ingress").annotations(annotations)
+```
+
+### Nginx-Specific Annotations
+
+#### Nginx SSL Redirect
+Enable SSL redirect for Nginx.
+
+```python
+ingress = Ingress("api-ingress").nginx_ssl_redirect(True)
+```
+
+#### Nginx Force SSL Redirect
+Force SSL redirect for Nginx.
+
+```python
+ingress = Ingress("api-ingress").nginx_force_ssl_redirect(True)
+```
+
+#### Nginx Proxy Body Size
+Set proxy body size for Nginx.
+
+```python
+ingress = Ingress("api-ingress").nginx_proxy_body_size("8m")
+```
+
+#### Nginx Proxy Connect Timeout
+Set proxy connect timeout for Nginx.
+
+```python
+ingress = Ingress("api-ingress").nginx_proxy_connect_timeout("60s")
+```
+
+#### Nginx Proxy Read Timeout
+Set proxy read timeout for Nginx.
+
+```python
+ingress = Ingress("api-ingress").nginx_proxy_read_timeout("60s")
+```
+
+#### Nginx Proxy Send Timeout
+Set proxy send timeout for Nginx.
+
+```python
+ingress = Ingress("api-ingress").nginx_proxy_send_timeout("60s")
+```
+
+### AWS ALB-Specific Annotations
+
+#### ALB SSL Policy
+Set SSL policy for AWS ALB.
+
+```python
+ingress = Ingress("api-ingress").alb_ssl_policy("ELBSecurityPolicy-TLS-1-2-2017-01")
+```
+
+#### ALB Target Type
+Set target type for AWS ALB.
+
+```python
+# IP target type
+ingress = Ingress("api-ingress").alb_target_type("ip")
+
+# Instance target type
+ingress = Ingress("api-ingress").alb_target_type("instance")
+```
+
+#### ALB Scheme
+Set scheme for AWS ALB.
+
+```python
+# Internet-facing
+ingress = Ingress("api-ingress").alb_scheme("internet-facing")
+
+# Internal
+ingress = Ingress("api-ingress").alb_scheme("internal")
+```
+
+### GCP GCE-Specific Annotations
+
+#### GCE SSL Certificate
+Set SSL certificate for GCP GCE.
+
+```python
+ingress = Ingress("api-ingress").gce_ssl_certificate("my-ssl-cert")
+```
+
+#### GCE Backend Config
+Set backend config for GCP GCE.
+
+```python
+ingress = Ingress("api-ingress").gce_backend_config("my-backend-config")
+```
+
+### Azure AGIC-Specific Annotations
+
+#### AGIC SSL Certificate
+Set SSL certificate for Azure AGIC.
+
+```python
+ingress = Ingress("api-ingress").agic_ssl_certificate("my-ssl-cert")
+```
+
+#### AGIC Backend Pool
+Set backend pool for Azure AGIC.
+
+```python
+ingress = Ingress("api-ingress").agic_backend_pool("my-backend-pool")
 ```
 
 ### Advanced Configuration
 
-```python
-# Advanced ingress with annotations
-advanced_ingress = (Ingress("advanced-app")
-    .host("myapp.example.com")
-    .tls("myapp.example.com", "tls-cert")
-    
-    # Routing
-    .path("/", "frontend", 80)
-    .path("/api", "backend", 8080)
-    .path("/static", "cdn", 80)
-    
-    # NGINX-specific annotations
-    .add_annotation("nginx.ingress.kubernetes.io/rewrite-target", "/")
-    .add_annotation("nginx.ingress.kubernetes.io/ssl-redirect", "true")
-    .add_annotation("nginx.ingress.kubernetes.io/force-ssl-redirect", "true")
-    .add_annotation("nginx.ingress.kubernetes.io/proxy-body-size", "50m")
-    .add_annotation("nginx.ingress.kubernetes.io/proxy-read-timeout", "300")
-    .add_annotation("nginx.ingress.kubernetes.io/rate-limit", "100")
-    
-    # CORS support
-    .add_annotation("nginx.ingress.kubernetes.io/enable-cors", "true")
-    .add_annotation("nginx.ingress.kubernetes.io/cors-allow-origin", "*")
-    .add_annotation("nginx.ingress.kubernetes.io/cors-allow-methods", "GET, POST, PUT, DELETE")
-    
-    # Metadata
-    .label("app", "myapp")
-    .label("environment", "production")
-    .annotation("cert-manager.io/cluster-issuer", "letsencrypt-prod"))
-```
-
-## Complete Examples
-
-### Production Web Application
+#### Namespace
+Set the namespace for the ingress.
 
 ```python
-#!/usr/bin/env python3
-"""
-Production Web Application with Ingress
-"""
-
-from celestra import App, Service, Ingress, Secret, KubernetesOutput
-
-def create_web_application():
-    # Frontend application
-    frontend = (App("frontend")
-        .image("myapp-frontend:v1.2.0")
-        .port(80, "http")
-        .replicas(3)
-        .resources(cpu="200m", memory="256Mi")
-        .label("app", "frontend")
-        .label("tier", "presentation"))
-    
-    # Backend API
-    backend = (App("backend-api")
-        .image("myapp-backend:v1.2.0")
-        .port(8080, "http")
-        .replicas(3)
-        .resources(cpu="500m", memory="1Gi")
-        .label("app", "backend")
-        .label("tier", "application"))
-    
-    # Admin interface
-    admin = (App("admin-panel")
-        .image("myapp-admin:v1.2.0")
-        .port(3000, "http")
-        .replicas(2)
-        .resources(cpu="200m", memory="512Mi")
-        .label("app", "admin")
-        .label("tier", "management"))
-    
-    # Services
-    frontend_service = (Service("frontend-service")
-        .selector({"app": "frontend"})
-        .add_port("http", 80, 80))
-    
-    backend_service = (Service("backend-service")
-        .selector({"app": "backend"})
-        .add_port("http", 8080, 8080))
-    
-    admin_service = (Service("admin-service")
-        .selector({"app": "admin"})
-        .add_port("http", 3000, 3000))
-    
-    # TLS certificate secret
-    tls_secret = (Secret("app-tls-cert")
-        .type("kubernetes.io/tls")
-        .add_data("tls.crt", "-----BEGIN CERTIFICATE-----\n...")
-        .add_data("tls.key", "-----BEGIN PRIVATE KEY-----\n..."))
-    
-    # Main application ingress
-    app_ingress = (Ingress("app-ingress")
-        # Main application
-        .host("myapp.example.com")
-        .tls("myapp.example.com", "app-tls-cert")
-        .path("/", "frontend-service", 80)
-        .path("/api", "backend-service", 8080)
-        .path("/api/v1", "backend-service", 8080)
-        
-        # Admin panel
-        .host("admin.myapp.example.com")
-        .tls("admin.myapp.example.com", "app-tls-cert")
-        .path("/", "admin-service", 3000)
-        
-        # NGINX configuration
-        .add_annotation("nginx.ingress.kubernetes.io/ssl-redirect", "true")
-        .add_annotation("nginx.ingress.kubernetes.io/proxy-body-size", "10m")
-        .add_annotation("nginx.ingress.kubernetes.io/proxy-read-timeout", "60")
-        .add_annotation("nginx.ingress.kubernetes.io/proxy-send-timeout", "60")
-        
-        # Security headers
-        .add_annotation("nginx.ingress.kubernetes.io/configuration-snippet", """
-            add_header X-Frame-Options "SAMEORIGIN" always;
-            add_header X-Content-Type-Options "nosniff" always;
-            add_header X-XSS-Protection "1; mode=block" always;
-            add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-        """)
-        
-        # Rate limiting
-        .add_annotation("nginx.ingress.kubernetes.io/rate-limit", "100")
-        .add_annotation("nginx.ingress.kubernetes.io/rate-limit-window", "1m")
-        
-        # Cert-manager for automatic SSL
-        .add_annotation("cert-manager.io/cluster-issuer", "letsencrypt-prod")
-        
-        # Metadata
-        .label("app", "myapp")
-        .label("environment", "production")
-        .annotation("description", "Main application ingress"))
-    
-    return (frontend, backend, admin, 
-            frontend_service, backend_service, admin_service,
-            tls_secret, app_ingress)
-
-if __name__ == "__main__":
-    components = create_web_application()
-    
-    output = KubernetesOutput()
-    for component in components:
-        output.generate(component, "web-app-ingress/")
-    
-    print("✅ Web application with ingress generated!")
-    print("🚀 Deploy: kubectl apply -f web-app-ingress/")
-    print("🌐 Access: https://myapp.example.com")
-    print("⚙️ Admin: https://admin.myapp.example.com")
+ingress = Ingress("api-ingress").namespace("production")
 ```
 
-### Microservices API Gateway
+#### Add Label
+Add a label to the ingress.
 
 ```python
-def create_microservices_gateway():
-    """Create ingress for microservices architecture"""
-    
-    # API Gateway ingress
-    api_gateway = (Ingress("api-gateway")
-        .host("api.mycompany.com")
-        .tls("api.mycompany.com", "api-tls-cert")
-        
-        # User service
-        .path("/api/v1/users", "user-service", 8080)
-        .path("/api/v1/auth", "auth-service", 8080)
-        
-        # Order service  
-        .path("/api/v1/orders", "order-service", 8080)
-        .path("/api/v1/cart", "cart-service", 8080)
-        
-        # Payment service
-        .path("/api/v1/payments", "payment-service", 8080)
-        .path("/api/v1/billing", "billing-service", 8080)
-        
-        # Product service
-        .path("/api/v1/products", "product-service", 8080)
-        .path("/api/v1/catalog", "catalog-service", 8080)
-        
-        # Search service
-        .path("/api/v1/search", "search-service", 8080)
-        
-        # Recommendations
-        .path("/api/v1/recommendations", "recommendation-service", 8080)
-        
-        # API Gateway configuration
-        .add_annotation("nginx.ingress.kubernetes.io/rewrite-target", "/$2")
-        .add_annotation("nginx.ingress.kubernetes.io/use-regex", "true")
-        .add_annotation("nginx.ingress.kubernetes.io/proxy-read-timeout", "300")
-        .add_annotation("nginx.ingress.kubernetes.io/proxy-send-timeout", "300")
-        
-        # CORS for API
-        .add_annotation("nginx.ingress.kubernetes.io/enable-cors", "true")
-        .add_annotation("nginx.ingress.kubernetes.io/cors-allow-origin", "https://app.mycompany.com")
-        .add_annotation("nginx.ingress.kubernetes.io/cors-allow-methods", "GET, POST, PUT, DELETE, OPTIONS")
-        .add_annotation("nginx.ingress.kubernetes.io/cors-allow-headers", "Authorization, Content-Type")
-        
-        # Rate limiting per service
-        .add_annotation("nginx.ingress.kubernetes.io/rate-limit", "1000")
-        .add_annotation("nginx.ingress.kubernetes.io/rate-limit-window", "1m")
-        
-        # Authentication
-        .add_annotation("nginx.ingress.kubernetes.io/auth-url", "http://auth-service.default.svc.cluster.local/auth")
-        .add_annotation("nginx.ingress.kubernetes.io/auth-signin", "https://auth.mycompany.com/signin")
-        
-        # Labels
-        .label("component", "api-gateway")
-        .label("tier", "networking"))
-    
-    # Internal API ingress (cluster-only)
-    internal_api = (Ingress("internal-api-gateway")
-        .host("internal-api.mycompany.local")
-        
-        # Internal services
-        .path("/internal/metrics", "prometheus", 9090)
-        .path("/internal/health", "health-service", 8080)
-        .path("/internal/admin", "admin-service", 9000)
-        
-        # Internal only - no TLS, no external access
-        .add_annotation("kubernetes.io/ingress.class", "nginx-internal")
-        .add_annotation("nginx.ingress.kubernetes.io/whitelist-source-range", "10.0.0.0/8,192.168.0.0/16")
-        
-        .label("component", "internal-gateway")
-        .label("access", "internal"))
-    
-    return api_gateway, internal_api
+ingress = Ingress("api-ingress").add_label("environment", "production")
 ```
 
-### Development Environment
+#### Add Labels
+Add multiple labels to the ingress.
 
 ```python
-def create_dev_ingress():
-    """Create development environment ingress"""
-    
-    # Development ingress with multiple apps
-    dev_ingress = (Ingress("dev-ingress")
-        .host("dev.myapp.local")
-        
-        # Main app branches
-        .path("/main", "app-main", 80)
-        .path("/feature-auth", "app-feature-auth", 80)
-        .path("/feature-ui", "app-feature-ui", 80)
-        
-        # API versions
-        .path("/api/main", "api-main", 8080)
-        .path("/api/v2", "api-v2", 8080)
-        
-        # Development tools
-        .path("/docs", "docs-service", 3000)
-        .path("/storybook", "storybook", 6006)
-        .path("/grafana", "grafana", 3000)
-        .path("/prometheus", "prometheus", 9090)
-        
-        # Development-specific annotations
-        .add_annotation("nginx.ingress.kubernetes.io/rewrite-target", "/$2")
-        .add_annotation("nginx.ingress.kubernetes.io/use-regex", "true")
-        .add_annotation("nginx.ingress.kubernetes.io/proxy-read-timeout", "3600")  # Long timeout for debugging
-        
-        # Basic auth for development
-        .add_annotation("nginx.ingress.kubernetes.io/auth-type", "basic")
-        .add_annotation("nginx.ingress.kubernetes.io/auth-secret", "dev-basic-auth")
-        .add_annotation("nginx.ingress.kubernetes.io/auth-realm", "Development Environment")
-        
-        # Labels
-        .label("environment", "development")
-        .label("access", "internal"))
-    
-    return dev_ingress
+labels = {
+    "environment": "production",
+    "team": "platform",
+    "tier": "frontend"
+}
+ingress = Ingress("api-ingress").add_labels(labels)
 ```
 
-## Ingress Controllers
-
-### NGINX Ingress Controller
+#### Ingress Class
+Set the ingress class.
 
 ```python
-# NGINX-specific annotations
-nginx_ingress = (Ingress("nginx-app")
-    .host("app.example.com")
-    .path("/", "app-service", 80)
-    
-    # Basic NGINX configuration
-    .add_annotation("kubernetes.io/ingress.class", "nginx")
-    .add_annotation("nginx.ingress.kubernetes.io/ssl-redirect", "true")
-    .add_annotation("nginx.ingress.kubernetes.io/proxy-body-size", "50m")
-    
-    # Advanced NGINX features
-    .add_annotation("nginx.ingress.kubernetes.io/server-snippet", """
-        location /custom {
-            return 301 https://example.com/redirect;
-        }
-    """)
-    .add_annotation("nginx.ingress.kubernetes.io/configuration-snippet", """
-        add_header X-Custom-Header "Custom Value" always;
-    """))
+ingress = Ingress("api-ingress").ingress_class("nginx")
+ingress = Ingress("api-ingress").ingress_class("alb")
+ingress = Ingress("api-ingress").ingress_class("gce")
 ```
 
-### Traefik Ingress
+#### Default Backend
+Set the default backend service.
 
 ```python
-# Traefik-specific annotations
-traefik_ingress = (Ingress("traefik-app")
-    .host("app.example.com")
-    .path("/", "app-service", 80)
-    
-    # Traefik configuration
-    .add_annotation("kubernetes.io/ingress.class", "traefik")
-    .add_annotation("traefik.ingress.kubernetes.io/router.tls", "true")
-    .add_annotation("traefik.ingress.kubernetes.io/router.middlewares", "default-redirect-https@kubernetescrd"))
+ingress = Ingress("api-ingress").default_backend("default-service", 8080)
 ```
 
-### AWS ALB Ingress
+### Health Checks
+
+#### Health Check Path
+Set health check path.
 
 ```python
-# AWS Application Load Balancer
-alb_ingress = (Ingress("alb-app")
-    .host("app.example.com")
-    .path("/", "app-service", 80)
-    
-    # ALB-specific annotations
-    .add_annotation("kubernetes.io/ingress.class", "alb")
-    .add_annotation("alb.ingress.kubernetes.io/scheme", "internet-facing")
-    .add_annotation("alb.ingress.kubernetes.io/target-type", "ip")
-    .add_annotation("alb.ingress.kubernetes.io/certificate-arn", "arn:aws:acm:us-west-2:123456789:certificate/abc-123")
-    .add_annotation("alb.ingress.kubernetes.io/listen-ports", '[{"HTTP": 80}, {"HTTPS": 443}]')
-    .add_annotation("alb.ingress.kubernetes.io/ssl-redirect", "443"))
+ingress = Ingress("api-ingress").health_check_path("/health")
 ```
 
-## Generated YAML
+#### Health Check Interval
+Set health check interval.
 
-### Basic Ingress
-
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: web-ingress
-spec:
-  rules:
-  - host: myapp.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: web-service
-            port:
-              number: 80
-      - path: /api
-        pathType: Prefix
-        backend:
-          service:
-            name: api-service
-            port:
-              number: 8080
+```python
+ingress = Ingress("api-ingress").health_check_interval("30s")
 ```
 
-### HTTPS Ingress
+#### Health Check Timeout
+Set health check timeout.
 
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: https-app
-  annotations:
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-spec:
-  tls:
-  - hosts:
-    - secure.example.com
-    secretName: tls-secret
-  rules:
-  - host: secure.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: app-service
-            port:
-              number: 80
+```python
+ingress = Ingress("api-ingress").health_check_timeout("5s")
+```
+
+### Output Generation
+
+#### Generate Configuration
+Generate the ingress configuration.
+
+```python
+# Generate Kubernetes YAML
+ingress.generate().to_yaml("./k8s/")
+
+# Generate Helm values
+ingress.generate().to_helm_values("./helm/")
+
+# Generate Terraform
+ingress.generate().to_terraform("./terraform/")
+```
+
+## Complete Example
+
+Here's a complete example of a production-ready API ingress:
+
+```python
+from celestra import Ingress
+
+# Create comprehensive API ingress
+api_ingress = (Ingress("api-ingress")
+    .host("api.example.com")
+    .route("/", "api-service", 8080)
+    .route("/v1", "api-v1-service", 8080)
+    .route("/v2", "api-v2-service", 8080)
+    .route("/docs", "docs-service", 3000)
+    .tls("api.example.com", "tls-secret")
+    .tls_redirect(True)
+    .load_balancer_method("least_conn")
+    .sticky_sessions(True, "sessionid")
+    .rate_limit(100)
+    .rate_limit_burst(200)
+    .cors(
+        origins=["https://example.com", "https://www.example.com"],
+        methods=["GET", "POST", "PUT", "DELETE"],
+        headers=["Authorization", "Content-Type"]
+    )
+    .ip_whitelist(["203.0.113.0/24", "10.0.0.0/8"])
+    .annotations({
+        "nginx.ingress.kubernetes.io/ssl-redirect": "true",
+        "nginx.ingress.kubernetes.io/force-ssl-redirect": "true",
+        "nginx.ingress.kubernetes.io/proxy-body-size": "8m",
+        "nginx.ingress.kubernetes.io/proxy-connect-timeout": "60s",
+        "nginx.ingress.kubernetes.io/proxy-read-timeout": "60s",
+        "nginx.ingress.kubernetes.io/proxy-send-timeout": "60s"
+    })
+    .namespace("production")
+    .add_labels({
+        "environment": "production",
+        "team": "platform",
+        "tier": "frontend"
+    })
+    .ingress_class("nginx")
+    .health_check_path("/health"))
+
+# Generate manifests
+api_ingress.generate().to_yaml("./k8s/")
+```
+
+## Ingress Controllers and Use Cases
+
+### Nginx Ingress Controller
+```python
+# Nginx ingress with SSL
+nginx_ingress = (Ingress("web-ingress")
+    .host("example.com")
+    .route("/", "web-service")
+    .tls("example.com", "tls-secret")
+    .nginx_ssl_redirect(True)
+    .nginx_proxy_body_size("8m")
+    .ingress_class("nginx"))
+```
+
+### AWS ALB Ingress Controller
+```python
+# AWS ALB ingress
+alb_ingress = (Ingress("api-ingress")
+    .host("api.example.com")
+    .route("/api", "api-service")
+    .tls("api.example.com", "tls-secret")
+    .alb_ssl_policy("ELBSecurityPolicy-TLS-1-2-2017-01")
+    .alb_target_type("ip")
+    .alb_scheme("internet-facing")
+    .ingress_class("alb"))
+```
+
+### GCP GCE Ingress Controller
+```python
+# GCP GCE ingress
+gce_ingress = (Ingress("api-ingress")
+    .host("api.example.com")
+    .route("/api", "api-service")
+    .tls("api.example.com", "tls-secret")
+    .gce_ssl_certificate("my-ssl-cert")
+    .gce_backend_config("my-backend-config")
+    .ingress_class("gce"))
+```
+
+### Azure AGIC Ingress Controller
+```python
+# Azure AGIC ingress
+agic_ingress = (Ingress("api-ingress")
+    .host("api.example.com")
+    .route("/api", "api-service")
+    .tls("api.example.com", "tls-secret")
+    .agic_ssl_certificate("my-ssl-cert")
+    .agic_backend_pool("my-backend-pool")
+    .ingress_class("azure/application-gateway"))
 ```
 
 ## Best Practices
 
-!!! tip "Ingress Best Practices"
-    
-    **Security:**
-    - Always use HTTPS in production
-    - Implement proper authentication and authorization
-    - Use security headers (HSTS, CSP, etc.)
-    - Implement rate limiting
-    
-    **Performance:**
-    - Configure appropriate timeouts
-    - Use connection pooling
-    - Implement caching where appropriate
-    - Monitor ingress controller performance
-    
-    **SSL/TLS:**
-    - Use cert-manager for automatic certificate management
-    - Implement proper certificate rotation
-    - Use strong cipher suites
-    - Enable HSTS headers
-    
-    **Routing:**
-    - Use meaningful path prefixes
-    - Implement health checks
-    - Plan for maintenance and blue-green deployments
-    - Document routing rules clearly
+### 1. **Use Appropriate Ingress Class**
+```python
+# ✅ Good: Use appropriate ingress class for your environment
+ingress = Ingress("api-ingress").ingress_class("nginx")  # For Nginx
+ingress = Ingress("api-ingress").ingress_class("alb")    # For AWS ALB
+ingress = Ingress("api-ingress").ingress_class("gce")    # For GCP GCE
 
-## Troubleshooting
-
-### Common Ingress Issues
-
-!!! warning "502/503 Errors"
-    ```bash
-    # Check ingress status
-    kubectl get ingress
-    kubectl describe ingress <ingress-name>
-    
-    # Check backend services
-    kubectl get services
-    kubectl get endpoints <service-name>
-    
-    # Check ingress controller logs
-    kubectl logs -n ingress-nginx deployment/ingress-nginx-controller
-    ```
-
-!!! warning "SSL Certificate Issues"
-    ```bash
-    # Check TLS secret
-    kubectl get secret <tls-secret-name> -o yaml
-    kubectl describe certificate <cert-name>  # If using cert-manager
-    
-    # Check cert-manager logs
-    kubectl logs -n cert-manager deployment/cert-manager
-    ```
-
-!!! warning "DNS Resolution"
-    ```bash
-    # Test DNS resolution
-    nslookup <hostname>
-    dig <hostname>
-    
-    # Check from inside cluster
-    kubectl run test-pod --image=busybox --rm -it -- nslookup <hostname>
-    ```
-
-### Debug Commands
-
-```bash
-# Check ingress controller
-kubectl get pods -n ingress-nginx
-kubectl logs -n ingress-nginx deployment/ingress-nginx-controller
-
-# Test ingress routing
-curl -H "Host: myapp.example.com" http://<ingress-ip>/
-
-# Check SSL certificate
-openssl s_client -connect myapp.example.com:443 -servername myapp.example.com
-
-# View ingress events
-kubectl get events --field-selector involvedObject.name=<ingress-name>
+# ❌ Bad: Use wrong ingress class
+ingress = Ingress("api-ingress").ingress_class("nginx")  # On AWS without Nginx
 ```
 
-## API Reference
+### 2. **Configure TLS Properly**
+```python
+# ✅ Good: Configure TLS with proper secret
+ingress = Ingress("api-ingress").tls("api.example.com", "tls-secret")
 
-::: src.celestra.networking.ingress.Ingress
-    options:
-      show_source: false
-      heading_level: 3
+# ❌ Bad: No TLS configuration
+ingress = Ingress("api-ingress")  # No TLS
+```
+
+### 3. **Use Rate Limiting**
+```python
+# ✅ Good: Configure rate limiting
+ingress = Ingress("api-ingress").rate_limit(100).rate_limit_burst(200)
+
+# ❌ Bad: No rate limiting
+ingress = Ingress("api-ingress")  # No rate limiting
+```
+
+### 4. **Configure CORS**
+```python
+# ✅ Good: Configure CORS for web applications
+ingress = Ingress("api-ingress").cors(
+    origins=["https://example.com"],
+    methods=["GET", "POST"],
+    headers=["Authorization"]
+)
+
+# ❌ Bad: No CORS configuration
+ingress = Ingress("api-ingress")  # No CORS
+```
+
+### 5. **Use IP Whitelisting**
+```python
+# ✅ Good: Restrict access to specific IPs
+ingress = Ingress("api-ingress").ip_whitelist(["203.0.113.0/24"])
+
+# ❌ Bad: Allow access from anywhere
+ingress = Ingress("api-ingress")  # No IP restrictions
+```
+
+### 6. **Configure Health Checks**
+```python
+# ✅ Good: Configure health checks
+ingress = Ingress("api-ingress").health_check_path("/health")
+
+# ❌ Bad: No health checks
+ingress = Ingress("api-ingress")  # No health checks
+```
 
 ## Related Components
 
-- **[Service](service.md)** - Backend services for ingress
-- **[App](../core/app.md)** - Applications behind ingress
-- **[Secret](../security/secrets.md)** - TLS certificates
-- **[NetworkPolicy](network-policy.md)** - Network security
+- **[App](../core/app.md)** - For stateless applications
+- **[StatefulApp](../core/stateful-app.md)** - For stateful applications
+- **[Service](service.md)** - For internal service discovery
+- **[NetworkPolicy](network-policy.md)** - For network security policies
+- **[Secret](../security/secrets.md)** - For TLS certificates
 
----
+## Next Steps
 
-**Next:** Learn about [Scaling](scaling.md) for automatic pod scaling. 
+- **[Service](service.md)** - Learn about internal service discovery
+- **[Components Overview](index.md)** - Explore all available components
+- **[Examples](../examples/index.md)** - See real-world examples
+- **[Tutorials](../tutorials/index.md)** - Step-by-step guides 

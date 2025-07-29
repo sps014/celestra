@@ -1,244 +1,280 @@
 # Quick Start Guide
 
-Get started with Celestra in just a few minutes! This guide will walk you through creating your first Kubernetes application.
+Get up and running with Celestra in 5 minutes! This guide will walk you through creating your first application and deploying it to Kubernetes.
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+- **Python 3.8+** installed
+- **Docker** installed (for local development)
+- **kubectl** configured (for Kubernetes deployment)
+- **A Kubernetes cluster** (local or remote)
 
 ## Installation
 
-=== "pip install"
+### Option 1: Install from PyPI (Recommended)
 
-    ```bash
-    # Install from source
-    git clone https://github.com/your-username/Celestra.git
-    cd Celestra
-    pip install -r src/requirements.txt
-    ```
+```bash
+pip install celestra
+```
 
-=== "Development Setup"
+### Option 2: Install from Source
 
-    ```bash
-    # Clone and setup for development
-    git clone https://github.com/your-username/Celestra.git
-    cd Celestra
-    pip install -r src/requirements.txt
-    
-    # Run tests to verify installation
-    python run_tests.py
-    ```
+```bash
+git clone https://github.com/your-username/celestra.git
+cd celestra
+pip install -e src/
+```
 
 ## Your First Application
 
-Let's create a simple web application:
+Let's create a simple web application that demonstrates Celestra's core features.
 
-### 1. Create a Basic Web App
+### 1. Create the Application
+
+Create a file called `my_first_app.py`:
 
 ```python
-from celestra import App, KubernetesOutput
+from celestra import App, StatefulApp, Secret, ConfigMap
 
-# Create a simple NGINX web application
-web_app = (App("my-web-app")
-    .image("nginx:1.21")
-    .port(80, "http")
+# Database credentials
+db_secret = (Secret("db-secret")
+    .add("username", "admin")
+    .add("password", "secure-password"))
+
+# Database configuration
+db_config = (ConfigMap("db-config")
+    .add("database", "myapp")
+    .add("max_connections", "100"))
+
+# Database
+database = (StatefulApp("postgres")
+    .image("postgres:15")
+    .port(5432)
+    .storage("10Gi")
+    .add_secret(db_secret)
+    .add_config(db_config))
+
+# Web application
+web_app = (App("web-app")
+    .image("nginx:latest")
+    .port(80)
     .replicas(3)
-    .resources(cpu="100m", memory="128Mi")
+    .resources(cpu="500m", memory="512Mi")
+    .add_secret(db_secret)
+    .add_config(db_config)
     .expose())
 
-print("✅ Web app created!")
+# Generate Kubernetes manifests
+web_app.generate().to_yaml("./k8s/")
+database.generate().to_yaml("./k8s/")
+db_secret.generate().to_yaml("./k8s/")
+db_config.generate().to_yaml("./k8s/")
+
+print("✅ Kubernetes manifests generated in ./k8s/")
 ```
 
-### 2. Generate Kubernetes YAML
-
-```python
-# Generate Kubernetes resources
-resources = web_app.generate_kubernetes_resources()
-
-# Output to files
-output = KubernetesOutput()
-output.generate(web_app, "k8s-manifests/")
-
-print(f"📄 Generated {len(resources)} Kubernetes resources")
-```
-
-### 3. Deploy to Kubernetes
-
-```bash
-# Apply the generated manifests
-kubectl apply -f k8s-manifests/
-
-# Check deployment status
-kubectl get deployments,services,pods
-```
-
-## Complete Example
-
-Here's a complete example file (`my_first_app.py`):
-
-```python
-#!/usr/bin/env python3
-"""
-My First Celestra Application
-"""
-
-import os
-from celestra import App, KubernetesOutput
-
-def main():
-    print("🚀 Creating your first Celestra application...")
-    
-    # Create the application
-    web_app = (App("my-web-app")
-        .image("nginx:1.21")
-        .port(80, "http")
-        .replicas(3)
-        .resources(cpu="100m", memory="128Mi")
-        .env("ENV", "production")
-        .expose())
-    
-    # Generate Kubernetes resources
-    resources = web_app.generate_kubernetes_resources()
-    
-    # Ensure output directory exists
-    os.makedirs("k8s-manifests", exist_ok=True)
-    
-    # Generate YAML files
-    output = KubernetesOutput()
-    output.generate(web_app, "k8s-manifests/")
-    
-    print(f"✅ Generated {len(resources)} Kubernetes resources:")
-    for resource in resources:
-        kind = resource.get("kind", "Unknown")
-        name = resource.get("metadata", {}).get("name", "unnamed")
-        print(f"   - {kind}: {name}")
-    
-    print("\n📁 Files created in k8s-manifests/")
-    print("🚀 Deploy with: kubectl apply -f k8s-manifests/")
-
-if __name__ == "__main__":
-    main()
-```
-
-### Run the Example
+### 2. Run the Application
 
 ```bash
 python my_first_app.py
 ```
 
-Expected output:
+This will create a `k8s/` directory with all the necessary Kubernetes manifests.
+
+### 3. Deploy to Kubernetes
+
+```bash
+kubectl apply -f ./k8s/
 ```
-🚀 Creating your first Celestra application...
-✅ Generated 2 Kubernetes resources:
-   - Deployment: my-web-app
-   - Service: my-web-app
-   
-📁 Files created in k8s-manifests/
-🚀 Deploy with: kubectl apply -f k8s-manifests/
+
+### 4. Check the Deployment
+
+```bash
+kubectl get pods
+kubectl get services
+kubectl get configmaps
+kubectl get secrets
 ```
+
+## What Just Happened?
+
+Let's break down what Celestra created for you:
+
+### 1. **Database (StatefulApp)**
+- **PostgreSQL StatefulSet** with persistent storage
+- **Service** for database connectivity
+- **Secret** for database credentials
+- **ConfigMap** for database configuration
+
+### 2. **Web Application (App)**
+- **Deployment** with 3 replicas
+- **Service** for load balancing
+- **Resource limits** for CPU and memory
+- **Secret and ConfigMap** mounted as environment variables
+
+### 3. **Security**
+- **Secrets** for sensitive data
+- **ConfigMaps** for configuration
+- **RBAC** (if enabled)
 
 ## Next Steps
 
-🎯 **Congratulations!** You've created your first Celestra application. Here's what to explore next:
+### Explore the Generated Files
 
-### Immediate Next Steps
+Check out what was created in the `k8s/` directory:
 
-<div class="grid cards" markdown>
+```bash
+ls -la k8s/
+```
 
--   **[Add a Database](tutorials/basic-web-app.md#adding-a-database)**
-    
-    Learn how to add PostgreSQL or MySQL to your application
+You'll see files like:
+- `web-app-deployment.yaml`
+- `web-app-service.yaml`
+- `postgres-statefulset.yaml`
+- `postgres-service.yaml`
+- `db-secret.yaml`
+- `db-config-configmap.yaml`
 
--   **[Configure Multiple Environments](tutorials/multi-environment.md)**
-    
-    Set up dev, staging, and production configurations
+### Customize Your Application
 
--   **[Add Health Checks](configuration/health-checks.md)**
-    
-    Configure liveness and readiness probes
+Try modifying the application:
 
--   **[Enable Monitoring](components/advanced/observability.md)**
-    
-    Add metrics, logging, and tracing
+```python
+# Add environment variables
+web_app = (App("web-app")
+    .image("nginx:latest")
+    .port(80)
+    .replicas(3)
+    .env("DEBUG", "false")
+    .env("ENVIRONMENT", "production")
+    .expose())
 
-</div>
+# Add health checks
+web_app = (App("web-app")
+    .image("nginx:latest")
+    .port(80)
+    .health_check("/health")
+    .liveness_probe("/health")
+    .readiness_probe("/ready")
+    .expose())
 
-### Popular Tutorials
+# Add resource limits
+web_app = (App("web-app")
+    .image("nginx:latest")
+    .port(80)
+    .resources(
+        cpu="500m", 
+        memory="512Mi",
+        cpu_limit="1000m",
+        memory_limit="1Gi"
+    )
+    .expose())
+```
 
-| Tutorial | Complexity | Time | Description |
-|----------|------------|------|-------------|
-| [Kafka Deployment](tutorials/kafka-deployment.md) | ⭐⭐⭐ | 15 min | Deploy a production Kafka cluster |
-| [WordPress Platform](tutorials/wordpress-platform.md) | ⭐⭐ | 10 min | Full WordPress with MySQL |
-| [Microservices](tutorials/microservices.md) | ⭐⭐⭐⭐ | 25 min | Complete microservices platform |
-| [RBAC Security](tutorials/rbac-security.md) | ⭐⭐⭐ | 15 min | Implement security and access control |
+### Generate Different Outputs
 
-### Core Concepts to Learn
+Celestra supports multiple output formats:
 
-1. **[Components Overview](components/index.md)** - Understand all available DSL components
-2. **[Configuration](configuration/index.md)** - Learn about resource configuration options
-3. **[Output Formats](advanced/output/kubernetes-yaml.md)** - Generate different output formats
-4. **[Security](components/security/rbac.md)** - Implement security best practices
+```python
+# Kubernetes YAML
+web_app.generate().to_yaml("./k8s/")
+
+# Docker Compose (for local development)
+web_app.generate().to_docker_compose("./docker-compose.yml")
+
+# Helm Chart
+web_app.generate().to_helm_chart("./charts/")
+
+# Kustomize
+web_app.generate().to_kustomize("./kustomize/")
+```
 
 ## Common Patterns
 
-### Web Application with Database
+### Multi-Service Application
 
 ```python
-from celestra import App, StatefulApp, Service
+from celestra import App, StatefulApp, AppGroup
 
-# Web application
-web_app = (App("web-app")
-    .image("myapp:latest")
-    .port(8080, "http")
-    .env("DATABASE_URL", "postgresql://postgres:5432/myapp")
-    .replicas(3)
-    .expose())
+# Create an application group
+platform = AppGroup("my-platform")
 
 # Database
-database = (StatefulApp("postgres")
-    .image("postgres:13")
-    .port(5432, "postgres")
-    .env("POSTGRES_DB", "myapp")
-    .env("POSTGRES_PASSWORD", "secretpassword")
-    .storage("/var/lib/postgresql/data", "10Gi"))
+database = StatefulApp("postgres").image("postgres:15").port(5432).storage("20Gi")
+
+# API Service
+api = App("api").image("myapp/api:latest").port(8080).replicas(3)
+
+# Frontend
+frontend = App("frontend").image("myapp/frontend:latest").port(80).replicas(2)
+
+# Add all services to the group
+platform.add([database, api, frontend])
+
+# Generate everything
+platform.generate().to_yaml("./k8s/")
 ```
 
-### Multiple Output Formats
+### Environment-Specific Configuration
 
 ```python
-from src.celestra.output import KubernetesOutput, HelmOutput, DockerComposeOutput
+# Development
+dev_app = (App("myapp-dev")
+    .image("myapp:latest")
+    .port(8080)
+    .replicas(1)
+    .resources(cpu="100m", memory="256Mi")
+    .env("ENVIRONMENT", "development"))
 
-# Kubernetes YAML
-KubernetesOutput().generate(web_app, "k8s/")
+# Production
+prod_app = (App("myapp")
+    .image("myapp:latest")
+    .port(8080)
+    .replicas(5)
+    .resources(cpu="500m", memory="1Gi")
+    .env("ENVIRONMENT", "production"))
 
-# Helm Chart
-helm_output = HelmOutput("my-app-chart")
-helm_output.add_resource(web_app)
-helm_output.generate("helm/")
-
-# Docker Compose for local development
-DockerComposeOutput().generate(web_app, "docker-compose.yml")
+dev_app.generate().to_yaml("./dev/")
+prod_app.generate().to_yaml("./prod/")
 ```
 
 ## Troubleshooting
 
 ### Common Issues
 
-!!! warning "Import Errors"
-    If you get import errors, make sure you're running from the project root and the `src/` directory is in your Python path:
-    ```bash
-    export PYTHONPATH="${PYTHONPATH}:$(pwd)/src"
-    python my_first_app.py
-    ```
+**1. Import Error**
+```bash
+ModuleNotFoundError: No module named 'celestra'
+```
+**Solution**: Install Celestra: `pip install celestra`
 
-!!! warning "Missing Dependencies"
-    Install all required dependencies:
-    ```bash
-    pip install -r src/requirements.txt
-    ```
+**2. Kubernetes Connection Error**
+```bash
+The connection to the server localhost:8080 was refused
+```
+**Solution**: Start your Kubernetes cluster (e.g., `minikube start`)
+
+**3. Permission Denied**
+```bash
+Error from server (Forbidden)
+```
+**Solution**: Check your kubectl configuration and permissions
 
 ### Getting Help
 
-- 📖 **Documentation**: Browse the [Components](components/index.md) and [Examples](examples/index.md)
-- 🐛 **Issues**: Report bugs on [GitHub Issues](https://github.com/your-username/Celestra/issues)
-- 💬 **Discussions**: Join conversations on [GitHub Discussions](https://github.com/your-username/Celestra/discussions)
+- **Documentation**: Browse the [complete documentation](../index.md)
+- **Examples**: Check out [example applications](../examples/index.md)
+- **Issues**: Report problems on [GitHub Issues](https://github.com/your-username/Celestra/issues)
 
----
+## What's Next?
 
-**Ready for more?** Try the [Kafka Deployment Tutorial](tutorials/kafka-deployment.md) or explore [all available components](components/index.md)! 
+Now that you've created your first application, explore:
+
+- **[Core Concepts](core-concepts.md)** - Understand Celestra's fundamental concepts
+- **[Components Guide](../components/index.md)** - Learn about all available components
+- **[Tutorials](../tutorials/index.md)** - Step-by-step guides for complex scenarios
+- **[Examples](../examples/index.md)** - Real-world examples and patterns
+
+Ready to build something more complex? Check out the [Kafka Deployment Tutorial](../tutorials/kafka-deployment.md) or [Microservices Guide](../tutorials/microservices.md)! 

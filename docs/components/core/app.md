@@ -1,353 +1,810 @@
-# App Component
+# App Class
 
-The `App` component is the primary building block for stateless applications in Celestra. It generates Kubernetes Deployments and Services for your applications.
+The `App` class represents stateless applications that can be horizontally scaled without persistent storage concerns. It's the primary component for deploying web applications, APIs, microservices, and other stateless workloads.
 
 ## Overview
-
-Use the `App` component for:
-- **Web applications** - APIs, frontend services
-- **Microservices** - Individual service components
-- **Stateless workloads** - Applications that don't need persistent storage
-
-## Basic Usage
 
 ```python
 from celestra import App
 
-# Simple web application
-app = (App("my-web-app")
-    .image("nginx:1.21")
+# Basic usage
+app = App("my-app").image("nginx:latest").port(8080).replicas(3)
+
+# Production-ready application
+app = (App("production-api")
+    .image("myapp/api:v1.0")
     .port(8080)
-    .replicas(3)
+    .replicas(5)
+    .resources(cpu="500m", memory="1Gi")
+    .env("NODE_ENV", "production")
     .expose())
 ```
 
-## Configuration Methods
+## Core API Functions
 
-### Image and Basic Setup
+### Container Configuration
+
+#### Image
+Set the container image for the application.
 
 ```python
-app = (App("api-service")
-    .image("myapp:v1.2.0")           # Container image
-    .tag("latest")                   # Image tag
-    .pull_policy("Always"))          # Image pull policy
+app = App("web").image("nginx:1.21")
+app = App("api").image("myapp:v2.1.0")
+app = App("service").image("gcr.io/myproject/service:latest")
 ```
 
-### Ports and Networking
+#### Build
+Build container from local Dockerfile instead of using pre-built image.
 
 ```python
-app = (App("web-app")
-    .port(8080, "http")             # Add a port with name
-    .http_port(8080, "main")        # HTTP port helper
-    .https_port(8443, "secure")     # HTTPS port helper
-    .metrics_port(9090, "metrics")  # Metrics port helper
-    .admin_port(9000, "admin")      # Admin port helper
-    .grpc_port(9091, "grpc")        # gRPC port helper
-    .expose())                      # Create Service automatically
+# Build from current directory
+app = App("myapp").build(".", "Dockerfile", VERSION="1.0")
+
+# Build from subdirectory with custom Dockerfile
+app = App("backend").build("./backend", "Dockerfile.dev", ENV="development")
 ```
 
-### Environment Variables
+#### From Dockerfile
+Use a custom Dockerfile for building the container.
 
 ```python
-app = (App("backend")
-    .env("DATABASE_URL", "postgres://...")
-    .env("LOG_LEVEL", "info")
-    .env("DEBUG", "false")
-    .env_from_secret("db-secret", "DATABASE_PASSWORD")
-    .env_from_configmap("app-config", "API_KEY"))
+# Use custom Dockerfile
+app = App("api").from_dockerfile("Dockerfile.prod", ".", ENV="production")
+
+# Multi-stage build
+app = App("optimized").from_dockerfile("Dockerfile.multi", ".", TARGET="production")
+```
+
+#### Command
+Set the command to run in the container.
+
+```python
+app = App("api").image("node:16").command(["npm", "start"])
+app = App("worker").image("python:3.9").command(["python", "worker.py"])
+```
+
+#### Arguments
+Set the arguments for the container command.
+
+```python
+app = App("api").image("myapp:latest").args(["--port", "8080", "--env", "prod"])
+```
+
+### Port Configuration
+
+#### Port
+Add a port to the application.
+
+```python
+# Basic HTTP port
+app = App("web").port(8080, "http")
+
+# Multiple ports
+app = (App("api")
+    .port(8080, "http")
+    .port(8443, "https")
+    .port(9090, "metrics"))
+
+# Custom protocol
+app = App("dns").port(53, "dns", "UDP")
+```
+
+#### Add Port
+Add a port to the application (alias for port()).
+
+```python
+# Add multiple ports
+app = (App("multi-service")
+    .add_port(8080, "http")
+    .add_port(8443, "https")
+    .add_port(9090, "metrics"))
+```
+
+#### Ports
+Add multiple ports at once.
+
+```python
+# Bulk port configuration
+ports_config = [
+    {"port": 8080, "name": "http"},
+    {"port": 8443, "name": "https"},
+    {"port": 9090, "name": "metrics"}
+]
+app = App("api").ports(ports_config)
+```
+
+### Convenience Port Methods
+
+#### HTTP Port
+```python
+app = App("web").http_port(8080)
+```
+
+#### HTTPS Port
+```python
+app = App("secure").https_port(8443)
+```
+
+#### Metrics Port
+```python
+app = App("monitored").metrics_port(9090)
+```
+
+#### Health Port
+```python
+app = App("healthy").health_port(8081)
+```
+
+#### Admin Port
+```python
+app = App("managed").admin_port(9000)
+```
+
+#### GRPC Port
+```python
+app = App("grpc-service").grpc_port(9090)
+```
+
+#### Debug Port
+```python
+app = App("debuggable").debug_port(5005)
+```
+
+#### Common Ports
+Add standard ports for web applications.
+
+```python
+# Standard web app ports
+app = App("web-app").common_ports()
+
+# Custom ports
+app = App("api").common_ports(http=3000, metrics=9090, health=8081)
+```
+
+### Environment Configuration
+
+#### Environment
+Set multiple environment variables at once.
+
+```python
+# Bulk environment variables
+env_config = {
+    "NODE_ENV": "production",
+    "DATABASE_URL": "postgres://user:pass@db:5432/myapp",
+    "REDIS_URL": "redis://redis:6379",
+    "LOG_LEVEL": "info"
+}
+app = App("api").environment(env_config)
+```
+
+#### Environment Variable
+Add a single environment variable.
+
+```python
+# Single environment variable
+app = App("api").env("DEBUG", "true")
+
+# Multiple individual variables
+app = (App("web")
+    .env("NODE_ENV", "production")
+    .env("PORT", "3000")
+    .env("API_URL", "https://api.example.com"))
+```
+
+#### Environment from Secret
+Load environment variables from a Secret.
+
+```python
+app = App("api").env_from_secret("db-secret")
+app = App("api").env_from_secret("api-keys", optional=True)
+```
+
+#### Environment from ConfigMap
+Load environment variables from a ConfigMap.
+
+```python
+app = App("api").env_from_config_map("app-config")
+app = App("api").env_from_config_map("feature-flags", optional=True)
 ```
 
 ### Resource Management
 
+#### Resources
+Set resource requests and limits for the application.
+
 ```python
-app = (App("cpu-intensive")
+# Basic resources
+app = App("web").resources(cpu="100m", memory="128Mi")
+
+# With limits
+app = (App("api")
     .resources(
-        cpu="500m",           # CPU request
-        memory="1Gi",         # Memory request
-        cpu_limit="1000m",    # CPU limit
-        memory_limit="2Gi"    # Memory limit
+        cpu="500m", 
+        memory="1Gi",
+        cpu_limit="1000m",
+        memory_limit="2Gi"
+    ))
+
+# GPU-enabled
+app = App("ml").resources(cpu="2", memory="8Gi", gpu=1)
+```
+
+#### Replicas
+Set the number of replicas for the application.
+
+```python
+# Single instance
+app = App("dev").replicas(1)
+
+# Production scaling
+app = App("prod").replicas(5)
+
+# High availability
+app = App("critical").replicas(10)
+```
+
+#### Scale
+Configure horizontal pod autoscaling.
+
+```python
+# Basic autoscaling
+app = App("api").scale(min_replicas=2, max_replicas=10)
+
+# With CPU target
+app = App("api").scale(min_replicas=2, max_replicas=10, target_cpu_utilization=70)
+```
+
+### Dependencies and Connections
+
+#### Depends On
+Set service dependencies for deployment ordering.
+
+```python
+# Single dependency
+app = App("api").depends_on(["database"])
+
+# Multiple dependencies
+app = App("web").depends_on(["api", "cache", "database"])
+
+# With external configuration
+app = App("worker").depends_on(["postgres", "redis", "kafka"])
+```
+
+#### connect_to(services: List[str]) -> App
+Establish connections to other services.
+
+```python
+# Connect to database and cache
+app = App("api").connect_to(["postgres", "redis"])
+
+# Connect to external services
+app = App("payment").connect_to(["stripe-api", "webhook-service"])
+```
+
+### Container Management
+
+#### add_companion(companion: Companion) -> App
+Add sidecar or init containers.
+
+```python
+# Logging sidecar
+app = (App("api")
+    .add_companion(
+        Companion("log-collector")
+            .image("fluentd:latest")
+            .type("sidecar")
+            .mount_shared_volume("/var/log")
+    ))
+
+# Database migration init container
+app = (App("api")
+    .add_companion(
+        Companion("db-migration")
+            .image("migrator:latest")
+            .type("init")
+            .command(["python", "migrate.py"])
     ))
 ```
 
-### Scaling and Replicas
+#### add_companions(companions: List[Companion]) -> App
+Add multiple companion containers.
 
 ```python
-app = (App("scalable-app")
-    .replicas(5)              # Static replica count
-    .auto_scale(              # Horizontal Pod Autoscaler
-        min_replicas=2,
-        max_replicas=10,
-        cpu_percent=80
-    ))
+# Multiple sidecars
+sidecars = [
+    Companion("log-collector").image("fluentd:latest").type("sidecar"),
+    Companion("metrics-collector").image("prometheus:latest").type("sidecar")
+]
+app = App("api").add_companions(sidecars)
 ```
 
-### Health Checks
+### Configuration Management
+
+#### add_secret(secret: Secret) -> App
+Add a secret to the application.
 
 ```python
-app = (App("monitored-app")
-    .liveness_probe("/health", port=8080, initial_delay=30)
-    .readiness_probe("/ready", port=8080, initial_delay=10)
-    .startup_probe("/startup", port=8080, initial_delay=5))
+# Add database secret
+db_secret = Secret("db-secret").add("password", "secret123")
+app = App("api").add_secret(db_secret)
+
+# Add API key secret
+api_secret = Secret("api-keys").add("stripe_key", "sk_live_...")
+app = App("payment").add_secret(api_secret)
 ```
 
-### Storage and Volumes
+#### add_secrets(secrets: List[Secret]) -> App
+Add multiple secrets to the application.
 
 ```python
-app = (App("file-processor")
-    .storage("/data", "10Gi")              # Persistent volume
-    .temp_storage("/tmp", "1Gi")           # Temporary storage
-    .config_volume("/config", "app-config") # ConfigMap volume
-    .secret_volume("/secrets", "app-secret")) # Secret volume
+# Multiple secrets
+secrets = [
+    Secret("db-secret").add("password", "secret123"),
+    Secret("api-keys").add("stripe_key", "sk_live_..."),
+    Secret("tls-cert").from_file("cert.pem")
+]
+app = App("api").add_secrets(secrets)
 ```
 
-## Advanced Configuration
-
-### Labels and Annotations
+#### add_config(config_map: ConfigMap) -> App
+Add a ConfigMap to the application.
 
 ```python
-app = (App("labeled-app")
-    .label("environment", "production")
-    .label("team", "backend")
-    .annotation("prometheus.io/scrape", "true")
-    .annotation("prometheus.io/port", "9090"))
+# Add application config
+app_config = ConfigMap("app-config").add_data("config.json", '{"debug": true}')
+app = App("api").add_config(app_config)
+
+# Add nginx config
+nginx_config = ConfigMap("nginx-config").add_data("nginx.conf", nginx_conf_content)
+app = App("web").add_config(nginx_config)
 ```
 
-### Namespace and Service Account
+#### add_configs(config_maps: List[ConfigMap]) -> App
+Add multiple ConfigMaps to the application.
 
 ```python
-app = (App("secure-app")
-    .namespace("production")
-    .service_account("app-service-account"))
+# Multiple configs
+configs = [
+    ConfigMap("app-config").add("debug", "false"),
+    ConfigMap("feature-flags").add("new_ui", "true"),
+    ConfigMap("nginx-config").from_file("nginx.conf")
+]
+app = App("api").add_configs(configs)
+```
+
+### Health Checks and Probes
+
+#### health_check(path: str, port: int = None, initial_delay: int = 30, period: int = 10) -> App
+Add a health check endpoint.
+
+```python
+app = App("api").health_check("/health")
+app = App("api").health_check("/ready", port=8081, initial_delay=60)
+```
+
+#### liveness_probe(path: str, port: int = None, initial_delay: int = 30, period: int = 10, timeout: int = 5, failure_threshold: int = 3) -> App
+Configure liveness probe.
+
+```python
+app = App("api").liveness_probe("/health")
+app = App("api").liveness_probe("/alive", port=8081, initial_delay=60)
+```
+
+#### readiness_probe(path: str, port: int = None, initial_delay: int = 5, period: int = 5, timeout: int = 3, failure_threshold: int = 3) -> App
+Configure readiness probe.
+
+```python
+app = App("api").readiness_probe("/ready")
+app = App("api").readiness_probe("/health", port=8081, initial_delay=10)
+```
+
+#### startup_probe(path: str, port: int = None, initial_delay: int = 30, period: int = 10, timeout: int = 5, failure_threshold: int = 30) -> App
+Configure startup probe.
+
+```python
+app = App("api").startup_probe("/startup")
+app = App("api").startup_probe("/init", port=8081, initial_delay=60)
+```
+
+### Security and RBAC
+
+#### add_service_account(service_account: ServiceAccount) -> App
+Add a service account to the application.
+
+```python
+sa = ServiceAccount("api-sa")
+app = App("api").add_service_account(sa)
+```
+
+#### add_role(role: Role) -> App
+Add a role to the application.
+
+```python
+role = Role("api-role").add_policy("get", "pods").add_policy("list", "services")
+app = App("api").add_role(role)
+```
+
+#### add_network_policy(network_policy: NetworkPolicy) -> App
+Add a network policy to the application.
+
+```python
+policy = NetworkPolicy("api-policy").allow_pods_with_label("app", "api")
+app = App("api").add_network_policy(policy)
+```
+
+#### add_security_policy(security_policy: SecurityPolicy) -> App
+Add a security policy to the application.
+
+```python
+policy = SecurityPolicy("restricted").pod_security_standards("restricted")
+app = App("api").add_security_policy(policy)
+```
+
+### Deployment Strategy
+
+#### deployment_strategy(strategy: str, **kwargs) -> App
+Configure deployment strategy.
+
+```python
+# Rolling update (default)
+app = App("api").deployment_strategy("rolling")
+
+# Blue-green deployment
+app = App("api").deployment_strategy("blue-green", health_check="/health")
+
+# Canary deployment
+app = App("api").deployment_strategy("canary", percentage=10)
+```
+
+#### rolling_update(max_surge: int = 1, max_unavailable: int = 0, min_ready_seconds: int = 0) -> App
+Configure rolling update strategy.
+
+```python
+app = App("api").rolling_update(max_surge=1, max_unavailable=0)
+app = App("api").rolling_update(max_surge=2, max_unavailable=1, min_ready_seconds=30)
+```
+
+#### blue_green_deployment(health_check: str = None, rollback_on_failure: bool = True) -> App
+Configure blue-green deployment.
+
+```python
+app = App("api").blue_green_deployment(health_check="/health")
+app = App("api").blue_green_deployment(rollback_on_failure=True)
+```
+
+#### canary_deployment(percentage: int = 10, promotion_criteria: str = None) -> App
+Configure canary deployment.
+
+```python
+app = App("api").canary_deployment(percentage=10)
+app = App("api").canary_deployment(percentage=20, promotion_criteria="success_rate > 95%")
+```
+
+### Networking and Exposure
+
+#### expose(external: bool = False, ingress: bool = False) -> App
+Expose the application via Service and optionally Ingress.
+
+```python
+# Internal service only
+app = App("api").expose()
+
+# External service
+app = App("web").expose(external=True)
+
+# With ingress
+app = App("web").expose(external=True, ingress=True)
+```
+
+#### add_service(service: Service) -> App
+Add a custom service configuration.
+
+```python
+service = Service("api-service").type("LoadBalancer")
+app = App("api").add_service(service)
+```
+
+#### add_ingress(ingress: Ingress) -> App
+Add an ingress configuration.
+
+```python
+ingress = Ingress("api-ingress").route("/api", "api-service")
+app = App("api").add_ingress(ingress)
+```
+
+### Observability
+
+#### add_observability(observability: Observability) -> App
+Add observability configuration.
+
+```python
+obs = Observability("monitoring").enable_metrics().enable_logging()
+app = App("api").add_observability(obs)
+```
+
+#### enable_metrics(port: int = 9090) -> App
+Enable metrics collection.
+
+```python
+app = App("api").enable_metrics(port=9090)
+```
+
+#### enable_logging(log_format: str = "json") -> App
+Enable structured logging.
+
+```python
+app = App("api").enable_logging(log_format="json")
+```
+
+#### enable_tracing(tracing_backend: str = "jaeger") -> App
+Enable distributed tracing.
+
+```python
+app = App("api").enable_tracing(tracing_backend="jaeger")
+```
+
+### Advanced Configuration
+
+#### namespace(namespace: str) -> App
+Set the namespace for the application.
+
+```python
+app = App("api").namespace("production")
+app = App("api").namespace("staging")
+```
+
+#### add_label(key: str, value: str) -> App
+Add a label to the application.
+
+```python
+app = App("api").add_label("environment", "production")
+app = App("api").add_label("team", "platform")
+```
+
+#### add_labels(labels: Dict[str, str]) -> App
+Add multiple labels to the application.
+
+```python
+labels = {
+    "environment": "production",
+    "team": "platform",
+    "version": "v1.0"
+}
+app = App("api").add_labels(labels)
+```
+
+#### add_annotation(key: str, value: str) -> App
+Add an annotation to the application.
+
+```python
+app = App("api").add_annotation("description", "API service")
+app = App("api").add_annotation("owner", "platform-team")
+```
+
+#### add_annotations(annotations: Dict[str, str]) -> App
+Add multiple annotations to the application.
+
+```python
+annotations = {
+    "description": "API service",
+    "owner": "platform-team",
+    "documentation": "https://docs.example.com/api"
+}
+app = App("api").add_annotations(annotations)
+```
+
+#### node_selector(selector: Dict[str, str]) -> App
+Set node selector for pod placement.
+
+```python
+app = App("api").node_selector({"node-type": "compute"})
+app = App("api").node_selector({"zone": "us-west-1"})
+```
+
+#### tolerations(tolerations: List[Dict[str, Any]]) -> App
+Set tolerations for pod scheduling.
+
+```python
+tolerations = [{"key": "dedicated", "operator": "Equal", "value": "api", "effect": "NoSchedule"}]
+app = App("api").tolerations(tolerations)
+```
+
+#### affinity(affinity: Dict[str, Any]) -> App
+Set pod affinity rules.
+
+```python
+affinity = {
+    "podAntiAffinity": {
+        "preferredDuringSchedulingIgnoredDuringExecution": [{
+            "weight": 100,
+            "podAffinityTerm": {
+                "labelSelector": {"matchExpressions": [{"key": "app", "operator": "In", "values": ["api"]}]},
+                "topologyKey": "kubernetes.io/hostname"
+            }
+        }]
+    }
+}
+app = App("api").affinity(affinity)
 ```
 
 ### Lifecycle Hooks
 
+#### add_lifecycle(lifecycle: Lifecycle) -> App
+Add lifecycle hooks to the application.
+
 ```python
-app = (App("lifecycle-app")
-    .post_start_exec(["sh", "-c", "echo 'Starting' > /tmp/started"])
-    .pre_stop_exec(["sh", "-c", "echo 'Stopping' > /tmp/stopped"]))
+lifecycle = Lifecycle("api-lifecycle")
+lifecycle.pre_stop_command(["python", "cleanup.py"])
+app = App("api").add_lifecycle(lifecycle)
+```
+
+#### pre_stop_command(command: List[str]) -> App
+Add pre-stop command.
+
+```python
+app = App("api").pre_stop_command(["python", "cleanup.py"])
+```
+
+#### post_start_command(command: List[str]) -> App
+Add post-start command.
+
+```python
+app = App("api").post_start_command(["python", "init.py"])
+```
+
+### Validation and Cost Optimization
+
+#### add_validator(validator: Validator) -> App
+Add validation to the application.
+
+```python
+validator = Validator("api-validator")
+validator.security_scan()
+validator.cost_optimization()
+app = App("api").add_validator(validator)
+```
+
+#### add_cost_optimizer(optimizer: CostOptimization) -> App
+Add cost optimization to the application.
+
+```python
+optimizer = CostOptimization("api-optimizer")
+optimizer.resource_optimization()
+optimizer.spot_instance_recommendation()
+app = App("api").add_cost_optimizer(optimizer)
+```
+
+### Output Generation
+
+#### generate() -> AppGenerator
+Generate the application configuration.
+
+```python
+# Generate Kubernetes YAML
+app.generate().to_yaml("./k8s/")
+
+# Generate Docker Compose
+app.generate().to_docker_compose("./docker-compose.yml")
+
+# Generate Helm Chart
+app.generate().to_helm_chart("./charts/")
+
+# Generate Kustomize
+app.generate().to_kustomize("./kustomize/")
 ```
 
 ## Complete Example
 
+Here's a complete example of a production-ready API application:
+
 ```python
-#!/usr/bin/env python3
-"""
-Complete App Example - E-commerce API Service
-"""
+from celestra import App, Secret, ConfigMap, ServiceAccount, Role, NetworkPolicy
 
-from celestra import App, Secret, ConfigMap, KubernetesOutput
+# Create secrets
+db_secret = Secret("db-secret").add("password", "secure-password")
+api_secret = Secret("api-secret").add("jwt_secret", "jwt-secret-key")
 
-def create_ecommerce_api():
-    # Configuration
-    config = ConfigMap("api-config")
-    config.add_data("database.host", "postgres.default.svc.cluster.local")
-    config.add_data("redis.host", "redis.default.svc.cluster.local")
-    config.add_data("log.level", "info")
-    
-    # Secrets
-    secret = Secret("api-secrets")
-    secret.add_data("database.password", "supersecret")
-    secret.add_data("jwt.secret", "jwt-signing-key")
-    secret.add_data("stripe.key", "sk_live_...")
-    
-    # Application
-    api = (App("ecommerce-api")
-        .image("ecommerce/api:v2.1.0")
-        .pull_policy("Always")
-        
-        # Networking
-        .http_port(8080, "api")
-        .metrics_port(9090, "metrics")
-        .admin_port(9000, "admin")
-        .expose()
-        
-        # Environment
-        .env("NODE_ENV", "production")
-        .env("PORT", "8080")
-        .env_from_configmap("api-config", "DATABASE_HOST", "database.host")
-        .env_from_configmap("api-config", "REDIS_HOST", "redis.host")
-        .env_from_configmap("api-config", "LOG_LEVEL", "log.level")
-        .env_from_secret("api-secrets", "DATABASE_PASSWORD", "database.password")
-        .env_from_secret("api-secrets", "JWT_SECRET", "jwt.secret")
-        .env_from_secret("api-secrets", "STRIPE_KEY", "stripe.key")
-        
-        # Resources
-        .resources(
-            cpu="1000m",
-            memory="2Gi", 
-            cpu_limit="2000m",
-            memory_limit="4Gi"
-        )
-        
-        # Scaling
-        .replicas(3)
-        .auto_scale(min_replicas=3, max_replicas=20, cpu_percent=70)
-        
-        # Health checks
-        .liveness_probe("/health", port=8080, initial_delay=60)
-        .readiness_probe("/ready", port=8080, initial_delay=30)
-        .startup_probe("/startup", port=8080, initial_delay=10)
-        
-        # Storage for logs and cache
-        .temp_storage("/tmp", "1Gi")
-        .storage("/app/logs", "5Gi")
-        
-        # Metadata
-        .label("app", "ecommerce")
-        .label("component", "api")
-        .label("environment", "production")
-        .annotation("prometheus.io/scrape", "true")
-        .annotation("prometheus.io/port", "9090")
-        .annotation("prometheus.io/path", "/metrics")
-        
-        # Security
-        .namespace("ecommerce")
-        .service_account("ecommerce-api"))
-    
-    return config, secret, api
+# Create configuration
+app_config = ConfigMap("api-config").add("debug", "false").add("log_level", "info")
 
-if __name__ == "__main__":
-    config, secret, api = create_ecommerce_api()
-    
-    # Generate Kubernetes resources
-    components = [config, secret, api]
-    
-    output = KubernetesOutput()
-    for component in components:
-        output.generate(component, "ecommerce-api/")
-    
-    print("✅ E-commerce API generated!")
-    print("🚀 Deploy: kubectl apply -f ecommerce-api/")
-```
+# Create service account and role
+sa = ServiceAccount("api-sa")
+role = Role("api-role").add_policy("get", "pods").add_policy("list", "services")
 
-## Generated Resources
+# Create network policy
+network_policy = NetworkPolicy("api-policy").allow_pods_with_label("app", "api")
 
-The App component generates these Kubernetes resources:
+# Create the application
+api = (App("api-service")
+    .image("myapp/api:v1.0")
+    .port(8080)
+    .replicas(5)
+    .resources(cpu="500m", memory="1Gi", cpu_limit="1000m", memory_limit="2Gi")
+    .env("NODE_ENV", "production")
+    .env("PORT", "8080")
+    .health_check("/health")
+    .liveness_probe("/health")
+    .readiness_probe("/ready")
+    .add_secret(db_secret)
+    .add_secret(api_secret)
+    .add_config(app_config)
+    .add_service_account(sa)
+    .add_role(role)
+    .add_network_policy(network_policy)
+    .rolling_update(max_surge=1, max_unavailable=0)
+    .expose(external=True))
 
-### Deployment
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: ecommerce-api
-  namespace: ecommerce
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: ecommerce-api
-  template:
-    spec:
-      containers:
-      - name: ecommerce-api
-        image: ecommerce/api:v2.1.0
-        ports:
-        - containerPort: 8080
-          name: api
-        - containerPort: 9090
-          name: metrics
-        resources:
-          requests:
-            cpu: 1000m
-            memory: 2Gi
-          limits:
-            cpu: 2000m
-            memory: 4Gi
-```
-
-### Service (when using .expose())
-
-```yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: ecommerce-api
-  namespace: ecommerce
-spec:
-  selector:
-    app: ecommerce-api
-  ports:
-  - port: 8080
-    targetPort: 8080
-    name: api
-  - port: 9090
-    targetPort: 9090
-    name: metrics
+# Generate manifests
+api.generate().to_yaml("./k8s/")
 ```
 
 ## Best Practices
 
-!!! tip "Production Guidelines"
-    
-    **Resource Limits:**
-    - Always set resource requests and limits
-    - Monitor actual usage to tune settings
-    - Use vertical scaling recommendations
-    
-    **Health Checks:**
-    - Implement proper health endpoints
-    - Set appropriate timeouts and delays
-    - Test health checks in staging
-    
-    **Security:**
-    - Use specific image tags, not `latest`
-    - Set `imagePullPolicy: Always` for production
-    - Use service accounts with minimal permissions
-    
-    **Scaling:**
-    - Start with manual scaling, add HPA later
-    - Monitor scaling events and tune thresholds
-    - Set appropriate min/max replica counts
-
-## Common Patterns
-
-### Development vs Production
-
+### 1. **Resource Management**
 ```python
-# Development
-dev_app = (App("myapp-dev")
-    .image("myapp:dev")
-    .replicas(1)
-    .resources(cpu="100m", memory="256Mi")
-    .env("DEBUG", "true"))
+# ✅ Good: Set appropriate resources
+app = App("api").resources(cpu="500m", memory="1Gi", cpu_limit="1000m", memory_limit="2Gi")
 
-# Production  
-prod_app = (App("myapp")
-    .image("myapp:v1.0.0")
-    .replicas(3)
-    .resources(cpu="500m", memory="1Gi", cpu_limit="1000m", memory_limit="2Gi")
-    .env("DEBUG", "false")
-    .auto_scale(min_replicas=3, max_replicas=10))
+# ❌ Bad: No resource limits
+app = App("api")  # No resource limits
 ```
 
-### Multi-Container Pods
-
+### 2. **Health Checks**
 ```python
-# Main application with sidecar
-app = (App("app-with-sidecar")
-    .image("myapp:latest")
-    .port(8080)
-    .sidecar("log-shipper", "fluent/fluent-bit:latest")
-    .sidecar_port("log-shipper", 24224))
+# ✅ Good: Comprehensive health checks
+app = (App("api")
+    .health_check("/health")
+    .liveness_probe("/health")
+    .readiness_probe("/ready"))
+
+# ❌ Bad: No health checks
+app = App("api")  # No health checks
 ```
 
-## API Reference
+### 3. **Security**
+```python
+# ✅ Good: Use service accounts and RBAC
+sa = ServiceAccount("api-sa")
+role = Role("api-role").add_policy("get", "pods")
+app = App("api").add_service_account(sa).add_role(role)
 
-::: src.celestra.core.app.App
-    options:
-      show_source: false
-      heading_level: 3
+# ❌ Bad: No security configuration
+app = App("api")  # No security
+```
+
+### 4. **Environment Variables**
+```python
+# ✅ Good: Use ConfigMaps and Secrets
+config = ConfigMap("app-config").add("debug", "false")
+secret = Secret("api-secret").add("password", "secret")
+app = App("api").add_config(config).add_secret(secret)
+
+# ❌ Bad: Hardcode in code
+app = App("api").env("PASSWORD", "hardcoded-password")
+```
+
+### 5. **Scaling**
+```python
+# ✅ Good: Configure autoscaling
+app = App("api").scale(min_replicas=2, max_replicas=10, target_cpu_utilization=70)
+
+# ❌ Bad: Fixed replicas only
+app = App("api").replicas(3)  # No autoscaling
+```
 
 ## Related Components
 
-- **[StatefulApp](stateful-app.md)** - For stateful applications
-- **[Service](../networking/service.md)** - Network service configuration
-- **[Ingress](../networking/ingress.md)** - External access
-- **[ConfigMap](../storage/config-map.md)** - Configuration management
-- **[Secret](../security/secrets.md)** - Secret management
+- **[StatefulApp](stateful-app.md)** - For stateful applications with persistent storage
+- **[Job](../workloads/job.md)** - For batch processing workloads
+- **[CronJob](../workloads/cron-job.md)** - For scheduled batch jobs
+- **[Secret](../security/secrets.md)** - For managing sensitive data
+- **[ConfigMap](../storage/config-map.md)** - For managing configuration data
+- **[ServiceAccount](../security/service-account.md)** - For RBAC identity
+- **[Role](../security/role.md)** - For access control policies
 
----
+## Next Steps
 
-**Next:** Learn about [StatefulApp](stateful-app.md) for stateful workloads. 
+- **[StatefulApp](stateful-app.md)** - Learn about stateful applications
+- **[Components Overview](index.md)** - Explore all available components
+- **[Examples](../examples/index.md)** - See real-world examples
+- **[Tutorials](../tutorials/index.md)** - Step-by-step guides 

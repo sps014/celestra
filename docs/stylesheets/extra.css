@@ -1,0 +1,744 @@
+/* Custom styles for Celestra Documentation */
+
+/* ===== GLOBAL STYLES ===== */
+
+:root {
+  --md-primary-fg-color: #673ab7;
+  --md-primary-fg-color--light: #9a67ea;
+  --md-primary-fg-color--dark: #320b86;
+  --md-accent-fg-color: #673ab7;
+  --md-accent-fg-color--transparent: #673ab7;
+}
+
+/* ===== DARK THEME ENHANCEMENTS ===== */
+
+[data-md-color-scheme="slate"] {
+  --md-default-fg-color: #e1e1e1;
+  --md-default-fg-color--light: #b0b0b0;
+  --md-default-fg-color--lighter: #737373;
+  --md-default-fg-color--lightest: #404040;
+  --md-default-bg-color: #1a1a1a;
+  --md-default-bg-color--light: #2a2a2a;
+  --md-default-bg-color--lighter: #3a3a3a;
+  --md-default-bg-color--lightest: #4a4a4a;
+  
+  --md-code-fg-color: #e1e1e1;
+  --md-code-bg-color: #2a2a2a;
+  --md-code-hl-color: #673ab7;
+  --md-code-hl-number-color: #9a67ea;
+  --md-code-hl-special-color: #ff6b6b;
+  --md-code-hl-function-color: #4ecdc4;
+  --md-code-hl-constant-color: #45b7d1;
+  --md-code-hl-keyword-color: #ff9ff3;
+  --md-code-hl-string-color: #feca57;
+  --md-code-hl-name-color: #48dbfb;
+  --md-code-hl-operator-color: #ff9ff3;
+  --md-code-hl-punctuation-color: #c8d6e5;
+  --md-code-hl-comment-color: #737373;
+  --md-code-hl-generic-color: #ff9ff3;
+  --md-code-hl-variable-color: #ff9ff3;
+}
+
+/* ===== TYPOGRAPHY ENHANCEMENTS ===== */
+
+.md-content {
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.md-content h1 {
+  font-size: 2.5em;
+  font-weight: 700;
+  color: var(--md-primary-fg-color);
+  border-bottom: 3px solid var(--md-primary-fg-color);
+  padding-bottom: 0.3em;
+  margin-bottom: 1em;
+}
+
+.md-content h2 {
+  font-size: 2em;
+  font-weight: 600;
+  color: var(--md-primary-fg-color);
+  border-bottom: 2px solid var(--md-primary-fg-color);
+  padding-bottom: 0.2em;
+  margin-top: 2em;
+  margin-bottom: 0.8em;
+}
+
+.md-content h3 {
+  font-size: 1.5em;
+  font-weight: 600;
+  color: var(--md-primary-fg-color);
+  margin-top: 1.5em;
+  margin-bottom: 0.6em;
+}
+
+.md-content h4 {
+  font-size: 1.3em;
+  font-weight: 600;
+  color: var(--md-primary-fg-color);
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+}
+
+/* ===== CODE BLOCK ENHANCEMENTS ===== */
+
+.md-content pre {
+  border-radius: 8px;
+  border: 1px solid var(--md-code-hl-color);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin: 1.5em 0;
+}
+
+.md-content code {
+  background-color: var(--md-code-bg-color);
+  color: var(--md-code-fg-color);
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-size: 0.9em;
+  border: 1px solid var(--md-code-hl-color);
+}
+
+/* ===== NAVIGATION ENHANCEMENTS ===== */
+
+.md-nav__title {
+  font-weight: 600;
+  color: var(--md-primary-fg-color);
+}
+
+.md-nav__link {
+  transition: all 0.2s ease;
+}
+
+.md-nav__link:hover {
+  color: var(--md-primary-fg-color);
+  background-color: var(--md-primary-fg-color--transparent);
+}
+
+/* ===== SIDEBAR ENHANCEMENTS ===== */
+
+.md-sidebar {
+  background-color: var(--md-default-bg-color--light);
+  border-right: 1px solid var(--md-default-fg-color--lightest);
+}
+
+/* ===== HEADER ENHANCEMENTS ===== */
+
+.md-header {
+  background-color: var(--md-primary-fg-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.md-header__title {
+  font-weight: 700;
+  font-size: 1.2em;
+}
+
+/* ===== SEARCH ENHANCEMENTS ===== */
+
+.md-search__input {
+  background-color: var(--md-default-bg-color--light);
+  border: 2px solid var(--md-primary-fg-color);
+  border-radius: 8px;
+  color: var(--md-default-fg-color);
+}
+
+.md-search__input::placeholder {
+  color: var(--md-default-fg-color--light);
+}
+
+/* ===== TAB ENHANCEMENTS ===== */
+
+.md-tabs {
+  background-color: var(--md-primary-fg-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.md-tabs__link {
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.md-tabs__link:hover {
+  background-color: var(--md-primary-fg-color--light);
+}
+
+/* ===== ADMONITION ENHANCEMENTS ===== */
+
+.admonition {
+  border-radius: 8px;
+  border-left: 4px solid;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin: 1.5em 0;
+}
+
+.admonition-title {
+  font-weight: 600;
+  font-size: 1.1em;
+}
+
+/* ===== BUTTON ENHANCEMENTS ===== */
+
+.md-button {
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.md-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* ===== CARD ENHANCEMENTS ===== */
+
+.md-card {
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  border: 1px solid var(--md-default-fg-color--lightest);
+}
+
+.md-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* ===== HOME PAGE ENHANCEMENTS ===== */
+
+/* Center align content */
+.md-content {
+  text-align: left;
+}
+
+/* Badge styling */
+.md-content img[src*="shields.io"] {
+  margin: 0.5em;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Center align specific sections */
+.md-content div[align="center"] {
+  text-align: center;
+  margin: 2em 0;
+}
+
+.md-content div[align="center"] img {
+  margin: 0.5em;
+}
+
+.md-content div[align="center"] p {
+  margin: 1em 0;
+  font-size: 1.2em;
+  font-weight: 500;
+}
+
+/* Home page specific styling */
+.md-content h1:first-of-type {
+  text-align: center;
+  font-size: 3em;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--md-primary-fg-color), var(--md-primary-fg-color--light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5em;
+}
+
+/* Subtitle styling */
+.md-content h1:first-of-type + div p {
+  text-align: center;
+  font-size: 1.5em;
+  color: var(--md-default-fg-color--light);
+  margin-bottom: 2em;
+  font-weight: 400;
+}
+
+/* Badge container */
+.md-content div[align="center"]:first-of-type {
+  background: var(--md-default-bg-color--light);
+  border-radius: 12px;
+  padding: 2em;
+  margin: 2em 0;
+  border: 1px solid var(--md-default-fg-color--lightest);
+}
+
+/* Feature grid styling */
+.md-content h2 + ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5em;
+  margin: 2em 0;
+}
+
+.md-content h2 + ul li {
+  background: var(--md-default-bg-color--light);
+  border-radius: 8px;
+  padding: 1.5em;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  transition: all 0.3s ease;
+  list-style: none;
+}
+
+.md-content h2 + ul li:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Component sections */
+.md-content h2 {
+  margin-top: 3em;
+  margin-bottom: 1em;
+  padding-bottom: 0.5em;
+  border-bottom: 2px solid var(--md-primary-fg-color);
+  color: var(--md-primary-fg-color);
+}
+
+.md-content h3 {
+  margin-top: 2em;
+  margin-bottom: 1em;
+  color: var(--md-primary-fg-color);
+  font-size: 1.4em;
+}
+
+/* Links styling */
+.md-content a {
+  color: var(--md-primary-fg-color);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.md-content a:hover {
+  color: var(--md-primary-fg-color--light);
+  text-decoration: underline;
+}
+
+/* Code blocks */
+.md-content pre {
+  background: var(--md-code-bg-color);
+  border: 1px solid var(--md-code-hl-color);
+  border-radius: 8px;
+  padding: 1.5em;
+  margin: 1.5em 0;
+  overflow-x: auto;
+}
+
+/* Inline code */
+.md-content code {
+  background: var(--md-code-bg-color);
+  color: var(--md-code-fg-color);
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-size: 0.9em;
+  border: 1px solid var(--md-code-hl-color);
+}
+
+/* Mermaid diagrams */
+.md-content .mermaid {
+  text-align: center;
+  margin: 2em 0;
+  padding: 1em;
+  background: var(--md-default-bg-color--light);
+  border-radius: 8px;
+  border: 1px solid var(--md-default-fg-color--lightest);
+}
+
+/* Call to action */
+.md-content div[align="center"]:last-of-type {
+  background: linear-gradient(135deg, var(--md-primary-fg-color), var(--md-primary-fg-color--light));
+  color: white;
+  padding: 2em;
+  border-radius: 12px;
+  margin: 3em 0;
+}
+
+.md-content div[align="center"]:last-of-type a {
+  color: white;
+  font-weight: 600;
+  font-size: 1.2em;
+  text-decoration: none;
+  padding: 0.8em 1.5em;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.md-content div[align="center"]:last-of-type a:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .md-content h1:first-of-type {
+    font-size: 2em;
+  }
+  
+  .md-content h2 + ul {
+    grid-template-columns: 1fr;
+  }
+  
+  .md-content div[align="center"]:first-of-type {
+    padding: 1em;
+  }
+}
+
+/* ===== IMPROVED SPACING ===== */
+
+.md-content > * {
+  margin-bottom: 1.5em;
+}
+
+.md-content > *:last-child {
+  margin-bottom: 0;
+}
+
+.md-content p {
+  line-height: 1.7;
+  margin-bottom: 1em;
+}
+
+.md-content ul, .md-content ol {
+  margin-bottom: 1.5em;
+  padding-left: 2em;
+}
+
+.md-content li {
+  margin-bottom: 0.5em;
+  line-height: 1.6;
+}
+
+/* ===== BETTER TYPOGRAPHY ===== */
+
+.md-content {
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--md-default-fg-color);
+}
+
+.md-content strong {
+  color: var(--md-primary-fg-color);
+  font-weight: 600;
+}
+
+/* ===== ENHANCED SECTIONS ===== */
+
+.md-content hr {
+  border: none;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--md-primary-fg-color), transparent);
+  margin: 3em 0;
+}
+
+/* ===== HORIZONTAL TABS STYLING ===== */
+
+/* Enhanced horizontal tabs */
+.md-tabs {
+  background: var(--md-primary-fg-color);
+  border-bottom: 1px solid var(--md-default-fg-color--lightest);
+}
+
+.md-tabs__item {
+  transition: all 0.3s ease;
+}
+
+.md-tabs__item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.md-tabs__link {
+  font-weight: 500;
+  padding: 1em 1.5em;
+  transition: all 0.3s ease;
+}
+
+.md-tabs__link:hover {
+  color: white;
+  text-decoration: none;
+}
+
+.md-tabs__link--active {
+  background: rgba(255, 255, 255, 0.2);
+  border-bottom: 3px solid white;
+  font-weight: 600;
+} 
+
+/* ===== SIMPLIFIED NAVIGATION STYLING ===== */
+
+/* Clean, simple navigation */
+.md-nav__list {
+  margin: 0;
+  padding: 0;
+}
+
+.md-nav__item {
+  margin: 0.05em 0;
+}
+
+.md-nav__link {
+  padding: 0.15em 0.3em;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.md-nav__link:hover {
+  background-color: var(--md-primary-fg-color--transparent);
+  color: var(--md-primary-fg-color);
+}
+
+.md-nav__link--active {
+  background-color: var(--md-primary-fg-color--transparent);
+  color: var(--md-primary-fg-color);
+  font-weight: 600;
+}
+
+/* Remove all deep nesting */
+.md-nav__list .md-nav__list {
+  margin-left: 0;
+  border-left: none;
+  padding-left: 0;
+}
+
+.md-nav__list .md-nav__list .md-nav__link {
+  font-size: 12px;
+  padding: 0.15em 0.3em;
+}
+
+/* Simple section headers */
+.md-nav__title {
+  font-weight: 600;
+  color: var(--md-primary-fg-color);
+  font-size: 12px;
+  margin: 0.3em 0 0.1em 0;
+  padding: 0.1em 0;
+  border-bottom: 1px solid var(--md-default-fg-color--lightest);
+}
+
+/* Clean horizontal tabs */
+.md-tabs {
+  background: var(--md-primary-fg-color);
+  border-bottom: 1px solid var(--md-default-fg-color--lightest);
+}
+
+.md-tabs__item {
+  transition: all 0.3s ease;
+}
+
+.md-tabs__item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.md-tabs__link {
+  font-weight: 500;
+  padding: 1em 1.5em;
+  transition: all 0.3s ease;
+}
+
+.md-tabs__link:hover {
+  color: white;
+  text-decoration: none;
+}
+
+.md-tabs__link--active {
+  background: rgba(255, 255, 255, 0.2);
+  border-bottom: 3px solid white;
+  font-weight: 600;
+}
+
+/* Sidebar navigation: even larger font */
+.md-nav__link {
+  font-size: 18px;
+  font-weight: 600;
+  padding: 0.7em 1.2em;
+}
+
+.md-nav__title {
+  font-size: 19px;
+  font-weight: 700;
+  margin: 1em 0 0.5em 0;
+}
+
+/* App bar (top navigation/header) */
+.md-header {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.md-header__title {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.md-tabs__link {
+  font-size: 18px;
+  font-weight: 600;
+  padding: 1.2em 2em;
+}
+
+.md-header__button, .md-header__option {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* Sidebar navigation: larger font and only one level of nesting visually prominent */
+.md-nav__link {
+  font-size: 16px;
+  font-weight: 500;
+  padding: 0.5em 1em;
+}
+
+.md-nav__list .md-nav__list {
+  margin-left: 0.5em;
+  border-left: 2px solid var(--md-primary-fg-color--lightest);
+}
+
+.md-nav__list .md-nav__list .md-nav__list {
+  display: none !important;
+}
+
+.md-nav__title {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 1em 0 0.5em 0;
+}
+
+.md-sidebar--primary {
+  width: 12rem;
+}
+
+.md-content {
+  margin-left: 12rem;
+  padding: 2rem;
+}
+
+/* Optimize sidebar width */
+@media screen and (min-width: 76.25em) {
+  .md-sidebar--primary {
+    width: 8rem;
+  }
+  
+  .md-sidebar--secondary {
+    width: 8rem;
+  }
+  
+  .md-content {
+    margin-left: 8rem;
+    padding: 1rem 2rem;
+  }
+}
+
+/* Reduce sidebar width on smaller screens */
+@media screen and (max-width: 76.24em) {
+  .md-sidebar--primary {
+    width: 6rem;
+  }
+  
+  .md-content {
+    margin-left: 6rem;
+    padding: 1rem;
+  }
+}
+
+/* Remove excessive spacing */
+.md-nav__section {
+  margin: 0.05em 0;
+}
+
+/* Hide navigation icons to reduce clutter */
+.md-nav__icon {
+  display: none;
+}
+
+/* Better content area with reduced margins */
+.md-content {
+  margin-left: 8rem;
+  padding: 1rem 2rem;
+  max-width: none;
+}
+
+/* Completely hide deep nesting to prevent API details */
+.md-nav__list .md-nav__list .md-nav__list {
+  display: none !important;
+}
+
+/* Hide any function definitions or API details in navigation */
+.md-nav__link[href*="#"] {
+  display: none !important;
+} 
+
+/* Sidebar navigation: much larger font for better visibility */
+.md-nav__link {
+  font-size: 22px;
+  font-weight: 600;
+  padding: 0.8em 1.5em;
+  line-height: 1.4;
+}
+
+.md-nav__title {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 1.2em 0 0.8em 0;
+  line-height: 1.3;
+}
+
+/* App bar (top navigation/header) */
+.md-header {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.md-header__title {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.md-tabs__link {
+  font-size: 20px;
+  font-weight: 600;
+  padding: 1.5em 2.5em;
+}
+
+.md-header__button, .md-header__option {
+  font-size: 20px;
+  font-weight: 600;
+} 
+
+/* Sidebar navigation: reasonable, readable font sizes */
+.md-nav__link {
+  font-size: 15px;
+  font-weight: 500;
+  padding: 0.4em 0.8em;
+  line-height: 1.3;
+}
+
+.md-nav__title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0.8em 0 0.4em 0;
+  line-height: 1.2;
+}
+
+/* App bar (top navigation/header) - reasonable size */
+.md-header {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.md-header__title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.md-tabs__link {
+  font-size: 16px;
+  font-weight: 500;
+  padding: 1em 1.5em;
+}
+
+.md-header__button, .md-header__option {
+  font-size: 16px;
+  font-weight: 500;
+} 

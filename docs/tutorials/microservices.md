@@ -1,610 +1,547 @@
-# Microservices Architecture Tutorial
+# Microservices Tutorial
 
-**⭐⭐⭐⭐ Difficulty:** Advanced | **⏱️ Time:** 30 minutes
+This tutorial demonstrates how to build a complete microservices architecture using Celestra DSL.
 
-Build a complete microservices platform with Celestra, featuring service discovery, inter-service communication, and advanced deployment patterns.
+## Overview
 
-## What You'll Build
+This tutorial shows how to:
+- Design microservices architecture
+- Implement service discovery
+- Set up API gateway
+- Configure inter-service communication
+- Deploy with proper monitoring
 
-A complete e-commerce microservices platform:
+## Architecture
+
+Our microservices platform will include:
+
+- **API Gateway** - Centralized routing and authentication
 - **User Service** - User management and authentication
 - **Product Service** - Product catalog and inventory
 - **Order Service** - Order processing and management
 - **Payment Service** - Payment processing
 - **Notification Service** - Email and SMS notifications
-- **API Gateway** - Single entry point for all services
-- **Service Mesh** - Inter-service communication
-- **Shared Infrastructure** - Database, cache, message queue
+- **Database Services** - PostgreSQL and Redis
 
-## Prerequisites
+## Implementation
 
-- Celestra installed
-- Understanding of microservices patterns
-- Kubernetes cluster with sufficient resources
-- Basic knowledge of service mesh concepts
-
-## Architecture Overview
-
-```
-Internet → API Gateway → Service Mesh → Microservices
-                           ↓
-                     Infrastructure Services
-                    (Database, Cache, Queue)
-```
-
-## Step 1: Create Infrastructure Services
-
-Start with shared infrastructure components:
+### 1. API Gateway
 
 ```python
-from celestra import StatefulApp, App, Service, Secret, ConfigMap
+from celestra import App, Ingress, Secret, ConfigMap
 
-# PostgreSQL database for persistent data
-database = (StatefulApp("postgres-db")
-    .image("postgres:14")
-    .port(5432, "postgres")
-    .env("POSTGRES_DB", "ecommerce")
-    .env("POSTGRES_USER", "ecommerce")
-    .env("POSTGRES_PASSWORD", "secure-password")
-    .storage("/var/lib/postgresql/data", "20Gi")
-    .resources(cpu="1", memory="2Gi"))
-
-# Redis cache for session and temporary data
-cache = (App("redis-cache")
-    .image("redis:7-alpine")
-    .port(6379, "redis")
-    .resources(cpu="200m", memory="512Mi")
-    .replicas(2))
-
-# RabbitMQ for async messaging
-message_queue = (StatefulApp("rabbitmq")
-    .image("rabbitmq:3.11-management")
-    .port(5672, "amqp")
-    .port(15672, "management")
-    .env("RABBITMQ_DEFAULT_USER", "ecommerce")
-    .env("RABBITMQ_DEFAULT_PASS", "message-password")
-    .storage("/var/lib/rabbitmq", "10Gi")
-    .resources(cpu="500m", memory="1Gi"))
-
-print("✅ Infrastructure services created")
-```
-
-## Step 2: Create Core Microservices
-
-Build the business logic microservices:
-
-```python
-# User Service - Authentication and user management
-user_service = (App("user-service")
-    .image("ecommerce/user-service:v1.0.0")
-    .port(8080, "http")
-    .port(9090, "metrics")
-    .env("DATABASE_URL", "postgresql://ecommerce:secure-password@postgres-db:5432/ecommerce")
-    .env("REDIS_URL", "redis://redis-cache:6379")
-    .env("JWT_SECRET", "user-jwt-secret")
-    .resources(cpu="300m", memory="512Mi")
+# API Gateway
+gateway = (App("api-gateway")
+    .image("nginx:alpine")
+    .port(80)
     .replicas(3)
-    .health_check("/health", 8080))
-
-# Product Service - Product catalog
-product_service = (App("product-service")
-    .image("ecommerce/product-service:v1.0.0")
-    .port(8080, "http")
-    .port(9090, "metrics")
-    .env("DATABASE_URL", "postgresql://ecommerce:secure-password@postgres-db:5432/ecommerce")
-    .env("REDIS_URL", "redis://redis-cache:6379")
-    .resources(cpu="300m", memory="512Mi")
-    .replicas(3)
-    .health_check("/health", 8080))
-
-# Order Service - Order processing
-order_service = (App("order-service")
-    .image("ecommerce/order-service:v1.0.0")
-    .port(8080, "http")
-    .port(9090, "metrics")
-    .env("DATABASE_URL", "postgresql://ecommerce:secure-password@postgres-db:5432/ecommerce")
-    .env("RABBITMQ_URL", "amqp://ecommerce:message-password@rabbitmq:5672")
-    .env("USER_SERVICE_URL", "http://user-service:8080")
-    .env("PRODUCT_SERVICE_URL", "http://product-service:8080")
-    .resources(cpu="400m", memory="768Mi")
-    .replicas(3)
-    .health_check("/health", 8080))
-
-# Payment Service - Payment processing
-payment_service = (App("payment-service")
-    .image("ecommerce/payment-service:v1.0.0")
-    .port(8080, "http")
-    .port(9090, "metrics")
-    .env("DATABASE_URL", "postgresql://ecommerce:secure-password@postgres-db:5432/ecommerce")
-    .env("RABBITMQ_URL", "amqp://ecommerce:message-password@rabbitmq:5672")
-    .env("PAYMENT_GATEWAY_API_KEY", "payment-api-key")
-    .resources(cpu="300m", memory="512Mi")
-    .replicas(2)
-    .health_check("/health", 8080))
-
-# Notification Service - Email and SMS
-notification_service = (App("notification-service")
-    .image("ecommerce/notification-service:v1.0.0")
-    .port(8080, "http")
-    .port(9090, "metrics")
-    .env("RABBITMQ_URL", "amqp://ecommerce:message-password@rabbitmq:5672")
-    .env("SMTP_HOST", "smtp.example.com")
-    .env("SMS_API_KEY", "sms-api-key")
     .resources(cpu="200m", memory="256Mi")
-    .replicas(2)
-    .health_check("/health", 8080))
-
-print("✅ Microservices created")
-```
-
-## Step 3: Create API Gateway
-
-Set up the API gateway for external access:
-
-```python
-from celestra import Ingress
-
-# API Gateway using NGINX Ingress
-api_gateway = (App("api-gateway")
-    .image("nginx:1.21-alpine")
-    .port(80, "http")
-    .port(443, "https")
-    .mount_config_map("gateway-config", "/etc/nginx/conf.d")
-    .resources(cpu="200m", memory="256Mi")
-    .replicas(2)
-    .health_check("/health", 80))
+    .expose())
 
 # Gateway configuration
 gateway_config = (ConfigMap("gateway-config")
-    .add_data("default.conf", """
+    .add("nginx.conf", """
+events {
+    worker_connections 1024;
+}
+
+http {
     upstream user-service {
-        server user-service:8080;
+        server user-service:3001;
     }
+    
     upstream product-service {
-        server product-service:8080;
+        server product-service:3002;
     }
+    
     upstream order-service {
-        server order-service:8080;
-    }
-    upstream payment-service {
-        server payment-service:8080;
+        server order-service:3003;
     }
     
     server {
         listen 80;
         
-        location /health {
-            return 200 "healthy";
-        }
-        
         location /api/users {
             proxy_pass http://user-service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
         }
         
         location /api/products {
             proxy_pass http://product-service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
         }
         
         location /api/orders {
             proxy_pass http://order-service;
-        }
-        
-        location /api/payments {
-            proxy_pass http://payment-service;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
         }
     }
-    """))
+}""")
+    .mount_as_file("/etc/nginx/nginx.conf"))
 
-print("✅ API Gateway configured")
+gateway.add_config(gateway_config)
+
+# Ingress for external access
+ingress = (Ingress("api-ingress")
+    .add_rule("api.example.com", "/api", "api-gateway", 80)
+    .tls_enabled(True)
+    .add_tls_secret("api-tls"))
 ```
 
-## Step 4: Set Up Service Discovery
-
-Create services for inter-service communication:
+### 2. User Service
 
 ```python
-# Infrastructure services
-db_service = (Service("postgres-db-service")
-    .selector({"app": "postgres-db"})
-    .add_port("postgres", 5432, 5432))
+from celestra import App, StatefulApp, Secret, ConfigMap
 
-cache_service = (Service("redis-cache-service")
-    .selector({"app": "redis-cache"})
-    .add_port("redis", 6379, 6379))
+# PostgreSQL database for users
+user_db = (StatefulApp("user-db")
+    .image("postgres:14")
+    .port(5432)
+    .storage("10Gi")
+    .environment({
+        "POSTGRES_DB": "users",
+        "POSTGRES_USER": "user_service"
+    })
+    .expose())
 
-queue_service = (Service("rabbitmq-service")
-    .selector({"app": "rabbitmq"})
-    .add_port("amqp", 5672, 5672)
-    .add_port("management", 15672, 15672))
+# User service
+user_service = (App("user-service")
+    .image("user-service:1.0.0")
+    .port(3001)
+    .replicas(3)
+    .resources(cpu="200m", memory="256Mi")
+    .environment({
+        "NODE_ENV": "production",
+        "PORT": "3001",
+        "DB_HOST": "user-db",
+        "DB_PORT": "5432"
+    })
+    .expose())
 
-# Microservices
-user_svc = (Service("user-service")
-    .selector({"app": "user-service"})
-    .add_port("http", 8080, 8080)
-    .add_port("metrics", 9090, 9090))
+# Database secret
+db_secret = (Secret("user-db-secret")
+    .add("password", "secure-password")
+    .mount_as_env_vars(prefix="DB_"))
 
-product_svc = (Service("product-service")
-    .selector({"app": "product-service"})
-    .add_port("http", 8080, 8080)
-    .add_port("metrics", 9090, 9090))
-
-order_svc = (Service("order-service")
-    .selector({"app": "order-service"})
-    .add_port("http", 8080, 8080)
-    .add_port("metrics", 9090, 9090))
-
-payment_svc = (Service("payment-service")
-    .selector({"app": "payment-service"})
-    .add_port("http", 8080, 8080)
-    .add_port("metrics", 9090, 9090))
-
-notification_svc = (Service("notification-service")
-    .selector({"app": "notification-service"})
-    .add_port("http", 8080, 8080)
-    .add_port("metrics", 9090, 9090))
-
-# API Gateway service
-gateway_svc = (Service("api-gateway-service")
-    .selector({"app": "api-gateway"})
-    .add_port("http", 80, 80)
-    .add_port("https", 443, 443)
-    .type("LoadBalancer"))
-
-print("✅ Service discovery configured")
+user_service.add_secret(db_secret)
 ```
 
-## Step 5: Add Observability
-
-Implement monitoring and tracing:
+### 3. Product Service
 
 ```python
-from celestra import Observability
+from celestra import App, StatefulApp, Secret
 
-# Comprehensive observability stack
-observability = (Observability("microservices-monitoring")
-    .enable_metrics()
-    .enable_tracing()
-    .enable_logging()
-    .prometheus_config(scrape_interval="15s")
-    .jaeger_config(sampling_rate=0.1)
-    .grafana_dashboards(["microservices", "infrastructure"])
-    .alert_rules([
-        "HighErrorRate",
-        "HighLatency", 
-        "ServiceDown"
-    ]))
+# PostgreSQL database for products
+product_db = (StatefulApp("product-db")
+    .image("postgres:14")
+    .port(5432)
+    .storage("10Gi")
+    .environment({
+        "POSTGRES_DB": "products",
+        "POSTGRES_USER": "product_service"
+    })
+    .expose())
 
-# Apply observability to all services
-services_to_monitor = [
-    user_service, product_service, order_service,
-    payment_service, notification_service, api_gateway
-]
+# Product service
+product_service = (App("product-service")
+    .image("product-service:1.0.0")
+    .port(3002)
+    .replicas(3)
+    .resources(cpu="200m", memory="256Mi")
+    .environment({
+        "NODE_ENV": "production",
+        "PORT": "3002",
+        "DB_HOST": "product-db",
+        "DB_PORT": "5432"
+    })
+    .expose())
 
-for service in services_to_monitor:
-    service.add_observability(observability)
+# Database secret
+product_db_secret = (Secret("product-db-secret")
+    .add("password", "secure-password")
+    .mount_as_env_vars(prefix="DB_"))
 
-print("✅ Observability configured")
+product_service.add_secret(product_db_secret)
 ```
 
-## Step 6: Implement Security
-
-Add comprehensive security:
+### 4. Order Service
 
 ```python
-from celestra import ServiceAccount, Role, RoleBinding, SecurityPolicy
+from celestra import App, StatefulApp, Secret
 
-# Service accounts for each microservice
+# PostgreSQL database for orders
+order_db = (StatefulApp("order-db")
+    .image("postgres:14")
+    .port(5432)
+    .storage("10Gi")
+    .environment({
+        "POSTGRES_DB": "orders",
+        "POSTGRES_USER": "order_service"
+    })
+    .expose())
+
+# Order service
+order_service = (App("order-service")
+    .image("order-service:1.0.0")
+    .port(3003)
+    .replicas(3)
+    .resources(cpu="200m", memory="256Mi")
+    .environment({
+        "NODE_ENV": "production",
+        "PORT": "3003",
+        "DB_HOST": "order-db",
+        "DB_PORT": "5432"
+    })
+    .expose())
+
+# Database secret
+order_db_secret = (Secret("order-db-secret")
+    .add("password", "secure-password")
+    .mount_as_env_vars(prefix="DB_"))
+
+order_service.add_secret(order_db_secret)
+```
+
+### 5. Payment Service
+
+```python
+from celestra import App, Secret
+
+# Payment service
+payment_service = (App("payment-service")
+    .image("payment-service:1.0.0")
+    .port(3004)
+    .replicas(3)
+    .resources(cpu="200m", memory="256Mi")
+    .environment({
+        "NODE_ENV": "production",
+        "PORT": "3004"
+    })
+    .expose())
+
+# Payment API secrets
+payment_secret = (Secret("payment-secret")
+    .add("stripe_key", "sk_live_...")
+    .add("paypal_client_id", "client_id")
+    .add("paypal_secret", "secret")
+    .mount_as_env_vars(prefix="PAYMENT_"))
+
+payment_service.add_secret(payment_secret)
+```
+
+### 6. Notification Service
+
+```python
+from celestra import App, Secret
+
+# Notification service
+notification_service = (App("notification-service")
+    .image("notification-service:1.0.0")
+    .port(3005)
+    .replicas(3)
+    .resources(cpu="200m", memory="256Mi")
+    .environment({
+        "NODE_ENV": "production",
+        "PORT": "3005"
+    })
+    .expose())
+
+# Email and SMS secrets
+notification_secret = (Secret("notification-secret")
+    .add("smtp_host", "smtp.gmail.com")
+    .add("smtp_port", "587")
+    .add("smtp_user", "notifications@example.com")
+    .add("smtp_password", "secure-password")
+    .add("twilio_account_sid", "account_sid")
+    .add("twilio_auth_token", "auth_token")
+    .mount_as_env_vars(prefix="NOTIFICATION_"))
+
+notification_service.add_secret(notification_secret)
+```
+
+### 7. Redis Cache
+
+```python
+from celestra import StatefulApp
+
+# Redis cache
+redis = (StatefulApp("redis")
+    .image("redis:7-alpine")
+    .port(6379)
+    .storage("5Gi")
+    .replicas(3)
+    .resources(cpu="200m", memory="256Mi")
+    .expose())
+```
+
+## Deployment
+
+### 1. Generate all manifests
+
+```python
+# Generate all services
+gateway.generate().to_yaml("./k8s/")
+user_db.generate().to_yaml("./k8s/")
+user_service.generate().to_yaml("./k8s/")
+product_db.generate().to_yaml("./k8s/")
+product_service.generate().to_yaml("./k8s/")
+order_db.generate().to_yaml("./k8s/")
+order_service.generate().to_yaml("./k8s/")
+payment_service.generate().to_yaml("./k8s/")
+notification_service.generate().to_yaml("./k8s/")
+redis.generate().to_yaml("./k8s/")
+ingress.generate().to_yaml("./k8s/")
+```
+
+### 2. Apply the deployment
+
+```bash
+# Apply databases first
+kubectl apply -f k8s/*-db-*.yaml
+
+# Wait for databases to be ready
+kubectl wait --for=condition=ready pod -l app=user-db --timeout=300s
+kubectl wait --for=condition=ready pod -l app=product-db --timeout=300s
+kubectl wait --for=condition=ready pod -l app=order-db --timeout=300s
+
+# Apply services
+kubectl apply -f k8s/*-service-*.yaml
+
+# Apply gateway and ingress
+kubectl apply -f k8s/api-gateway-*.yaml
+kubectl apply -f k8s/api-ingress-*.yaml
+
+# Check deployment status
+kubectl get deployments
+kubectl get services
+kubectl get pods
+```
+
+### 3. Verify the deployment
+
+```bash
+# Check all services are running
+kubectl get pods -l app=user-service
+kubectl get pods -l app=product-service
+kubectl get pods -l app=order-service
+kubectl get pods -l app=payment-service
+kubectl get pods -l app=notification-service
+
+# Test API gateway
+kubectl port-forward service/api-gateway 8080:80
+curl http://localhost:8080/api/users/health
+curl http://localhost:8080/api/products/health
+curl http://localhost:8080/api/orders/health
+```
+
+## Service Communication
+
+### 1. Service Discovery
+
+Services communicate using Kubernetes service names:
+
+```python
+# Service URLs
+USER_SERVICE_URL = "http://user-service:3001"
+PRODUCT_SERVICE_URL = "http://product-service:3002"
+ORDER_SERVICE_URL = "http://order-service:3003"
+PAYMENT_SERVICE_URL = "http://payment-service:3004"
+NOTIFICATION_SERVICE_URL = "http://notification-service:3005"
+```
+
+### 2. Inter-Service Communication
+
+```python
+# Example: Order service calling user service
+import requests
+
+def get_user(user_id):
+    response = requests.get(f"{USER_SERVICE_URL}/users/{user_id}")
+    return response.json()
+
+def get_product(product_id):
+    response = requests.get(f"{PRODUCT_SERVICE_URL}/products/{product_id}")
+    return response.json()
+
+def process_payment(order_id, amount):
+    response = requests.post(f"{PAYMENT_SERVICE_URL}/payments", {
+        "order_id": order_id,
+        "amount": amount
+    })
+    return response.json()
+```
+
+## Monitoring and Observability
+
+### 1. Health Checks
+
+```python
+from celestra import Health
+
+# Add health checks to all services
+health = (Health("service-health")
+    .liveness_probe("/health", 3000, 30, 10, 5, 3)
+    .readiness_probe("/ready", 3000, 5, 5, 3, 1))
+
+user_service.add_health(health)
+product_service.add_health(health)
+order_service.add_health(health)
+payment_service.add_health(health)
+notification_service.add_health(health)
+```
+
+### 2. Logging
+
+```python
+# Configure logging for all services
+logging_config = (ConfigMap("logging-config")
+    .add("logback.xml", """
+<configuration>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    
+    <root level="INFO">
+        <appender-ref ref="STDOUT" />
+    </root>
+</configuration>""")
+    .mount_as_file("/app/logback.xml"))
+
+user_service.add_config(logging_config)
+product_service.add_config(logging_config)
+order_service.add_config(logging_config)
+payment_service.add_config(logging_config)
+notification_service.add_config(logging_config)
+```
+
+## Scaling
+
+### 1. Horizontal Pod Autoscaling
+
+```python
+from celestra import Scaling
+
+# Add HPA to all services
+hpa = (Scaling("service-hpa")
+    .target_cpu_utilization(70)
+    .min_replicas(3)
+    .max_replicas(10))
+
+user_service.add_scaling(hpa)
+product_service.add_scaling(hpa)
+order_service.add_scaling(hpa)
+payment_service.add_scaling(hpa)
+notification_service.add_scaling(hpa)
+```
+
+### 2. Database Scaling
+
+```python
+# Scale databases based on usage
+db_hpa = (Scaling("db-hpa")
+    .target_cpu_utilization(60)
+    .min_replicas(3)
+    .max_replicas(5))
+
+user_db.add_scaling(db_hpa)
+product_db.add_scaling(db_hpa)
+order_db.add_scaling(db_hpa)
+```
+
+## Security
+
+### 1. Network Policies
+
+```python
+from celestra import NetworkPolicy
+
+# Allow API gateway to access services
+gateway_policy = (NetworkPolicy("gateway-policy")
+    .policy_type("Ingress")
+    .add_ingress_rule(
+        from_pods={"app": "api-gateway"},
+        ports=[{"port": 3001}, {"port": 3002}, {"port": 3003}, {"port": 3004}, {"port": 3005}]
+    ))
+
+# Allow services to access databases
+db_policy = (NetworkPolicy("db-policy")
+    .policy_type("Ingress")
+    .add_ingress_rule(
+        from_pods={"app": ["user-service", "product-service", "order-service"]},
+        ports=[{"port": 5432}]
+    ))
+```
+
+### 2. RBAC
+
+```python
+from celestra import ServiceAccount, Role, RoleBinding
+
+# Create service accounts
 user_sa = ServiceAccount("user-service-sa")
 product_sa = ServiceAccount("product-service-sa")
 order_sa = ServiceAccount("order-service-sa")
-payment_sa = ServiceAccount("payment-service-sa")
-notification_sa = ServiceAccount("notification-service-sa")
-gateway_sa = ServiceAccount("api-gateway-sa")
 
-# Roles with specific permissions
-microservice_role = (Role("microservice-role")
-    .allow_get("configmaps", "secrets")
-    .allow_list("services", "endpoints")
-    .allow_create("events"))
-
-gateway_role = (Role("gateway-role")
-    .allow_get("configmaps", "services", "endpoints")
-    .allow_list("services", "endpoints"))
+# Create roles
+service_role = (Role("service-role")
+    .add_rule(["get", "list", "watch"], ["pods", "services"])
+    .add_rule(["get"], ["configmaps", "secrets"]))
 
 # Bind roles to service accounts
-user_binding = RoleBinding("user-service-binding", microservice_role, user_sa)
-product_binding = RoleBinding("product-service-binding", microservice_role, product_sa)
-order_binding = RoleBinding("order-service-binding", microservice_role, order_sa)
-payment_binding = RoleBinding("payment-service-binding", microservice_role, payment_sa)
-notification_binding = RoleBinding("notification-service-binding", microservice_role, notification_sa)
-gateway_binding = RoleBinding("gateway-binding", gateway_role, gateway_sa)
-
-# Apply service accounts to applications
-user_service.service_account(user_sa)
-product_service.service_account(product_sa)
-order_service.service_account(order_sa)
-payment_service.service_account(payment_sa)
-notification_service.service_account(notification_sa)
-api_gateway.service_account(gateway_sa)
-
-# Security policy
-security_policy = (SecurityPolicy("microservices-security")
-    .enable_rbac()
-    .pod_security_standards("baseline")
-    .network_policies(enabled=True))
-
-print("✅ Security configured")
+user_binding = RoleBinding("user-service-binding").add_subject("ServiceAccount", "user-service-sa").add_role("service-role")
+product_binding = RoleBinding("product-service-binding").add_subject("ServiceAccount", "product-service-sa").add_role("service-role")
+order_binding = RoleBinding("order-service-binding").add_subject("ServiceAccount", "order-service-sa").add_role("service-role")
 ```
 
-## Step 7: Add Advanced Features
+## Best Practices
 
-Implement advanced microservices patterns:
-
+### 1. **Service Independence**
 ```python
-from celestra import DependencyManager, DeploymentStrategy, CostOptimization
+# ✅ Good: Each service has its own database
+user_db = StatefulApp("user-db").storage("10Gi")
+product_db = StatefulApp("product-db").storage("10Gi")
 
-# Dependency management
-deps = (DependencyManager()
-    .add_dependency(user_service, database)
-    .add_dependency(user_service, cache)
-    .add_dependency(product_service, database)
-    .add_dependency(product_service, cache)
-    .add_dependency(order_service, database)
-    .add_dependency(order_service, message_queue)
-    .add_dependency(order_service, user_service)
-    .add_dependency(order_service, product_service)
-    .add_dependency(payment_service, database)
-    .add_dependency(payment_service, message_queue)
-    .add_dependency(notification_service, message_queue)
-    .add_dependency(api_gateway, user_service)
-    .add_dependency(api_gateway, product_service)
-    .add_dependency(api_gateway, order_service)
-    .add_dependency(api_gateway, payment_service))
-
-# Deployment strategies
-canary_strategy = (DeploymentStrategy("canary-deployment")
-    .canary_rollout(percentage=20)
-    .traffic_splitting(enabled=True)
-    .rollback_on_failure(enabled=True))
-
-# Cost optimization
-cost_optimizer = (CostOptimization("microservices-optimizer")
-    .resource_optimization()
-    .enable_vertical_scaling()
-    .spot_instance_recommendations())
-
-print("✅ Advanced features configured")
+# ❌ Bad: Shared database
+shared_db = StatefulApp("shared-db").storage("50Gi")
 ```
 
-## Step 8: Complete Microservices Platform
-
-Here's the complete platform code:
-
+### 2. **Proper Resource Limits**
 ```python
-#!/usr/bin/env python3
-"""
-Microservices Platform - Complete e-commerce architecture with Celestra
-"""
+# ✅ Good: Set appropriate resource limits
+service = App("service").resources(cpu="200m", memory="256Mi")
 
-from celestra import (
-    App, StatefulApp, Service, Secret, ConfigMap, Ingress,
-    ServiceAccount, Role, RoleBinding, SecurityPolicy,
-    Observability, DependencyManager, DeploymentStrategy,
-    KubernetesOutput, HelmOutput
-)
-
-def create_microservices_platform():
-    """Create a complete microservices platform."""
-    
-    # Infrastructure Layer
-    database = (StatefulApp("postgres-db")
-        .image("postgres:14")
-        .port(5432, "postgres")
-        .env("POSTGRES_DB", "ecommerce")
-        .env("POSTGRES_USER", "ecommerce")
-        .env("POSTGRES_PASSWORD", "secure-password")
-        .storage("/var/lib/postgresql/data", "20Gi")
-        .resources(cpu="1", memory="2Gi"))
-    
-    cache = (App("redis-cache")
-        .image("redis:7-alpine")
-        .port(6379, "redis")
-        .resources(cpu="200m", memory="512Mi")
-        .replicas(2))
-    
-    message_queue = (StatefulApp("rabbitmq")
-        .image("rabbitmq:3.11-management")
-        .port(5672, "amqp")
-        .port(15672, "management")
-        .env("RABBITMQ_DEFAULT_USER", "ecommerce")
-        .env("RABBITMQ_DEFAULT_PASS", "message-password")
-        .storage("/var/lib/rabbitmq", "10Gi")
-        .resources(cpu="500m", memory="1Gi"))
-    
-    # Business Services
-    user_service = (App("user-service")
-        .image("ecommerce/user-service:v1.0.0")
-        .port(8080, "http")
-        .port(9090, "metrics")
-        .env("DATABASE_URL", "postgresql://ecommerce:secure-password@postgres-db:5432/ecommerce")
-        .env("REDIS_URL", "redis://redis-cache:6379")
-        .resources(cpu="300m", memory="512Mi")
-        .replicas(3)
-        .health_check("/health", 8080))
-    
-    product_service = (App("product-service")
-        .image("ecommerce/product-service:v1.0.0")
-        .port(8080, "http")
-        .port(9090, "metrics")
-        .env("DATABASE_URL", "postgresql://ecommerce:secure-password@postgres-db:5432/ecommerce")
-        .env("REDIS_URL", "redis://redis-cache:6379")
-        .resources(cpu="300m", memory="512Mi")
-        .replicas(3)
-        .health_check("/health", 8080))
-    
-    order_service = (App("order-service")
-        .image("ecommerce/order-service:v1.0.0")
-        .port(8080, "http")
-        .port(9090, "metrics")
-        .env("DATABASE_URL", "postgresql://ecommerce:secure-password@postgres-db:5432/ecommerce")
-        .env("RABBITMQ_URL", "amqp://ecommerce:message-password@rabbitmq:5672")
-        .resources(cpu="400m", memory="768Mi")
-        .replicas(3)
-        .health_check("/health", 8080))
-    
-    # Services
-    db_service = (Service("postgres-db")
-        .selector({"app": "postgres-db"})
-        .add_port("postgres", 5432, 5432))
-    
-    cache_service = (Service("redis-cache")
-        .selector({"app": "redis-cache"})
-        .add_port("redis", 6379, 6379))
-    
-    user_svc = (Service("user-service")
-        .selector({"app": "user-service"})
-        .add_port("http", 8080, 8080)
-        .add_port("metrics", 9090, 9090))
-    
-    product_svc = (Service("product-service")
-        .selector({"app": "product-service"})
-        .add_port("http", 8080, 8080)
-        .add_port("metrics", 9090, 9090))
-    
-    order_svc = (Service("order-service")
-        .selector({"app": "order-service"})
-        .add_port("http", 8080, 8080)
-        .add_port("metrics", 9090, 9090))
-    
-    # API Gateway
-    api_gateway = (App("api-gateway")
-        .image("nginx:1.21-alpine")
-        .port(80, "http")
-        .resources(cpu="200m", memory="256Mi")
-        .replicas(2))
-    
-    gateway_svc = (Service("api-gateway")
-        .selector({"app": "api-gateway"})
-        .add_port("http", 80, 80)
-        .type("LoadBalancer"))
-    
-    # Ingress
-    ingress = (Ingress("ecommerce-ingress")
-        .host("ecommerce.example.com")
-        .route("/api/users", "user-service", 8080)
-        .route("/api/products", "product-service", 8080)
-        .route("/api/orders", "order-service", 8080)
-        .route("/", "api-gateway", 80))
-    
-    return [
-        # Infrastructure
-        database, cache, message_queue,
-        # Services
-        user_service, product_service, order_service,
-        # Networking
-        db_service, cache_service, user_svc, product_svc, order_svc,
-        # Gateway
-        api_gateway, gateway_svc, ingress
-    ]
-
-def main():
-    """Generate the microservices platform."""
-    print("🏗️ Creating Microservices Platform")
-    print("=" * 45)
-    
-    # Create all components
-    components = create_microservices_platform()
-    
-    # Generate Kubernetes manifests
-    k8s_output = KubernetesOutput()
-    all_resources = []
-    
-    for component in components:
-        resources = component.generate_kubernetes_resources()
-        all_resources.extend(resources)
-    
-    # Save Kubernetes manifests
-    k8s_output.write_all_resources(all_resources, "microservices-platform.yaml")
-    
-    # Generate Helm chart
-    helm_output = HelmOutput("ecommerce-platform")
-    for component in components:
-        helm_output.add_resource(component)
-    helm_output.generate("helm-chart/")
-    
-    print(f"✅ Generated {len(all_resources)} Kubernetes resources")
-    print("📄 Kubernetes manifests: microservices-platform.yaml")
-    print("📦 Helm chart: helm-chart/")
-    print("\n🏗️ Platform components:")
-    print("   • 3 Infrastructure services (DB, Cache, Queue)")
-    print("   • 3 Business microservices")
-    print("   • 1 API Gateway")
-    print("   • Services and Ingress")
-    print("\n🚀 Deploy with:")
-    print("   kubectl apply -f microservices-platform.yaml")
-    print("   # OR")
-    print("   helm install ecommerce ./helm-chart/")
-
-if __name__ == "__main__":
-    main()
+# ❌ Bad: No resource limits
+service = App("service")  # No resource limits
 ```
 
-## Deployment and Testing
+### 3. **Health Checks**
+```python
+# ✅ Good: Configure health checks
+health = Health("health").liveness_probe("/health")
+service.add_health(health)
 
-1. **Deploy the platform:**
-   ```bash
-   python microservices_platform.py
-   kubectl apply -f microservices-platform.yaml
-   ```
+# ❌ Bad: No health checks
+service = App("service")  # No health checks
+```
 
-2. **Verify deployment:**
-   ```bash
-   kubectl get pods
-   kubectl get services
-   kubectl get ingress
-   ```
+### 4. **Service Discovery**
+```python
+# ✅ Good: Use Kubernetes service names
+USER_SERVICE_URL = "http://user-service:3001"
 
-3. **Test the services:**
-   ```bash
-   # Get external IP
-   kubectl get service api-gateway -w
-   
-   # Test endpoints
-   curl http://<EXTERNAL-IP>/api/users/health
-   curl http://<EXTERNAL-IP>/api/products/health
-   curl http://<EXTERNAL-IP>/api/orders/health
-   ```
-
-## Key Patterns Implemented
-
-✅ **Service Discovery**: Internal communication via Kubernetes services  
-✅ **API Gateway**: Single entry point with routing  
-✅ **Async Messaging**: RabbitMQ for service communication  
-✅ **Database Per Service**: Shared database with service isolation  
-✅ **Circuit Breaker**: Built into service health checks  
-✅ **Observability**: Comprehensive monitoring and tracing  
-✅ **Security**: RBAC and security policies  
-✅ **Scalability**: Horizontal scaling and resource optimization  
-
-## Best Practices Followed
-
-- **Domain-Driven Design**: Services organized by business domains
-- **Database Per Service**: Logical isolation in shared database
-- **API Versioning**: Version endpoints for backward compatibility
-- **Health Checks**: Comprehensive health monitoring
-- **Resource Limits**: Proper CPU and memory allocation
-- **Security**: RBAC and network policies
-- **Observability**: Metrics, logs, and tracing
-- **Deployment**: Gradual rollouts with canary deployments
+# ❌ Bad: Hardcode IP addresses
+USER_SERVICE_URL = "http://10.0.0.1:3001"
+```
 
 ## Next Steps
 
-Enhance your microservices platform:
+1. **[Observability Stack Tutorial](observability-stack.md)** - Add monitoring and tracing
+2. **[Production Deployments](../examples/production/index.md)** - Learn about production configurations
+3. **[Complex Platforms](../examples/complex/index.md)** - Advanced multi-service platforms
 
-1. **[Observability Stack](observability-stack.md)** - Advanced monitoring
-2. **[Multi-Environment](multi-environment.md)** - Environment management
-3. **[Advanced Features](../advanced/index.md)** - Service mesh, advanced patterns
-
----
-
-**Congratulations!** You've built a production-ready microservices platform with Celestra. The platform includes all essential components for running scalable, secure, and observable microservices.
+Ready to add monitoring and observability? Check out the [Observability Stack Tutorial](observability-stack.md)! 

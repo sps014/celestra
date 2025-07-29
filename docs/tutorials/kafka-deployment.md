@@ -1,627 +1,443 @@
 # Kafka Deployment Tutorial
 
-Learn how to deploy a production-ready Apache Kafka cluster with ZooKeeper using Celestra. This tutorial covers everything from basic setup to advanced configurations.
+This tutorial will guide you through deploying a production-ready Apache Kafka cluster using Celestra, including ZooKeeper, monitoring, and best practices.
 
-!!! info "Tutorial Overview"
-    **Difficulty**: ⭐⭐⭐ Intermediate  
-    **Time**: 15-20 minutes  
-    **Prerequisites**: Basic Kubernetes knowledge  
-    **You'll Learn**: Kafka deployment, ZooKeeper setup, production configurations
+## 🎯 What You'll Build
 
-## What We'll Build
+By the end of this tutorial, you'll have:
 
-```mermaid
-graph TB
-    subgraph "Kafka Cluster"
-        K1[Kafka Broker 1] --> ZK[ZooKeeper Ensemble]
-        K2[Kafka Broker 2] --> ZK
-        K3[Kafka Broker 3] --> ZK
-        ZK --> Z1[ZooKeeper 1]
-        ZK --> Z2[ZooKeeper 2]
-        ZK --> Z3[ZooKeeper 3]
-    end
-    
-    subgraph "Client Applications"
-        P[Producer] --> K1
-        P --> K2
-        P --> K3
-        K1 --> C[Consumer]
-        K2 --> C
-        K3 --> C
-    end
-    
-    subgraph "Monitoring"
-        K1 --> M[Metrics & Monitoring]
-        K2 --> M
-        K3 --> M
-    end
-```
+- **Apache Kafka cluster** with 3 brokers
+- **Apache ZooKeeper** ensemble for coordination
+- **Monitoring stack** with Prometheus and Grafana
+- **Kafka UI** for management
+- **Proper security** with RBAC and network policies
 
-## Step 1: Basic Kafka Setup
+## 📋 Prerequisites
 
-Let's start with a simple Kafka deployment:
+Before starting, ensure you have:
+
+- Celestra installed (`pip install celestra`)
+- A Kubernetes cluster (minikube, kind, or cloud)
+- kubectl configured
+- At least 4GB of available memory
+
+## 🚀 Step 1: Basic Kafka Setup
+
+Let's start with a basic Kafka deployment:
 
 ```python
-#!/usr/bin/env python3
-"""
-Basic Kafka Deployment with Celestra
-"""
+from celestra import StatefulApp, ConfigMap, Secret
 
-from celestra import App, StatefulApp, Service, ConfigMap, KubernetesOutput
-import os
+# ZooKeeper configuration
+zookeeper_config = (ConfigMap("zookeeper-config")
+    .add("dataDir", "/var/lib/zookeeper/data")
+    .add("clientPort", "2181")
+    .add("maxClientCnxns", "60")
+    .add("tickTime", "2000")
+    .add("initLimit", "10")
+    .add("syncLimit", "5"))
 
-def create_basic_kafka():
-    print("🚀 Creating basic Kafka deployment...")
-    
-    # ZooKeeper for Kafka coordination
-    zookeeper = (StatefulApp("zookeeper")
-        .image("confluentinc/cp-zookeeper:7.4.0")
-        .port(2181, "client")
-        .port(2888, "follower")
-        .port(3888, "election")
-        .env("ZOOKEEPER_CLIENT_PORT", "2181")
-        .env("ZOOKEEPER_TICK_TIME", "2000")
-        .resources(cpu="100m", memory="256Mi")
-        .storage("/var/lib/zookeeper/data", "1Gi")
-        .replicas(1))  # Start with single instance
-    
-    # Kafka Broker
-    kafka = (StatefulApp("kafka")
-        .image("confluentinc/cp-kafka:7.4.0")
-        .port(9092, "kafka")
-        .port(9101, "jmx")
-        .env("KAFKA_BROKER_ID", "1")
-        .env("KAFKA_ZOOKEEPER_CONNECT", "zookeeper:2181")
-        .env("KAFKA_LISTENER_SECURITY_PROTOCOL_MAP", "PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT")
-        .env("KAFKA_ADVERTISED_LISTENERS", "PLAINTEXT://kafka:9092")
-        .env("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "1")
-        .env("KAFKA_TRANSACTION_STATE_LOG_MIN_ISR", "1")
-        .env("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "1")
-        .env("KAFKA_JMX_PORT", "9101")
-        .env("KAFKA_JMX_HOSTNAME", "localhost")
-        .resources(cpu="500m", memory="1Gi")
-        .storage("/var/lib/kafka/data", "10Gi")
-        .replicas(1))
-    
-    return zookeeper, kafka
+# Kafka configuration
+kafka_config = (ConfigMap("kafka-config")
+    .add("broker.id", "0")
+    .add("listeners", "PLAINTEXT://:9092")
+    .add("advertised.listeners", "PLAINTEXT://kafka-0.kafka-headless:9092")
+    .add("log.dirs", "/var/lib/kafka/data")
+    .add("zookeeper.connect", "zookeeper-0.zookeeper-headless:2181")
+    .add("num.partitions", "3")
+    .add("default.replication.factor", "3")
+    .add("min.insync.replicas", "2")
+    .add("offsets.topic.replication.factor", "3")
+    .add("transaction.state.log.replication.factor", "3")
+    .add("transaction.state.log.min.isr", "2"))
 
-if __name__ == "__main__":
-    zookeeper, kafka = create_basic_kafka()
-    
-    # Generate Kubernetes resources
-    zk_resources = zookeeper.generate_kubernetes_resources()
-    kafka_resources = kafka.generate_kubernetes_resources()
-    
-    # Output to files
-    os.makedirs("kafka-basic", exist_ok=True)
-    
-    output = KubernetesOutput()
-    output.generate(zookeeper, "kafka-basic/")
-    output.generate(kafka, "kafka-basic/")
-    
-    print(f"✅ Generated basic Kafka deployment")
-    print(f"📁 Files: kafka-basic/")
-    print(f"🚀 Deploy: kubectl apply -f kafka-basic/")
+# ZooKeeper StatefulSet
+zookeeper = (StatefulApp("zookeeper")
+    .image("confluentinc/cp-zookeeper:7.4.0")
+    .port(2181)
+    .storage("10Gi")
+    .replicas(3)
+    .add_config(zookeeper_config)
+    .env("ZOOKEEPER_CLIENT_PORT", "2181")
+    .env("ZOOKEEPER_TICK_TIME", "2000")
+    .env("ZOOKEEPER_INIT_LIMIT", "10")
+    .env("ZOOKEEPER_SYNC_LIMIT", "5"))
+
+# Kafka StatefulSet
+kafka = (StatefulApp("kafka")
+    .image("confluentinc/cp-kafka:7.4.0")
+    .kafka_port(9092)
+    .storage("100Gi")
+    .replicas(3)
+    .add_config(kafka_config)
+    .env("KAFKA_ZOOKEEPER_CONNECT", "zookeeper-0.zookeeper-headless:2181")
+    .env("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "3")
+    .env("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "3")
+    .env("KAFKA_TRANSACTION_STATE_LOG_MIN_ISR", "2"))
+
+# Generate manifests
+zookeeper.generate().to_yaml("./kafka/")
+kafka.generate().to_yaml("./kafka/")
+zookeeper_config.generate().to_yaml("./kafka/")
+kafka_config.generate().to_yaml("./kafka/")
 ```
 
-## Step 2: Production Kafka Cluster
+## 🔒 Step 2: Add Security
 
-Now let's create a production-ready cluster with multiple brokers:
+Now let's add security features:
 
 ```python
-#!/usr/bin/env python3
-"""
-Production Kafka Cluster with Celestra
-"""
+from celestra import Secret, ServiceAccount, Role, RoleBinding, NetworkPolicy
 
-from celestra import (
-    StatefulApp, Service, ConfigMap, Secret, 
-    ServiceAccount, NetworkPolicy, KubernetesOutput
+# Kafka credentials
+kafka_secret = (Secret("kafka-secret")
+    .add("username", "kafka-user")
+    .add("password", "secure-kafka-password"))
+
+# Service accounts
+kafka_sa = ServiceAccount("kafka-sa")
+zookeeper_sa = ServiceAccount("zookeeper-sa")
+
+# RBAC roles
+kafka_role = (Role("kafka-role")
+    .add_policy("get", "pods")
+    .add_policy("get", "services")
+    .add_policy("list", "endpoints"))
+
+zookeeper_role = (Role("zookeeper-role")
+    .add_policy("get", "pods")
+    .add_policy("get", "services"))
+
+# Role bindings
+kafka_binding = RoleBinding("kafka-binding").bind_role(kafka_role).bind_service_account(kafka_sa)
+zookeeper_binding = RoleBinding("zookeeper-binding").bind_role(zookeeper_role).bind_service_account(zookeeper_sa)
+
+# Network policies
+kafka_network_policy = (NetworkPolicy("kafka-network-policy")
+    .allow_pods_with_label("app", "kafka")
+    .allow_pods_with_label("app", "zookeeper")
+    .deny_all())
+
+zookeeper_network_policy = (NetworkPolicy("zookeeper-network-policy")
+    .allow_pods_with_label("app", "zookeeper")
+    .deny_all())
+
+# Update applications with security
+kafka = (kafka
+    .add_service_account(kafka_sa)
+    .add_secret(kafka_secret)
+    .add_network_policy(kafka_network_policy))
+
+zookeeper = (zookeeper
+    .add_service_account(zookeeper_sa)
+    .add_network_policy(zookeeper_network_policy))
+
+# Generate security manifests
+kafka_secret.generate().to_yaml("./kafka/")
+kafka_sa.generate().to_yaml("./kafka/")
+zookeeper_sa.generate().to_yaml("./kafka/")
+kafka_role.generate().to_yaml("./kafka/")
+zookeeper_role.generate().to_yaml("./kafka/")
+kafka_binding.generate().to_yaml("./kafka/")
+zookeeper_binding.generate().to_yaml("./kafka/")
+kafka_network_policy.generate().to_yaml("./kafka/")
+zookeeper_network_policy.generate().to_yaml("./kafka/")
+```
+
+## 📊 Step 3: Add Monitoring
+
+Let's add monitoring with Prometheus and Grafana:
+
+```python
+from celestra import App, Observability
+
+# Prometheus configuration
+prometheus_config = (ConfigMap("prometheus-config")
+    .add_yaml("prometheus.yml", """
+global:
+  scrape_interval: 15s
+scrape_configs:
+  - job_name: 'kafka'
+    static_configs:
+      - targets: ['kafka-0.kafka-headless:9092', 'kafka-1.kafka-headless:9092', 'kafka-2.kafka-headless:9092']
+  - job_name: 'zookeeper'
+    static_configs:
+      - targets: ['zookeeper-0.zookeeper-headless:2181', 'zookeeper-1.zookeeper-headless:2181', 'zookeeper-2.zookeeper-headless:2181']
+"""))
+
+# Prometheus
+prometheus = (App("prometheus")
+    .image("prom/prometheus:latest")
+    .port(9090)
+    .add_config(prometheus_config)
+    .resources(cpu="500m", memory="1Gi")
+    .expose())
+
+# Grafana
+grafana = (App("grafana")
+    .image("grafana/grafana:latest")
+    .port(3000)
+    .env("GF_SECURITY_ADMIN_PASSWORD", "admin")
+    .env("GF_INSTALL_PLUGINS", "grafana-kafka-datasource")
+    .resources(cpu="200m", memory="512Mi")
+    .expose())
+
+# Kafka UI for management
+kafka_ui = (App("kafka-ui")
+    .image("provectuslabs/kafka-ui:latest")
+    .port(8080)
+    .env("KAFKA_CLUSTERS_0_NAME", "local")
+    .env("KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS", "kafka-0.kafka-headless:9092")
+    .env("KAFKA_CLUSTERS_0_ZOOKEEPER", "zookeeper-0.zookeeper-headless:2181")
+    .resources(cpu="100m", memory="256Mi")
+    .expose())
+
+# Generate monitoring manifests
+prometheus.generate().to_yaml("./kafka/")
+grafana.generate().to_yaml("./kafka/")
+kafka_ui.generate().to_yaml("./kafka/")
+prometheus_config.generate().to_yaml("./kafka/")
+```
+
+## 🔧 Step 4: Advanced Configuration
+
+Let's add advanced features like backup scheduling and resource optimization:
+
+```python
+from celestra import CostOptimization, DeploymentStrategy
+
+# Backup configuration
+backup_config = (ConfigMap("kafka-backup-config")
+    .add("backup_schedule", "0 2 * * *")  # Daily at 2 AM
+    .add("retention_days", "7")
+    .add("backup_location", "s3://kafka-backups"))
+
+# Add backup scheduling to Kafka
+kafka = (kafka
+    .backup_schedule("0 2 * * *")
+    .add_config(backup_config)
+    .deployment_strategy("rolling")
+    .health_check("/health")
+    .liveness_probe("/health")
+    .readiness_probe("/ready"))
+
+# Cost optimization
+optimizer = CostOptimization("kafka-optimizer")
+optimizer.resource_optimization()
+optimizer.storage_optimization()
+optimizer.spot_instance_recommendation()
+
+# Add observability
+observability = Observability("kafka-monitoring")
+observability.enable_metrics()
+observability.enable_logging()
+observability.enable_tracing()
+
+kafka = kafka.add_observability(observability)
+```
+
+## 🚀 Step 5: Deploy Everything
+
+Now let's create a complete deployment script:
+
+```python
+# Complete Kafka deployment
+from celestra import AppGroup
+
+# Create application group
+kafka_platform = AppGroup("kafka-platform")
+
+# Add all components
+kafka_platform.add([
+    zookeeper_config,
+    kafka_config,
+    backup_config,
+    prometheus_config,
+    zookeeper,
+    kafka,
+    prometheus,
+    grafana,
+    kafka_ui,
+    kafka_secret,
+    kafka_sa,
+    zookeeper_sa,
+    kafka_role,
+    zookeeper_role,
+    kafka_binding,
+    zookeeper_binding,
+    kafka_network_policy,
+    zookeeper_network_policy
+])
+
+# Generate all manifests
+kafka_platform.generate().to_yaml("./kafka/")
+
+print("✅ Kafka platform manifests generated in ./kafka/")
+```
+
+## 🎯 Step 6: Deploy and Verify
+
+Deploy the Kafka platform:
+
+```bash
+# Deploy to Kubernetes
+kubectl apply -f ./kafka/
+
+# Check deployment status
+kubectl get pods -l app=kafka
+kubectl get pods -l app=zookeeper
+kubectl get services
+
+# Check logs
+kubectl logs -l app=kafka
+kubectl logs -l app=zookeeper
+```
+
+## 🔍 Step 7: Test the Deployment
+
+### Test Kafka Connectivity
+
+```python
+# Test script
+from kafka import KafkaProducer, KafkaConsumer
+import json
+
+# Producer test
+producer = KafkaProducer(
+    bootstrap_servers=['kafka-0.kafka-headless:9092'],
+    value_serializer=lambda v: json.dumps(v).encode('utf-8')
 )
-import os
 
-def create_production_kafka():
-    print("🚀 Creating production Kafka cluster...")
-    
-    # ZooKeeper Ensemble (3 nodes for HA)
-    zookeeper = (StatefulApp("zookeeper")
-        .image("confluentinc/cp-zookeeper:7.4.0")
-        .port(2181, "client")
-        .port(2888, "follower") 
-        .port(3888, "election")
-        .env("ZOOKEEPER_CLIENT_PORT", "2181")
-        .env("ZOOKEEPER_TICK_TIME", "2000")
-        .env("ZOOKEEPER_INIT_LIMIT", "5")
-        .env("ZOOKEEPER_SYNC_LIMIT", "2")
-        .env("ZOOKEEPER_SERVERS", "zookeeper-0.zookeeper:2888:3888;zookeeper-1.zookeeper:2888:3888;zookeeper-2.zookeeper:2888:3888")
-        .resources(cpu="500m", memory="512Mi")
-        .storage("/var/lib/zookeeper/data", "2Gi")
-        .storage("/var/lib/zookeeper/log", "1Gi", mount_path="/var/lib/zookeeper/log")
-        .replicas(3))  # HA setup
-    
-    # Kafka Cluster (3 brokers)
-    kafka = (StatefulApp("kafka")
-        .image("confluentinc/cp-kafka:7.4.0")
-        .port(9092, "kafka")
-        .port(9093, "kafka-ssl")
-        .port(9101, "jmx")
-        .env("KAFKA_ZOOKEEPER_CONNECT", "zookeeper-0.zookeeper:2181,zookeeper-1.zookeeper:2181,zookeeper-2.zookeeper:2181")
-        .env("KAFKA_LISTENER_SECURITY_PROTOCOL_MAP", "PLAINTEXT:PLAINTEXT,SSL:SSL,PLAINTEXT_HOST:PLAINTEXT")
-        .env("KAFKA_ADVERTISED_LISTENERS", "PLAINTEXT://kafka-$(POD_NAME).kafka:9092")
-        .env("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "false")
-        .env("KAFKA_DEFAULT_REPLICATION_FACTOR", "3")
-        .env("KAFKA_MIN_INSYNC_REPLICAS", "2")
-        .env("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "3")
-        .env("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "3")
-        .env("KAFKA_TRANSACTION_STATE_LOG_MIN_ISR", "2")
-        .env("KAFKA_LOG_RETENTION_HOURS", "168")  # 7 days
-        .env("KAFKA_LOG_RETENTION_BYTES", "1073741824")  # 1GB per partition
-        .env("KAFKA_LOG_SEGMENT_BYTES", "1073741824")
-        .env("KAFKA_JMX_PORT", "9101")
-        .env("KAFKA_JMX_HOSTNAME", "localhost")
-        .env("KAFKA_HEAP_OPTS", "-Xmx1G -Xms1G")
-        .resources(cpu="1000m", memory="2Gi")
-        .storage("/var/lib/kafka/data", "50Gi")
-        .replicas(3))
-    
-    # Kafka Manager for cluster management
-    kafka_manager = (App("kafka-manager")
-        .image("hlebalbau/kafka-manager:stable")
-        .port(9000, "web")
-        .env("ZK_HOSTS", "zookeeper-0.zookeeper:2181,zookeeper-1.zookeeper:2181,zookeeper-2.zookeeper:2181")
-        .env("APPLICATION_SECRET", "letmein")
-        .resources(cpu="100m", memory="256Mi")
-        .replicas(1)
-        .expose())
-    
-    return zookeeper, kafka, kafka_manager
+producer.send('test-topic', {'message': 'Hello Kafka!'})
+producer.flush()
 
-def create_kafka_topics_job():
-    """Create a Job to initialize Kafka topics"""
-    from celestra import Job
-    
-    topics_job = (Job("kafka-topics-setup")
-        .image("confluentinc/cp-kafka:7.4.0")
-        .command([
-            "sh", "-c", """
-            # Wait for Kafka to be ready
-            until kafka-topics --bootstrap-server kafka-0.kafka:9092 --list; do
-                echo "Waiting for Kafka..."
-                sleep 5
-            done
-            
-            # Create topics
-            kafka-topics --bootstrap-server kafka-0.kafka:9092 --create --topic user-events --partitions 12 --replication-factor 3 --if-not-exists
-            kafka-topics --bootstrap-server kafka-0.kafka:9092 --create --topic order-events --partitions 6 --replication-factor 3 --if-not-exists
-            kafka-topics --bootstrap-server kafka-0.kafka:9092 --create --topic notifications --partitions 3 --replication-factor 3 --if-not-exists
-            
-            echo "Topics created successfully!"
-            """
-        ])
-        .resources(cpu="100m", memory="128Mi")
-        .retry_limit(3))
-    
-    return topics_job
+# Consumer test
+consumer = KafkaConsumer(
+    'test-topic',
+    bootstrap_servers=['kafka-0.kafka-headless:9092'],
+    value_deserializer=lambda m: json.loads(m.decode('utf-8'))
+)
 
-if __name__ == "__main__":
-    zookeeper, kafka, kafka_manager = create_production_kafka()
-    topics_job = create_kafka_topics_job()
-    
-    # Generate all resources
-    components = [zookeeper, kafka, kafka_manager, topics_job]
-    
-    os.makedirs("kafka-production", exist_ok=True)
-    
-    output = KubernetesOutput()
-    for component in components:
-        output.generate(component, "kafka-production/")
-    
-    print(f"✅ Generated production Kafka cluster")
-    print(f"📁 Files: kafka-production/")
-    print(f"🚀 Deploy: kubectl apply -f kafka-production/")
-    print(f"🌐 Access Kafka Manager: kubectl port-forward svc/kafka-manager 9000:9000")
+for message in consumer:
+    print(f"Received: {message.value}")
+    break
 ```
 
-## Step 3: Kafka with Security (SASL/SSL)
-
-Add security with authentication and encryption:
-
-```python
-#!/usr/bin/env python3
-"""
-Secure Kafka Deployment with SASL/SSL
-"""
-
-from celestra import StatefulApp, Secret, ConfigMap, KubernetesOutput
-import os
-
-def create_secure_kafka():
-    print("🔐 Creating secure Kafka cluster...")
-    
-    # Create JAAS configuration for SASL
-    jaas_config = ConfigMap("kafka-jaas-config")
-    jaas_config.add_data("kafka_server_jaas.conf", """
-KafkaServer {
-    org.apache.kafka.common.security.plain.PlainLoginModule required
-    username="admin"
-    password="admin-secret"
-    user_admin="admin-secret"
-    user_producer="producer-secret"
-    user_consumer="consumer-secret";
-};
-
-Client {
-    org.apache.kafka.common.security.plain.PlainLoginModule required
-    username="admin"
-    password="admin-secret";
-};
-""")
-    
-    # SSL Certificates (in production, use cert-manager or external certs)
-    ssl_secret = Secret("kafka-ssl-certs")
-    ssl_secret.add_data("kafka.keystore.jks", "base64-encoded-keystore")
-    ssl_secret.add_data("kafka.truststore.jks", "base64-encoded-truststore")
-    ssl_secret.add_data("keystore-password", "keystore-password")
-    ssl_secret.add_data("truststore-password", "truststore-password")
-    
-    # Secure ZooKeeper
-    zookeeper = (StatefulApp("zookeeper")
-        .image("confluentinc/cp-zookeeper:7.4.0")
-        .port(2181, "client")
-        .port(2182, "secure-client")
-        .env("ZOOKEEPER_CLIENT_PORT", "2181")
-        .env("ZOOKEEPER_SECURE_CLIENT_PORT", "2182")
-        .env("ZOOKEEPER_TICK_TIME", "2000")
-        .env("ZOOKEEPER_SASL_ENABLED", "true")
-        .env("ZOOKEEPER_REQUIRE_CLIENT_AUTH", "false")
-        .env("KAFKA_OPTS", "-Djava.security.auth.login.config=/etc/kafka/secrets/kafka_server_jaas.conf")
-        .resources(cpu="500m", memory="512Mi")
-        .storage("/var/lib/zookeeper/data", "2Gi")
-        .replicas(3))
-    
-    # Secure Kafka
-    kafka = (StatefulApp("kafka")
-        .image("confluentinc/cp-kafka:7.4.0")
-        .port(9092, "plaintext")
-        .port(9093, "ssl") 
-        .port(9094, "sasl-ssl")
-        .port(9101, "jmx")
-        .env("KAFKA_ZOOKEEPER_CONNECT", "zookeeper:2181")
-        .env("KAFKA_LISTENER_SECURITY_PROTOCOL_MAP", "PLAINTEXT:PLAINTEXT,SSL:SSL,SASL_SSL:SASL_SSL")
-        .env("KAFKA_ADVERTISED_LISTENERS", "PLAINTEXT://kafka:9092,SSL://kafka:9093,SASL_SSL://kafka:9094")
-        .env("KAFKA_SECURITY_INTER_BROKER_PROTOCOL", "SASL_SSL")
-        .env("KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL", "PLAIN")
-        .env("KAFKA_SASL_ENABLED_MECHANISMS", "PLAIN")
-        .env("KAFKA_SSL_KEYSTORE_FILENAME", "kafka.keystore.jks")
-        .env("KAFKA_SSL_KEYSTORE_CREDENTIALS", "keystore-password")
-        .env("KAFKA_SSL_KEY_CREDENTIALS", "keystore-password")
-        .env("KAFKA_SSL_TRUSTSTORE_FILENAME", "kafka.truststore.jks")
-        .env("KAFKA_SSL_TRUSTSTORE_CREDENTIALS", "truststore-password")
-        .env("KAFKA_SSL_CLIENT_AUTH", "none")
-        .env("KAFKA_OPTS", "-Djava.security.auth.login.config=/etc/kafka/secrets/kafka_server_jaas.conf")
-        .env("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "3")
-        .env("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "3")
-        .env("KAFKA_TRANSACTION_STATE_LOG_MIN_ISR", "2")
-        .resources(cpu="1000m", memory="2Gi")
-        .storage("/var/lib/kafka/data", "50Gi")
-        .replicas(3))
-    
-    return zookeeper, kafka, jaas_config, ssl_secret
-
-if __name__ == "__main__":
-    zookeeper, kafka, jaas_config, ssl_secret = create_secure_kafka()
-    
-    components = [jaas_config, ssl_secret, zookeeper, kafka]
-    
-    os.makedirs("kafka-secure", exist_ok=True)
-    
-    output = KubernetesOutput()
-    for component in components:
-        output.generate(component, "kafka-secure/")
-    
-    print(f"🔐 Generated secure Kafka cluster")
-    print(f"📁 Files: kafka-secure/")
-    print(f"🚀 Deploy: kubectl apply -f kafka-secure/")
-```
-
-## Step 4: Monitoring and Observability
-
-Add comprehensive monitoring to your Kafka cluster:
-
-```python
-#!/usr/bin/env python3
-"""
-Kafka with Monitoring and Observability
-"""
-
-from celestra import App, StatefulApp, ConfigMap, Service, KubernetesOutput
-import os
-
-def create_kafka_with_monitoring():
-    print("📊 Creating Kafka cluster with monitoring...")
-    
-    # Kafka JMX Exporter Configuration
-    jmx_config = ConfigMap("kafka-jmx-config")
-    jmx_config.add_data("kafka-jmx.yml", """
-rules:
-  - pattern: "kafka.server<type=(.+), name=(.+)><>Value"
-    name: kafka_server_$1_$2
-  - pattern: "kafka.server<type=(.+), name=(.+), clientId=(.+)><>Value"
-    name: kafka_server_$1_$2
-    labels:
-      clientId: "$3"
-  - pattern: "kafka.server<type=(.+), name=(.+), topic=(.+)><>Value"
-    name: kafka_server_$1_$2
-    labels:
-      topic: "$3"
-""")
-    
-    # Kafka with JMX metrics
-    kafka = (StatefulApp("kafka")
-        .image("confluentinc/cp-kafka:7.4.0")
-        .port(9092, "kafka")
-        .port(9101, "jmx")
-        .port(9308, "metrics")  # Prometheus metrics
-        .env("KAFKA_ZOOKEEPER_CONNECT", "zookeeper:2181")
-        .env("KAFKA_ADVERTISED_LISTENERS", "PLAINTEXT://kafka:9092")
-        .env("KAFKA_JMX_PORT", "9101")
-        .env("KAFKA_JMX_HOSTNAME", "localhost")
-        .env("KAFKA_OPTS", "-javaagent:/opt/jmx_prometheus_javaagent.jar=9308:/etc/jmx-exporter/kafka-jmx.yml")
-        .resources(cpu="1000m", memory="2Gi")
-        .storage("/var/lib/kafka/data", "50Gi")
-        .replicas(3))
-    
-    # Kafka Exporter for additional metrics
-    kafka_exporter = (App("kafka-exporter")
-        .image("danielqsj/kafka-exporter:latest")
-        .port(9308, "metrics")
-        .command(["./kafka_exporter", "--kafka.server=kafka:9092"])
-        .resources(cpu="100m", memory="128Mi")
-        .replicas(1))
-    
-    # Grafana for visualization
-    grafana = (App("grafana")
-        .image("grafana/grafana:9.5.0")
-        .port(3000, "web")
-        .env("GF_SECURITY_ADMIN_PASSWORD", "admin")
-        .env("GF_INSTALL_PLUGINS", "grafana-piechart-panel")
-        .resources(cpu="200m", memory="256Mi")
-        .storage("/var/lib/grafana", "1Gi")
-        .expose())
-    
-    # Prometheus for metrics collection
-    prometheus = (App("prometheus")
-        .image("prom/prometheus:v2.44.0")
-        .port(9090, "web")
-        .resources(cpu="500m", memory="1Gi")
-        .storage("/prometheus", "10Gi")
-        .expose())
-    
-    return kafka, kafka_exporter, grafana, prometheus, jmx_config
-
-if __name__ == "__main__":
-    kafka, kafka_exporter, grafana, prometheus, jmx_config = create_kafka_with_monitoring()
-    
-    components = [jmx_config, kafka, kafka_exporter, grafana, prometheus]
-    
-    os.makedirs("kafka-monitoring", exist_ok=True)
-    
-    output = KubernetesOutput()
-    for component in components:
-        output.generate(component, "kafka-monitoring/")
-    
-    print(f"📊 Generated Kafka cluster with monitoring")
-    print(f"📁 Files: kafka-monitoring/")
-    print(f"🚀 Deploy: kubectl apply -f kafka-monitoring/")
-    print(f"📊 Grafana: kubectl port-forward svc/grafana 3000:3000")
-    print(f"📈 Prometheus: kubectl port-forward svc/prometheus 9090:9090")
-```
-
-## Step 5: Complete Production Example
-
-Here's a complete production example with all features:
-
-```python
-#!/usr/bin/env python3
-"""
-Complete Production Kafka Platform
-"""
-
-from celestra import *
-import os
-
-def create_complete_kafka_platform():
-    print("🏗️ Creating complete Kafka platform...")
-    
-    # Namespace for isolation
-    namespace = "kafka-platform"
-    
-    # Service Account with minimal permissions
-    service_account = ServiceAccount("kafka-service-account")
-    
-    # Network Policy for security
-    network_policy = (NetworkPolicy("kafka-network-policy")
-        .allow_ingress_from_pods({"app": "kafka"})
-        .allow_egress_to_pods({"app": "zookeeper"}))
-    
-    # ZooKeeper Ensemble
-    zookeeper = (StatefulApp("zookeeper")
-        .image("confluentinc/cp-zookeeper:7.4.0")
-        .namespace(namespace)
-        .service_account(service_account)
-        .port(2181, "client")
-        .port(2888, "follower")
-        .port(3888, "election")
-        .env("ZOOKEEPER_CLIENT_PORT", "2181")
-        .env("ZOOKEEPER_TICK_TIME", "2000")
-        .env("ZOOKEEPER_SERVERS", "zookeeper-0.zookeeper:2888:3888;zookeeper-1.zookeeper:2888:3888;zookeeper-2.zookeeper:2888:3888")
-        .resources(cpu="500m", memory="1Gi", cpu_limit="1000m", memory_limit="2Gi")
-        .storage("/var/lib/zookeeper/data", "5Gi")
-        .replicas(3)
-        .liveness_probe("/health", port=2181, initial_delay=30)
-        .readiness_probe("/ready", port=2181, initial_delay=10))
-    
-    # Kafka Cluster
-    kafka = (StatefulApp("kafka")
-        .image("confluentinc/cp-kafka:7.4.0")
-        .namespace(namespace)
-        .service_account(service_account)
-        .port(9092, "kafka")
-        .port(9101, "jmx")
-        .port(9308, "metrics")
-        .env("KAFKA_ZOOKEEPER_CONNECT", "zookeeper:2181")
-        .env("KAFKA_ADVERTISED_LISTENERS", "PLAINTEXT://kafka:9092")
-        .env("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "false")
-        .env("KAFKA_DEFAULT_REPLICATION_FACTOR", "3")
-        .env("KAFKA_MIN_INSYNC_REPLICAS", "2")
-        .env("KAFKA_NUM_NETWORK_THREADS", "8")
-        .env("KAFKA_NUM_IO_THREADS", "8")
-        .env("KAFKA_SOCKET_SEND_BUFFER_BYTES", "102400")
-        .env("KAFKA_SOCKET_RECEIVE_BUFFER_BYTES", "102400")
-        .env("KAFKA_SOCKET_REQUEST_MAX_BYTES", "104857600")
-        .env("KAFKA_LOG_RETENTION_HOURS", "168")
-        .env("KAFKA_LOG_SEGMENT_BYTES", "1073741824")
-        .env("KAFKA_JMX_PORT", "9101")
-        .env("KAFKA_HEAP_OPTS", "-Xmx2G -Xms2G")
-        .resources(cpu="1000m", memory="3Gi", cpu_limit="2000m", memory_limit="4Gi")
-        .storage("/var/lib/kafka/data", "100Gi")
-        .replicas(3)
-        .liveness_probe("/health", port=9092, initial_delay=60)
-        .readiness_probe("/ready", port=9092, initial_delay=30))
-    
-    # Schema Registry
-    schema_registry = (App("schema-registry")
-        .image("confluentinc/cp-schema-registry:7.4.0")
-        .namespace(namespace)
-        .port(8081, "api")
-        .env("SCHEMA_REGISTRY_HOST_NAME", "schema-registry")
-        .env("SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS", "kafka:9092")
-        .env("SCHEMA_REGISTRY_LISTENERS", "http://0.0.0.0:8081")
-        .resources(cpu="200m", memory="512Mi")
-        .replicas(2)
-        .expose())
-    
-    # Kafka Connect
-    kafka_connect = (App("kafka-connect")
-        .image("confluentinc/cp-kafka-connect:7.4.0")
-        .namespace(namespace)
-        .port(8083, "api")
-        .env("CONNECT_BOOTSTRAP_SERVERS", "kafka:9092")
-        .env("CONNECT_REST_ADVERTISED_HOST_NAME", "kafka-connect")
-        .env("CONNECT_REST_PORT", "8083")
-        .env("CONNECT_GROUP_ID", "compose-connect-group")
-        .env("CONNECT_CONFIG_STORAGE_TOPIC", "docker-connect-configs")
-        .env("CONNECT_OFFSET_STORAGE_TOPIC", "docker-connect-offsets")
-        .env("CONNECT_STATUS_STORAGE_TOPIC", "docker-connect-status")
-        .env("CONNECT_KEY_CONVERTER", "org.apache.kafka.connect.storage.StringConverter")
-        .env("CONNECT_VALUE_CONVERTER", "io.confluent.connect.avro.AvroConverter")
-        .env("CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL", "http://schema-registry:8081")
-        .resources(cpu="500m", memory="1Gi")
-        .replicas(2)
-        .expose())
-    
-    # KSQL Server
-    ksql_server = (App("ksql-server")
-        .image("confluentinc/cp-ksqldb-server:7.4.0")
-        .namespace(namespace)
-        .port(8088, "api")
-        .env("KSQL_CONFIG_DIR", "/etc/ksql")
-        .env("KSQL_BOOTSTRAP_SERVERS", "kafka:9092")
-        .env("KSQL_HOST_NAME", "ksql-server")
-        .env("KSQL_LISTENERS", "http://0.0.0.0:8088")
-        .env("KSQL_CACHE_MAX_BYTES_BUFFERING", "0")
-        .env("KSQL_KSQL_SCHEMA_REGISTRY_URL", "http://schema-registry:8081")
-        .resources(cpu="500m", memory="1Gi")
-        .replicas(2)
-        .expose())
-    
-    return {
-        "zookeeper": zookeeper,
-        "kafka": kafka,
-        "schema_registry": schema_registry,
-        "kafka_connect": kafka_connect,
-        "ksql_server": ksql_server,
-        "service_account": service_account,
-        "network_policy": network_policy
-    }
-
-if __name__ == "__main__":
-    components = create_complete_kafka_platform()
-    
-    os.makedirs("kafka-platform", exist_ok=True)
-    
-    output = KubernetesOutput()
-    for name, component in components.items():
-        output.generate(component, "kafka-platform/")
-    
-    print(f"🏗️ Generated complete Kafka platform")
-    print(f"📁 Files: kafka-platform/")
-    print(f"🚀 Deploy: kubectl apply -f kafka-platform/")
-    print(f"\n🌐 Access Services:")
-    print(f"   Schema Registry: kubectl port-forward svc/schema-registry 8081:8081")
-    print(f"   Kafka Connect: kubectl port-forward svc/kafka-connect 8083:8083")
-    print(f"   KSQL Server: kubectl port-forward svc/ksql-server 8088:8088")
-```
-
-## Deployment and Testing
-
-### Deploy Your Kafka Cluster
+### Access the UI
 
 ```bash
-# Create namespace
-kubectl create namespace kafka-platform
+# Port forward Kafka UI
+kubectl port-forward svc/kafka-ui 8080:8080
 
-# Deploy the cluster
-kubectl apply -f kafka-platform/
+# Port forward Grafana
+kubectl port-forward svc/grafana 3000:3000
 
-# Wait for pods to be ready
-kubectl wait --for=condition=ready pod -l app=kafka -n kafka-platform --timeout=300s
-kubectl wait --for=condition=ready pod -l app=zookeeper -n kafka-platform --timeout=300s
+# Access in browser:
+# Kafka UI: http://localhost:8080
+# Grafana: http://localhost:3000 (admin/admin)
 ```
 
-### Test Your Kafka Cluster
+## 📊 Monitoring and Metrics
 
+### Key Metrics to Monitor
+
+1. **Kafka Metrics:**
+   - Messages per second
+   - Consumer lag
+   - Partition count
+   - Replication factor
+
+2. **ZooKeeper Metrics:**
+   - Connection count
+   - Request latency
+   - Node count
+
+3. **System Metrics:**
+   - CPU usage
+   - Memory usage
+   - Disk I/O
+   - Network I/O
+
+### Grafana Dashboards
+
+Import these dashboard IDs in Grafana:
+- Kafka: `7589`
+- ZooKeeper: `10466`
+- System: `1860`
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+**1. ZooKeeper Connection Issues**
 ```bash
-# Create a test topic
-kubectl exec -it kafka-0 -n kafka-platform -- kafka-topics \
-  --bootstrap-server localhost:9092 \
-  --create \
-  --topic test-topic \
-  --partitions 3 \
-  --replication-factor 3
+# Check ZooKeeper status
+kubectl exec -it zookeeper-0 -- zkServer.sh status
 
-# Produce messages
-kubectl exec -it kafka-0 -n kafka-platform -- kafka-console-producer \
-  --bootstrap-server localhost:9092 \
-  --topic test-topic
-
-# Consume messages (in another terminal)
-kubectl exec -it kafka-0 -n kafka-platform -- kafka-console-consumer \
-  --bootstrap-server localhost:9092 \
-  --topic test-topic \
-  --from-beginning
+# Check logs
+kubectl logs zookeeper-0
 ```
 
-## Next Steps
+**2. Kafka Broker Issues**
+```bash
+# Check Kafka status
+kubectl exec -it kafka-0 -- kafka-topics --bootstrap-server localhost:9092 --list
 
-🎯 **Congratulations!** You now have a production-ready Kafka cluster. Here's what to explore next:
+# Check logs
+kubectl logs kafka-0
+```
 
-- **[Multi-Environment Setup](multi-environment.md)** - Deploy across dev/staging/prod
-- **[RBAC Security](rbac-security.md)** - Add role-based access control
-- **[Observability Stack](observability-stack.md)** - Enhanced monitoring and alerting
-- **[Advanced Configuration](../configuration/multi-environment.md)** - Fine-tune your cluster
+**3. Network Policy Issues**
+```bash
+# Check network policies
+kubectl get networkpolicies
 
-## Best Practices
+# Test connectivity
+kubectl exec -it kafka-0 -- nc -zv zookeeper-0.zookeeper-headless 2181
+```
 
-!!! tip "Production Recommendations"
-    - Use at least 3 Kafka brokers for high availability
-    - Set appropriate replication factors (3 for production)
-    - Configure proper resource limits and requests
-    - Enable monitoring and alerting
-    - Use persistent storage for data durability
-    - Implement proper security (SASL/SSL)
-    - Regular backup and disaster recovery planning
+### Performance Tuning
 
----
+```python
+# Optimize for high throughput
+kafka = (kafka
+    .resources(cpu="2000m", memory="4Gi")
+    .env("KAFKA_NUM_NETWORK_THREADS", "8")
+    .env("KAFKA_NUM_IO_THREADS", "8")
+    .env("KAFKA_SOCKET_SEND_BUFFER_BYTES", "102400")
+    .env("KAFKA_SOCKET_RECEIVE_BUFFER_BYTES", "102400")
+    .env("KAFKA_SOCKET_REQUEST_MAX_BYTES", "104857600"))
+```
 
-**Need help?** Check out our [examples](../examples/messaging/kafka.md) or [troubleshooting guide](../advanced/best-practices.md)! 
+## 🎯 Production Considerations
+
+### 1. **Persistence**
+- Use SSD storage for better performance
+- Configure proper backup strategies
+- Monitor disk usage
+
+### 2. **Security**
+- Enable TLS encryption
+- Use SASL authentication
+- Implement network policies
+
+### 3. **Scaling**
+- Monitor partition count
+- Scale based on throughput
+- Use auto-scaling policies
+
+### 4. **Monitoring**
+- Set up alerting
+- Monitor consumer lag
+- Track broker health
+
+## 🚀 Next Steps
+
+Now that you have a working Kafka cluster, explore:
+
+- **[Multi-Environment Tutorial](multi-environment.md)** - Deploy to different environments
+- **[RBAC Security Tutorial](../components/security/rbac.md)** - Advanced security configuration
+- **[Microservices Tutorial](microservices.md)** - Build complete microservices platforms
+- **[Observability Stack Tutorial](observability-stack.md)** - Advanced monitoring setup
+
+Ready to build more complex systems? Check out the [Microservices Tutorial](microservices.md) or [Observability Stack Tutorial](observability-stack.md)! 

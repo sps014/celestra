@@ -1,612 +1,499 @@
-# ConfigMap Component
+# ConfigMap Class
 
-The `ConfigMap` component provides configuration data storage for your applications, allowing you to separate configuration from application code and manage settings externally.
+The `ConfigMap` class manages Kubernetes ConfigMaps for configuration data like application settings, environment variables, and configuration files.
 
 ## Overview
-
-Use `ConfigMap` for:
-- **Application Configuration** - App settings, feature flags
-- **Environment Variables** - Non-sensitive configuration values
-- **Configuration Files** - Properties, YAML, JSON configuration files
-- **Script Storage** - Shell scripts, SQL scripts, configuration scripts
-
-## Basic Usage
 
 ```python
 from celestra import ConfigMap
 
-# Simple key-value configuration
+# Basic usage
+config = ConfigMap("app-config").add("debug", "true").add("port", "8080")
+```
+
+## Functions
+
+### add(key: str, value: str) -> ConfigMap
+Add a key-value pair to the ConfigMap.
+
+```python
+# Basic configuration
+config = ConfigMap("app-config").add("debug", "true")
+
+# Multiple values
 config = (ConfigMap("app-config")
-    .add_data("database.host", "postgres.default.svc.cluster.local")
-    .add_data("database.port", "5432")
-    .add_data("log.level", "info"))
+    .add("debug", "true")
+    .add("port", "8080")
+    .add("log_level", "info")
+    .add("database_url", "postgres://localhost:5432/myapp"))
 ```
 
-## Configuration Methods
-
-### Key-Value Data
+### add_json(key: str, data: Dict[str, Any]) -> ConfigMap
+Add JSON data to the ConfigMap.
 
 ```python
-# Simple configuration values
-app_config = (ConfigMap("web-app-config")
-    .add_data("API_BASE_URL", "https://api.example.com")
-    .add_data("MAX_CONNECTIONS", "100")
-    .add_data("TIMEOUT", "30")
-    .add_data("DEBUG_MODE", "false")
-    .add_data("FEATURE_FLAG_X", "enabled"))
+# Add JSON configuration
+config = ConfigMap("app-config").add_json("features", {
+    "new_ui": True,
+    "beta": False,
+    "max_users": 1000
+})
+
+# Add complex JSON
+config = ConfigMap("api-config").add_json("endpoints", {
+    "users": {
+        "url": "/api/users",
+        "methods": ["GET", "POST", "PUT", "DELETE"]
+    },
+    "products": {
+        "url": "/api/products",
+        "methods": ["GET", "POST"]
+    }
+})
 ```
 
-### Configuration Files
+### add_yaml(key: str, data: Union[Dict[str, Any], str]) -> ConfigMap
+Add YAML data to the ConfigMap.
 
 ```python
-# Complete configuration files
-database_config = (ConfigMap("database-config")
-    .add_file("postgresql.conf", """
-# PostgreSQL Configuration
-max_connections = 200
-shared_buffers = 256MB
-effective_cache_size = 1GB
-work_mem = 4MB
-checkpoint_completion_target = 0.9
-""")
-    .add_file("pg_hba.conf", """
-# PostgreSQL HBA Configuration
-local   all             all                     trust
-host    all             all     127.0.0.1/32    md5
-host    all             all     ::1/128         md5
-"""))
+# Add YAML from dictionary
+config = ConfigMap("app-config").add_yaml("settings", {
+    "server": {
+        "port": 8080,
+        "host": "0.0.0.0"
+    },
+    "database": {
+        "host": "localhost",
+        "port": 5432
+    }
+})
+
+# Add YAML string
+yaml_content = """
+server:
+  port: 8080
+  host: 0.0.0.0
+database:
+  host: localhost
+  port: 5432
+"""
+config = ConfigMap("app-config").add_yaml("config.yaml", yaml_content)
 ```
 
-### JSON and YAML Configuration
+### add_properties(key: str, properties: Dict[str, str]) -> ConfigMap
+Add properties file format data.
 
 ```python
-# Structured configuration
-api_config = (ConfigMap("api-config")
-    .add_json("config.json", {
-        "server": {
-            "port": 8080,
-            "host": "0.0.0.0"
-        },
-        "database": {
-            "url": "postgresql://postgres:5432/myapp",
-            "pool_size": 10
-        },
-        "features": {
-            "auth": True,
-            "logging": True,
-            "metrics": True
-        }
-    })
-    .add_yaml("logging.yaml", {
-        "version": 1,
-        "formatters": {
-            "default": {
-                "format": "[%(asctime)s] %(levelname)s in %(module)s: %(message)s"
-            }
-        },
-        "handlers": {
-            "console": {
-                "class": "logging.StreamHandler",
-                "formatter": "default"
-            }
-        },
-        "root": {
-            "level": "INFO",
-            "handlers": ["console"]
-        }
-    }))
+# Add properties configuration
+config = ConfigMap("app-config").add_properties("application.properties", {
+    "server.port": "8080",
+    "spring.datasource.url": "jdbc:postgresql://localhost:5432/myapp",
+    "logging.level.root": "INFO",
+    "app.feature.new_ui": "true"
+})
 ```
 
-### Scripts and Executables
+### add_ini(key: str, sections: Dict[str, Dict[str, str]]) -> ConfigMap
+Add INI file format data.
 
 ```python
-# Shell scripts and tools
-scripts_config = (ConfigMap("init-scripts")
-    .add_script("init-db.sh", """#!/bin/bash
-echo "Initializing database..."
-createdb myapp
-psql myapp < /scripts/schema.sql
-echo "Database initialized successfully"
-""")
-    .add_script("backup.sh", """#!/bin/bash
-DATE=$(date +%Y%m%d_%H%M%S)
-pg_dump myapp > /backups/backup_$DATE.sql
-echo "Backup created: backup_$DATE.sql"
-""")
-    .executable(True))  # Make scripts executable
+# Add INI configuration
+config = ConfigMap("app-config").add_ini("config.ini", {
+    "database": {
+        "host": "localhost",
+        "port": "5432",
+        "name": "myapp"
+    },
+    "server": {
+        "port": "8080",
+        "host": "0.0.0.0"
+    },
+    "logging": {
+        "level": "INFO",
+        "format": "json"
+    }
+})
 ```
 
-## Advanced Configuration
-
-### Namespace and Metadata
+### add_toml(key: str, data: Dict[str, Any]) -> ConfigMap
+Add TOML file format data.
 
 ```python
-# Organized configuration with metadata
-config = (ConfigMap("production-config")
-    .namespace("production")
-    .add_data("environment", "production")
-    .add_data("region", "us-west-2")
-    .label("component", "configuration")
-    .label("environment", "production")
-    .annotation("managed-by", "Celestra")
-    .annotation("last-updated", "2024-01-15"))
+# Add TOML configuration
+config = ConfigMap("app-config").add_toml("config.toml", {
+    "server": {
+        "port": 8080,
+        "host": "0.0.0.0"
+    },
+    "database": {
+        "host": "localhost",
+        "port": 5432,
+        "name": "myapp"
+    },
+    "features": {
+        "new_ui": True,
+        "beta": False
+    }
+})
 ```
 
-### Immutable ConfigMaps
+### from_file(key: str, file_path: str) -> ConfigMap
+Add data from a file.
 
 ```python
-# Immutable configuration (cannot be updated)
-immutable_config = (ConfigMap("app-version-config")
-    .add_data("version", "v1.2.3")
-    .add_data("build-id", "build-12345")
-    .add_data("commit-sha", "abc123def456")
-    .immutable(True))
+# Add configuration from file
+config = ConfigMap("app-config").from_file("nginx.conf", "configs/nginx.conf")
+
+# Add JSON from file
+config = ConfigMap("app-config").from_file("config.json", "configs/app.json")
+
+# Add YAML from file
+config = ConfigMap("app-config").from_file("config.yaml", "configs/app.yaml")
 ```
 
-### Binary Data
+### from_directory(directory_path: str, pattern: str = "*", recursive: bool = False) -> ConfigMap
+Add all files from a directory.
 
 ```python
-# Binary configuration files
-binary_config = (ConfigMap("binary-config")
-    .add_binary_file("keystore.jks", "/path/to/keystore.jks")
-    .add_binary_file("truststore.jks", "/path/to/truststore.jks"))
+# Add all files from directory
+config = ConfigMap("app-config").from_directory("configs/")
+
+# Add specific pattern files
+config = ConfigMap("app-config").from_directory("configs/", "*.yaml")
+
+# Add recursively
+config = ConfigMap("app-config").from_directory("configs/", "*.conf", recursive=True)
 ```
 
-## Complete Examples
+### from_env_file(file_path: str, prefix: str = "") -> ConfigMap
+Load configuration from an environment file.
 
-### Web Application Configuration
+```python
+# Load from .env file
+config = ConfigMap("app-config").from_env_file(".env")
+
+# Load with prefix
+config = ConfigMap("app-config").from_env_file(".env", prefix="APP_")
+
+# Example .env file:
+# DEBUG=true
+# PORT=8080
+# LOG_LEVEL=info
+# DATABASE_URL=postgres://localhost:5432/myapp
+```
+
+### from_template(template_path: str, variables: Dict[str, Any], output_key: str = None) -> ConfigMap
+Generate configuration from a template.
+
+```python
+# Generate from template
+variables = {
+    "app_name": "myapp",
+    "environment": "production",
+    "database_host": "postgres-service",
+    "redis_host": "redis-service"
+}
+config = ConfigMap("app-config").from_template("templates/app.conf.j2", variables)
+
+# With custom output key
+config = ConfigMap("app-config").from_template("templates/nginx.conf.j2", variables, "nginx.conf")
+```
+
+### mount_path(path: str) -> ConfigMap
+Set the mount path for the ConfigMap volume.
+
+```python
+# Mount at /etc/config
+config = ConfigMap("app-config").mount_path("/etc/config")
+
+# Mount at /var/config
+config = ConfigMap("app-config").mount_path("/var/config")
+```
+
+### mount_as_env_vars(prefix: str = "") -> ConfigMap
+Configure ConfigMap to be mounted as environment variables.
+
+```python
+# Mount as environment variables
+config = ConfigMap("app-config").mount_as_env_vars()
+
+# Mount with prefix
+config = ConfigMap("app-config").mount_as_env_vars(prefix="APP_")
+
+# Example: ConfigMap with keys "debug" and "port"
+# Will create environment variables: APP_DEBUG and APP_PORT
+```
+
+### file_permissions(mode: int) -> ConfigMap
+Set file permissions for mounted files.
+
+```python
+# Set read-only permissions
+config = ConfigMap("app-config").file_permissions(0o644)
+
+# Set executable permissions
+config = ConfigMap("app-config").file_permissions(0o755)
+```
+
+### hot_reload(enabled: bool = True, restart_policy: str = "rolling", interval: str = "30s") -> ConfigMap
+Enable hot reload for configuration changes.
+
+```python
+# Enable hot reload
+config = ConfigMap("app-config").hot_reload(True)
+
+# Configure hot reload
+config = ConfigMap("app-config").hot_reload(
+    enabled=True,
+    restart_policy="rolling",
+    interval="60s"
+)
+```
+
+## Complete Example
 
 ```python
 #!/usr/bin/env python3
 """
-Complete Web Application Configuration
+Complete ConfigMap Example - Production Application Configuration
 """
 
-from celestra import ConfigMap, App, KubernetesOutput
+import os
+from celestra import ConfigMap, KubernetesOutput
 
-def create_web_app_config():
-    # Main application configuration
-    app_config = (ConfigMap("web-app-config")
-        .namespace("web")
-        .add_data("NODE_ENV", "production")
-        .add_data("PORT", "8080")
-        .add_data("LOG_LEVEL", "info")
-        .add_data("SESSION_TIMEOUT", "3600")
-        .add_data("MAX_FILE_SIZE", "10485760")  # 10MB
-        .label("component", "web-app"))
+def load_config(config_path: str) -> str:
+    """Load configuration from external file."""
+    with open(f"configs/{config_path}", "r") as f:
+        return f.read()
+
+def create_production_config():
+    """Create production-ready configuration."""
+    
+    # Load external configurations
+    nginx_config = load_config("application/nginx.conf")
+    app_config = load_config("application/app.json")
+    postgres_config = load_config("database/postgres.conf")
+    
+    # Application configuration
+    app_config_map = (ConfigMap("app-config")
+        .add("debug", "false")
+        .add("port", "8080")
+        .add("log_level", "info")
+        .add_json("features", {
+            "new_ui": True,
+            "beta": False,
+            "max_users": 10000
+        })
+        .add_yaml("settings", {
+            "server": {
+                "port": 8080,
+                "host": "0.0.0.0"
+            },
+            "database": {
+                "host": "postgres-service",
+                "port": 5432
+            }
+        })
+        .mount_as_env_vars(prefix="APP_"))
+    
+    # NGINX configuration
+    nginx_config_map = (ConfigMap("nginx-config")
+        .add_data("nginx.conf", nginx_config)
+        .mount_path("/etc/nginx")
+        .file_permissions(0o644))
     
     # Database configuration
-    database_config = (ConfigMap("database-config")
-        .namespace("web")
-        .add_data("DATABASE_HOST", "postgres.database.svc.cluster.local")
-        .add_data("DATABASE_PORT", "5432")
-        .add_data("DATABASE_NAME", "webapp")
-        .add_data("CONNECTION_POOL_SIZE", "20")
-        .add_data("CONNECTION_TIMEOUT", "5000")
-        .label("component", "database"))
+    db_config_map = (ConfigMap("postgres-config")
+        .add_data("postgresql.conf", postgres_config)
+        .mount_path("/etc/postgresql")
+        .file_permissions(0o644))
     
-    # Redis configuration
-    redis_config = (ConfigMap("redis-config")
-        .namespace("web")
-        .add_data("REDIS_HOST", "redis.cache.svc.cluster.local")
-        .add_data("REDIS_PORT", "6379")
-        .add_data("REDIS_DB", "0")
-        .add_data("REDIS_TIMEOUT", "2000")
-        .label("component", "cache"))
+    # Environment-specific configuration
+    env_config_map = (ConfigMap("env-config")
+        .from_env_file(".env.production", prefix="PROD_")
+        .mount_as_env_vars(prefix="ENV_"))
     
-    # Nginx configuration
-    nginx_config = (ConfigMap("nginx-config")
-        .namespace("web")
-        .add_file("nginx.conf", """
-events {
-    worker_connections 1024;
-}
-
-http {
-    upstream backend {
-        server web-app:8080;
+    # Template-based configuration
+    template_vars = {
+        "app_name": "myapp",
+        "environment": "production",
+        "database_host": "postgres-service",
+        "redis_host": "redis-service"
     }
+    template_config_map = (ConfigMap("template-config")
+        .from_template("templates/app.conf.j2", template_vars, "app.conf")
+        .mount_path("/etc/app")
+        .hot_reload(True, "rolling", "30s"))
     
-    server {
-        listen 80;
-        server_name localhost;
-        
-        location / {
-            proxy_pass http://backend;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
-        
-        location /health {
-            access_log off;
-            return 200 "healthy\\n";
-            add_header Content-Type text/plain;
-        }
-    }
-}
-""")
-        .label("component", "proxy"))
-    
-    # Application using the configurations
-    web_app = (App("web-app")
-        .image("webapp:v1.0.0")
-        .namespace("web")
-        .port(8080, "http")
-        .env_from_configmap("web-app-config", "NODE_ENV")
-        .env_from_configmap("web-app-config", "PORT")
-        .env_from_configmap("web-app-config", "LOG_LEVEL")
-        .env_from_configmap("database-config", "DATABASE_HOST")
-        .env_from_configmap("database-config", "DATABASE_PORT")
-        .env_from_configmap("redis-config", "REDIS_HOST")
-        .env_from_configmap("redis-config", "REDIS_PORT")
-        .config_volume("/etc/config", "web-app-config")
-        .replicas(3))
-    
-    # Nginx proxy
-    nginx = (App("nginx")
-        .image("nginx:1.21")
-        .namespace("web")
-        .port(80, "http")
-        .config_volume("/etc/nginx", "nginx-config")
-        .replicas(2)
-        .expose())
-    
-    return app_config, database_config, redis_config, nginx_config, web_app, nginx
+    return [app_config_map, nginx_config_map, db_config_map, env_config_map, template_config_map]
 
 if __name__ == "__main__":
-    components = create_web_app_config()
+    configs = create_production_config()
     
+    # Generate Kubernetes resources
     output = KubernetesOutput()
-    for component in components:
-        output.generate(component, "web-app-config/")
+    for config in configs:
+        output.generate(config, "production-config/")
     
-    print("✅ Web application configuration generated!")
-    print("🚀 Deploy: kubectl apply -f web-app-config/")
+    print("✅ Production configuration generated!")
+    print("🚀 Deploy: kubectl apply -f production-config/")
 ```
 
-### Microservices Configuration
+## Generated Kubernetes Resources
+
+The ConfigMap class generates the following Kubernetes resources:
+
+- **ConfigMap** - Kubernetes ConfigMap with the specified data
+- **Volume** - Volume definition for mounting ConfigMaps
+- **VolumeMount** - Volume mount configuration
+
+## Usage Patterns
+
+### Application Configuration
 
 ```python
-def create_microservices_config():
-    # Shared service discovery configuration
-    service_discovery = (ConfigMap("service-discovery")
-        .namespace("microservices")
-        .add_data("USER_SERVICE_URL", "http://user-service.microservices.svc.cluster.local:8080")
-        .add_data("ORDER_SERVICE_URL", "http://order-service.microservices.svc.cluster.local:8080")
-        .add_data("PAYMENT_SERVICE_URL", "http://payment-service.microservices.svc.cluster.local:8080")
-        .add_data("NOTIFICATION_SERVICE_URL", "http://notification-service.microservices.svc.cluster.local:8080")
-        .label("scope", "shared"))
-    
-    # API Gateway configuration
-    api_gateway_config = (ConfigMap("api-gateway-config")
-        .namespace("microservices")
-        .add_file("routes.yaml", """
-routes:
-  - path: /api/v1/users/*
-    service: user-service
-    port: 8080
-    timeout: 30s
-  - path: /api/v1/orders/*
-    service: order-service
-    port: 8080
-    timeout: 45s
-  - path: /api/v1/payments/*
-    service: payment-service
-    port: 8080
-    timeout: 60s
-""")
-        .add_data("RATE_LIMIT", "1000")
-        .add_data("CORS_ENABLED", "true")
-        .label("component", "api-gateway"))
-    
-    # Monitoring configuration
-    monitoring_config = (ConfigMap("monitoring-config")
-        .namespace("microservices")
-        .add_data("METRICS_ENABLED", "true")
-        .add_data("METRICS_PORT", "9090")
-        .add_data("HEALTH_CHECK_INTERVAL", "30")
-        .add_data("TRACING_ENABLED", "true")
-        .add_data("JAEGER_ENDPOINT", "http://jaeger-collector:14268/api/traces")
-        .label("component", "monitoring"))
-    
-    return service_discovery, api_gateway_config, monitoring_config
+# Basic app config
+app_config = (ConfigMap("app-config")
+    .add("debug", "false")
+    .add("port", "8080")
+    .add("log_level", "info")
+    .mount_as_env_vars(prefix="APP_"))
+
+# JSON configuration
+json_config = (ConfigMap("api-config")
+    .add_json("endpoints", {
+        "users": "/api/users",
+        "products": "/api/products"
+    })
+    .mount_as_env_vars(prefix="API_"))
+```
+
+### Web Server Configuration
+
+```python
+# NGINX configuration
+nginx_config = (ConfigMap("nginx-config")
+    .from_file("nginx.conf", "configs/nginx.conf")
+    .mount_path("/etc/nginx")
+    .file_permissions(0o644))
+
+# Apache configuration
+apache_config = (ConfigMap("apache-config")
+    .from_file("httpd.conf", "configs/httpd.conf")
+    .mount_path("/etc/apache2")
+    .file_permissions(0o644))
 ```
 
 ### Database Configuration
 
 ```python
-def create_database_configs():
-    # PostgreSQL configuration
-    postgres_config = (ConfigMap("postgres-config")
-        .namespace("database")
-        .add_file("postgresql.conf", """
-# Connection Settings
-listen_addresses = '*'
-port = 5432
-max_connections = 200
+# PostgreSQL configuration
+postgres_config = (ConfigMap("postgres-config")
+    .from_file("postgresql.conf", "configs/postgresql.conf")
+    .from_file("pg_hba.conf", "configs/pg_hba.conf")
+    .mount_path("/etc/postgresql")
+    .file_permissions(0o644))
 
-# Memory Settings
-shared_buffers = 512MB
-effective_cache_size = 2GB
-work_mem = 8MB
-maintenance_work_mem = 128MB
-
-# Checkpoint Settings
-checkpoint_completion_target = 0.9
-checkpoint_timeout = 15min
-max_wal_size = 2GB
-min_wal_size = 1GB
-
-# Logging Settings
-log_destination = 'stderr'
-logging_collector = on
-log_directory = 'pg_log'
-log_filename = 'postgresql-%Y-%m-%d_%H%M%S.log'
-log_min_duration_statement = 1000
-log_line_prefix = '%t [%p]: [%l-1] user=%u,db=%d,app=%a,client=%h '
-""")
-        .add_file("pg_hba.conf", """
-# TYPE  DATABASE        USER            ADDRESS                 METHOD
-local   all             all                                     trust
-host    all             all             127.0.0.1/32            md5
-host    all             all             ::1/128                 md5
-host    replication     postgres        0.0.0.0/0               md5
-host    all             all             0.0.0.0/0               md5
-"""))
-    
-    # Redis configuration
-    redis_config = (ConfigMap("redis-config")
-        .namespace("cache")
-        .add_file("redis.conf", """
-# Network
-bind 0.0.0.0
-port 6379
-timeout 300
-tcp-keepalive 60
-
-# Memory
-maxmemory 1gb
-maxmemory-policy allkeys-lru
-
-# Persistence
-save 900 1
-save 300 10
-save 60 10000
-dir /data
-
-# Security
-requirepass redis-password-change-me
-
-# Logging
-loglevel notice
-logfile /var/log/redis/redis-server.log
-"""))
-    
-    return postgres_config, redis_config
+# MySQL configuration
+mysql_config = (ConfigMap("mysql-config")
+    .from_file("my.cnf", "configs/my.cnf")
+    .mount_path("/etc/mysql")
+    .file_permissions(0o644))
 ```
 
-## ConfigMap Usage in Applications
-
-### Environment Variables
+### Environment Configuration
 
 ```python
-# Use entire ConfigMap as environment variables
-app = (App("config-app")
-    .env_from_configmap("app-config")  # All keys become env vars
-    .env_from_configmap("db-config", prefix="DB_"))  # With prefix
+# Development environment
+dev_config = (ConfigMap("dev-config")
+    .from_env_file(".env.development", prefix="DEV_")
+    .mount_as_env_vars(prefix="DEV_"))
 
-# Use specific keys
-app = (App("selective-app")
-    .env_from_configmap("app-config", "LOG_LEVEL", "log.level")
-    .env_from_configmap("db-config", "DATABASE_URL", "database.url"))
+# Production environment
+prod_config = (ConfigMap("prod-config")
+    .from_env_file(".env.production", prefix="PROD_")
+    .mount_as_env_vars(prefix="PROD_"))
 ```
 
-### Volume Mounts
+### Template-Based Configuration
 
 ```python
-# Mount ConfigMap as files
-app = (App("file-config-app")
-    .config_volume("/etc/config", "app-config")
-    .config_volume("/etc/database", "db-config")
-    .config_volume("/scripts", "init-scripts"))
-
-# Mount specific keys as files
-app = (App("specific-files-app")
-    .config_volume("/etc/nginx", "nginx-config", 
-                   files={"nginx.conf": "nginx.conf"}))
+# Template with variables
+template_vars = {
+    "app_name": "myapp",
+    "environment": "production",
+    "database_host": "postgres-service"
+}
+template_config = (ConfigMap("template-config")
+    .from_template("templates/app.conf.j2", template_vars, "app.conf")
+    .mount_path("/etc/app")
+    .hot_reload(True))
 ```
 
-### Init Containers
+### Directory-Based Configuration
 
 ```python
-# Use ConfigMap in init containers
-app = (App("init-app")
-    .init_container("init", "busybox")
-    .init_command(["sh", "/scripts/init.sh"])
-    .init_config_volume("/scripts", "init-scripts"))
-```
+# All configuration files
+all_config = (ConfigMap("all-config")
+    .from_directory("configs/", "*.yaml")
+    .mount_path("/etc/config"))
 
-## Generated YAML
-
-### Basic ConfigMap
-
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: app-config
-  namespace: web
-data:
-  database.host: "postgres.default.svc.cluster.local"
-  database.port: "5432"
-  log.level: "info"
-```
-
-### ConfigMap with Files
-
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: nginx-config
-data:
-  nginx.conf: |
-    events {
-        worker_connections 1024;
-    }
-    http {
-        upstream backend {
-            server web-app:8080;
-        }
-        server {
-            listen 80;
-            location / {
-                proxy_pass http://backend;
-            }
-        }
-    }
-```
-
-### Binary ConfigMap
-
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: binary-config
-binaryData:
-  keystore.jks: UEsDBBQACAgIAKhobY0AAAAAAAAAAAAAAAoAAABrZXlzdG9yZQ==
+# Recursive configuration
+recursive_config = (ConfigMap("recursive-config")
+    .from_directory("configs/", "*.conf", recursive=True)
+    .mount_path("/etc/config"))
 ```
 
 ## Best Practices
 
-!!! tip "ConfigMap Best Practices"
-    
-    **Organization:**
-    - Group related configuration together
-    - Use descriptive names and labels
-    - Separate by component or environment
-    
-    **Size Management:**
-    - Keep ConfigMaps under 1MB
-    - Split large configurations into multiple ConfigMaps
-    - Use external storage for very large files
-    
-    **Security:**
-    - Never store sensitive data in ConfigMaps
-    - Use Secrets for passwords and keys
-    - Apply proper RBAC permissions
-    
-    **Versioning:**
-    - Version ConfigMaps for rolling updates
-    - Use immutable ConfigMaps for releases
-    - Test configuration changes in staging
-
-## Common Patterns
-
-### Environment-Specific Configuration
+### 1. Use External Files
 
 ```python
-# Different configs per environment
-dev_config = (ConfigMap("app-config-dev")
-    .namespace("development")
-    .add_data("LOG_LEVEL", "debug")
-    .add_data("DEBUG", "true"))
+# ✅ Good: Load from external files
+config = ConfigMap("app-config").from_file("config.json", "configs/app.json")
 
-prod_config = (ConfigMap("app-config-prod")
-    .namespace("production")
-    .add_data("LOG_LEVEL", "error")
-    .add_data("DEBUG", "false"))
+# ❌ Bad: Hardcode in code
+config = ConfigMap("app-config").add("config.json", '{"debug": true}')
 ```
 
-### Configuration Layers
+### 2. Use Environment-Specific Configs
 
 ```python
-# Base configuration
-base_config = ConfigMap("base-config").add_data("TIMEOUT", "30")
+# ✅ Good: Environment-specific
+dev_config = ConfigMap("dev-config").from_env_file(".env.development")
+prod_config = ConfigMap("prod-config").from_env_file(".env.production")
 
-# Environment overrides
-env_config = ConfigMap("env-config").add_data("TIMEOUT", "60")  # Override
-
-# Feature flags
-feature_config = ConfigMap("feature-config").add_data("NEW_FEATURE", "enabled")
+# ❌ Bad: Same config for all environments
+config = ConfigMap("app-config").add("debug", "true")
 ```
 
-### Shared Configuration
+### 3. Use Templates for Dynamic Configs
 
 ```python
-# Shared across multiple applications
-shared_config = (ConfigMap("shared-services")
-    .add_data("REDIS_URL", "redis:6379")
-    .add_data("ELASTIC_URL", "elasticsearch:9200")
-    .add_data("JAEGER_URL", "jaeger:14268"))
+# ✅ Good: Use templates
+template_vars = {"app_name": "myapp", "environment": "production"}
+config = ConfigMap("app-config").from_template("templates/app.conf.j2", template_vars)
+
+# ❌ Bad: Hardcode dynamic values
+config = ConfigMap("app-config").add("app_name", "myapp")
 ```
 
-## Troubleshooting
+### 4. Use Hot Reload for Development
 
-### Common ConfigMap Issues
+```python
+# ✅ Good: Enable hot reload for development
+dev_config = ConfigMap("dev-config").hot_reload(True)
 
-!!! warning "ConfigMap Not Found"
-    ```bash
-    # Check if ConfigMap exists
-    kubectl get configmaps -n <namespace>
-    kubectl describe configmap <name> -n <namespace>
-    
-    # View ConfigMap data
-    kubectl get configmap <name> -o yaml
-    ```
-
-!!! warning "Volume Mount Issues"
-    ```bash
-    # Check pod mounts
-    kubectl describe pod <pod-name>
-    kubectl exec <pod-name> -- ls -la /etc/config/
-    
-    # Check file contents
-    kubectl exec <pod-name> -- cat /etc/config/app.conf
-    ```
-
-!!! warning "Environment Variable Issues"
-    ```bash
-    # Check environment variables in pod
-    kubectl exec <pod-name> -- env | grep CONFIG
-    kubectl exec <pod-name> -- printenv LOG_LEVEL
-    ```
-
-### Debug Commands
-
-```bash
-# List all ConfigMaps
-kubectl get configmaps --all-namespaces
-
-# View ConfigMap contents
-kubectl get configmap <name> -o yaml
-kubectl describe configmap <name>
-
-# Check which pods use a ConfigMap
-kubectl get pods -o json | jq '.items[] | select(.spec.volumes[]?.configMap.name=="<configmap-name>") | .metadata.name'
-
-# Test configuration loading
-kubectl run test-pod --image=busybox --rm -it -- sh
-# Mount the ConfigMap and check files
+# ❌ Bad: Always restart for config changes
+config = ConfigMap("app-config")  # No hot reload
 ```
 
-## API Reference
+### 5. Use Proper File Permissions
 
-::: src.celestra.storage.config_map.ConfigMap
-    options:
-      show_source: false
-      heading_level: 3
+```python
+# ✅ Good: Set appropriate permissions
+config = ConfigMap("app-config").file_permissions(0o644)
 
-## Related Components
-
-- **[App](../core/app.md)** - Using ConfigMaps in applications
-- **[Secret](../security/secrets.md)** - For sensitive configuration
-- **[StatefulApp](../core/stateful-app.md)** - Configuration for stateful apps
-- **[Job](../workloads/job.md)** - Configuration for batch jobs
-
----
-
-**Next:** Learn about [Job](../workloads/job.md) for batch processing workloads. 
+# ❌ Bad: Use default permissions
+config = ConfigMap("app-config")  # Default permissions
+``` 

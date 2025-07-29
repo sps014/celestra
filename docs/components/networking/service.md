@@ -1,476 +1,384 @@
-# Service Component
+# Service Class
 
-The `Service` component provides stable network endpoints for your applications, enabling service discovery and load balancing in Kubernetes clusters.
+The `Service` class manages network access to applications by creating Kubernetes Services. It provides load balancing, service discovery, and network policies for your applications.
 
 ## Overview
-
-Services provide:
-- **Stable IP addresses** - Even when pods restart
-- **Load balancing** - Traffic distribution across pods
-- **Service discovery** - DNS-based service location
-- **Port mapping** - External to internal port translation
-
-## Service Types
-
-| Type | Use Case | Access |
-|------|----------|---------|
-| **ClusterIP** | Internal communication | Cluster-only |
-| **NodePort** | External access via nodes | Node IP + Port |
-| **LoadBalancer** | Cloud load balancer | External IP |
-| **ExternalName** | Alias to external service | DNS CNAME |
-
-## Basic Usage
 
 ```python
 from celestra import Service
 
-# Basic ClusterIP service
+# Basic usage
+service = Service("web-service").type("ClusterIP").add_port("http", 80, 8080)
+
+# Production service with load balancer
 service = (Service("api-service")
-    .selector({"app": "api"})
-    .add_port("http", 80, 8080)
-    .type("ClusterIP"))
+    .type("LoadBalancer")
+    .add_port("https", 443, 8443)
+    .selector({"app": "api"}))
 ```
 
-## Service Configuration
+## Core API Functions
 
-### Port Mapping
+### Service Type Configuration
+
+#### Type
+Set the service type (ClusterIP, NodePort, LoadBalancer, ExternalName).
 
 ```python
-# Single port
-service = (Service("web-service")
-    .add_port("http", 80, 8080))
+# ClusterIP (default) - internal access only
+service = Service("internal-service").type("ClusterIP")
+
+# NodePort - accessible via node IP
+service = Service("node-service").type("NodePort")
+
+# LoadBalancer - external access via cloud load balancer
+service = Service("external-service").type("LoadBalancer")
+
+# ExternalName - DNS alias to external service
+service = Service("external-api").type("ExternalName")
+```
+
+### Port Configuration
+
+#### Add Port
+Add a port to the service with name, port, target port, and protocol.
+
+```python
+# Basic port configuration
+service = Service("web-service").add_port("http", 80, 8080)
+
+# Named port with protocol
+service = Service("api-service").add_port("https", 443, 8443, "TCP")
 
 # Multiple ports
-service = (Service("api-service")
-    .add_port("http", 80, 8080)
-    .add_port("https", 443, 8443)
-    .add_port("metrics", 9090, 9090)
-    .add_port("admin", 9000, 9000))
-
-# Different protocols
-service = (Service("database-service")
-    .add_port("postgres", 5432, 5432, "TCP")
-    .add_port("metrics", 9187, 9187, "TCP"))
+service = (Service("multi-service")
+    .add_port("http", 80, 8080, "TCP")
+    .add_port("https", 443, 8443, "TCP")
+    .add_port("metrics", 9090, 9090, "TCP"))
 ```
 
-### Selectors and Targeting
+### Selector Configuration
+
+#### Selector
+Set the pod selector to determine which pods the service targets.
 
 ```python
-# Target specific pods
-service = (Service("backend-service")
-    .selector({"app": "backend", "version": "v2"})
-    .add_port("api", 8080, 8080))
+# Select by app label
+service = Service("api-service").selector({"app": "api"})
 
-# Target multiple applications
-service = (Service("microservices")
-    .selector({"tier": "backend"})
-    .add_port("http", 80, 8080))
+# Select by multiple labels
+service = Service("web-service").selector({
+    "app": "web",
+    "tier": "frontend",
+    "environment": "production"
+})
 
-# No selector (manual endpoints)
-service = (Service("external-db")
-    .add_port("postgres", 5432, 5432)
-    .no_selector())  # Manage endpoints manually
+# Select by component label
+service = Service("database-service").selector({"component": "database"})
 ```
 
-### Service Types
+### Advanced Configuration
+
+#### Namespace
+Set the namespace for the service.
 
 ```python
-# ClusterIP (default)
-internal_service = (Service("internal-api")
+service = Service("api-service").namespace("production")
+```
+
+#### Add Label
+Add a label to the service.
+
+```python
+service = Service("api-service").add_label("environment", "production")
+service = Service("api-service").add_label("tier", "backend")
+```
+
+#### Add Labels
+Add multiple labels to the service.
+
+```python
+labels = {
+    "environment": "production",
+    "tier": "backend",
+    "team": "platform"
+}
+service = Service("api-service").add_labels(labels)
+```
+
+#### Add Annotation
+Add an annotation to the service.
+
+```python
+service = Service("api-service").add_annotation("description", "API service")
+```
+
+#### Add Annotations
+Add multiple annotations to the service.
+
+```python
+annotations = {
+    "description": "API service for production",
+    "owner": "platform-team",
+    "service-type": "load-balanced"
+}
+service = Service("api-service").add_annotations(annotations)
+```
+
+### Output Generation
+
+#### Generate Configuration
+Generate the service configuration.
+
+```python
+# Generate Kubernetes YAML
+service.generate().to_yaml("./k8s/")
+
+# Generate Helm values
+service.generate().to_helm_values("./helm/")
+
+# Generate Terraform
+service.generate().to_terraform("./terraform/")
+```
+
+## Usage Examples
+
+### Basic Service Types
+
+```python
+from celestra import Service
+
+# ClusterIP (default) - internal access only
+internal_service = Service("api-internal").type("ClusterIP")
+
+# NodePort - accessible via node IP
+node_service = Service("api-node").type("NodePort")
+
+# LoadBalancer - external access via cloud load balancer
+external_service = Service("api-external").type("LoadBalancer")
+
+# ExternalName - DNS alias to external service
+external_api = Service("external-api").type("ExternalName")
+```
+
+### Port Configuration Examples
+
+```python
+# Basic port
+service = Service("web-service").add_port("http", 80, 8080)
+
+# Named port with protocol
+service = Service("api-service").add_port("https", 443, 8443, "TCP")
+
+# Multiple ports
+service = (Service("multi-service")
+    .add_port("http", 80, 8080, "TCP")
+    .add_port("https", 443, 8443, "TCP")
+    .add_port("metrics", 9090, 9090, "TCP"))
+```
+
+### Selector Examples
+
+```python
+# Select by app label
+service = Service("api-service").selector({"app": "api"})
+
+# Select by multiple labels
+service = Service("web-service").selector({
+    "app": "web",
+    "tier": "frontend",
+    "environment": "production"
+})
+
+# Select by component label
+service = Service("database-service").selector({"component": "database"})
+```
+
+### Complete Production Example
+
+```python
+from celestra import Service
+
+# Production API service
+api_service = (Service("api-service")
+    .type("LoadBalancer")
+    .add_port("http", 80, 8080, "TCP")
+    .add_port("https", 443, 8443, "TCP")
+    .add_port("metrics", 9090, 9090, "TCP")
+    .selector({"app": "api", "tier": "backend"})
+    .add_label("environment", "production")
+    .add_label("team", "platform")
+    .add_annotation("description", "Production API service")
+    .namespace("production"))
+
+# Internal database service
+db_service = (Service("database-service")
     .type("ClusterIP")
-    .cluster_ip("10.0.0.100")  # Specific IP
-    .selector({"app": "api"})
-    .add_port("http", 8080, 8080))
+    .add_port("postgres", 5432, 5432, "TCP")
+    .selector({"app": "database", "component": "postgres"})
+    .add_label("environment", "production")
+    .add_label("tier", "data")
+    .namespace("databases"))
 
-# NodePort
-nodeport_service = (Service("public-web")
-    .type("NodePort") 
-    .node_port(30080)  # Specific node port
-    .selector({"app": "web"})
-    .add_port("http", 80, 8080))
-
-# LoadBalancer
-lb_service = (Service("external-api")
-    .type("LoadBalancer")
-    .load_balancer_ip("203.0.113.10")
-    .selector({"app": "api"})
-    .add_port("http", 80, 8080)
-    .add_port("https", 443, 8443))
-
-# ExternalName
-external_service = (Service("external-db")
+# External service alias
+external_api = (Service("external-api")
     .type("ExternalName")
-    .external_name("db.example.com"))
+    .add_annotation("description", "External API service")
+    .namespace("external"))
 ```
 
-## Advanced Configuration
+## Service Types
 
-### Session Affinity
+### ClusterIP
+Default service type for internal communication.
 
 ```python
-# Sticky sessions
-service = (Service("stateful-app")
-    .selector({"app": "stateful"})
-    .session_affinity("ClientIP")
-    .session_affinity_timeout(10800)  # 3 hours
-    .add_port("http", 8080, 8080))
+# Internal service
+service = Service("api-internal").type("ClusterIP")
 ```
 
-### Load Balancer Configuration
+### NodePort
+Exposes the service on each Node's IP at a static port.
 
 ```python
-# Cloud provider specific
-aws_service = (Service("aws-lb")
-    .type("LoadBalancer")
-    .selector({"app": "web"})
-    .add_port("http", 80, 8080)
-    .add_annotation("service.beta.kubernetes.io/aws-load-balancer-type", "nlb")
-    .add_annotation("service.beta.kubernetes.io/aws-load-balancer-scheme", "internet-facing"))
-
-gcp_service = (Service("gcp-lb")
-    .type("LoadBalancer")
-    .selector({"app": "api"})
-    .add_port("http", 80, 8080)
-    .add_annotation("cloud.google.com/load-balancer-type", "External"))
+# Node port service
+service = Service("api-node").type("NodePort")
 ```
 
-### Headless Services
+### LoadBalancer
+Exposes the service externally using the cloud provider's load balancer.
 
 ```python
-# For StatefulSets
-headless_service = (Service("postgres-headless")
-    .cluster_ip("None")  # Headless
-    .selector({"app": "postgres"})
-    .add_port("postgres", 5432, 5432))
+# Load balancer service
+service = Service("api-external").type("LoadBalancer")
 ```
 
-## Complete Examples
-
-### Web Application Service
+### ExternalName
+Maps the service to the contents of the externalName field.
 
 ```python
-#!/usr/bin/env python3
-"""
-Web Application with Multiple Service Types
-"""
-
-from celestra import App, Service, KubernetesOutput
-
-def create_web_services():
-    # Web application
-    web_app = (App("web-app")
-        .image("nginx:1.21")
-        .port(80, "http")
-        .port(443, "https")
-        .replicas(3)
-        .label("app", "web")
-        .label("tier", "frontend"))
-    
-    # Internal service for cluster communication
-    internal_service = (Service("web-internal")
-        .type("ClusterIP")
-        .selector({"app": "web"})
-        .add_port("http", 80, 80)
-        .add_port("https", 443, 443)
-        .label("service-type", "internal"))
-    
-    # External service for public access
-    external_service = (Service("web-external")
-        .type("LoadBalancer")
-        .selector({"app": "web"})
-        .add_port("http", 80, 80)
-        .add_port("https", 443, 443)
-        .load_balancer_source_ranges(["10.0.0.0/8", "192.168.0.0/16"])
-        .add_annotation("service.beta.kubernetes.io/aws-load-balancer-ssl-cert", "arn:aws:acm:...")
-        .label("service-type", "external"))
-    
-    # Development service with NodePort
-    dev_service = (Service("web-dev")
-        .type("NodePort")
-        .selector({"app": "web"})
-        .add_port("http", 80, 80)
-        .node_port(30080)
-        .label("environment", "development"))
-    
-    return web_app, internal_service, external_service, dev_service
-
-if __name__ == "__main__":
-    components = create_web_services()
-    
-    output = KubernetesOutput()
-    for component in components:
-        output.generate(component, "web-services/")
-    
-    print("✅ Web services generated!")
-    print("🚀 Deploy: kubectl apply -f web-services/")
-```
-
-### Database Service Setup
-
-```python
-def create_database_services():
-    # PostgreSQL StatefulSet
-    postgres = (StatefulApp("postgres")
-        .image("postgres:13")
-        .port(5432, "postgres")
-        .replicas(3)
-        .storage("/var/lib/postgresql/data", "100Gi")
-        .label("app", "postgres")
-        .label("component", "database"))
-    
-    # Headless service for StatefulSet
-    postgres_headless = (Service("postgres-headless")
-        .cluster_ip("None")
-        .selector({"app": "postgres"})
-        .add_port("postgres", 5432, 5432)
-        .label("service-type", "headless"))
-    
-    # Primary service (points to leader)
-    postgres_primary = (Service("postgres-primary")
-        .selector({"app": "postgres", "role": "primary"})
-        .add_port("postgres", 5432, 5432)
-        .label("service-type", "primary"))
-    
-    # Read-only service (points to replicas)
-    postgres_read = (Service("postgres-read")
-        .selector({"app": "postgres", "role": "replica"})
-        .add_port("postgres", 5432, 5432)
-        .label("service-type", "read-replica"))
-    
-    # Admin service for management tools
-    postgres_admin = (Service("postgres-admin")
-        .type("NodePort")
-        .selector({"app": "postgres"})
-        .add_port("postgres", 5432, 5432)
-        .node_port(30432)
-        .label("service-type", "admin"))
-    
-    return postgres, postgres_headless, postgres_primary, postgres_read, postgres_admin
-```
-
-### Microservices Communication
-
-```python
-def create_microservices_network():
-    # User service
-    user_service = (Service("user-service")
-        .selector({"app": "user-service"})
-        .add_port("http", 80, 8080)
-        .add_port("grpc", 9090, 9090))
-    
-    # Order service
-    order_service = (Service("order-service")
-        .selector({"app": "order-service"})
-        .add_port("http", 80, 8080)
-        .add_port("grpc", 9090, 9090))
-    
-    # Payment service
-    payment_service = (Service("payment-service")
-        .selector({"app": "payment-service"})
-        .add_port("http", 80, 8080)
-        .add_port("grpc", 9090, 9090))
-    
-    # API Gateway (external access)
-    api_gateway = (Service("api-gateway")
-        .type("LoadBalancer")
-        .selector({"app": "api-gateway"})
-        .add_port("http", 80, 8080)
-        .add_port("https", 443, 8443)
-        .session_affinity("ClientIP"))
-    
-    return user_service, order_service, payment_service, api_gateway
-```
-
-## Service Discovery
-
-### DNS Names
-
-Services are automatically assigned DNS names:
-
-```python
-# Service: my-service in namespace: my-namespace
-# DNS names:
-# - my-service (same namespace)
-# - my-service.my-namespace
-# - my-service.my-namespace.svc.cluster.local
-```
-
-### Environment Variables
-
-Kubernetes injects service information as environment variables:
-
-```bash
-# For service "database-service" on port 5432
-DATABASE_SERVICE_SERVICE_HOST=10.0.0.100
-DATABASE_SERVICE_SERVICE_PORT=5432
-DATABASE_SERVICE_PORT_5432_TCP_ADDR=10.0.0.100
-DATABASE_SERVICE_PORT_5432_TCP_PORT=5432
-```
-
-## Generated YAML
-
-### ClusterIP Service
-
-```yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: api-service
-spec:
-  type: ClusterIP
-  selector:
-    app: api
-  ports:
-  - name: http
-    port: 80
-    targetPort: 8080
-    protocol: TCP
-```
-
-### LoadBalancer Service
-
-```yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: web-external
-  annotations:
-    service.beta.kubernetes.io/aws-load-balancer-type: nlb
-spec:
-  type: LoadBalancer
-  selector:
-    app: web
-  ports:
-  - name: http
-    port: 80
-    targetPort: 80
-  - name: https
-    port: 443
-    targetPort: 443
-  loadBalancerSourceRanges:
-  - 10.0.0.0/8
-  - 192.168.0.0/16
+# External service alias
+service = Service("external-api").type("ExternalName")
 ```
 
 ## Best Practices
 
-!!! tip "Service Design Guidelines"
-    
-    **Naming:**
-    - Use descriptive, consistent names
-    - Include service type or purpose
-    - Follow organizational naming conventions
-    
-    **Port Management:**
-    - Use named ports for clarity
-    - Keep port mappings consistent
-    - Document port purposes
-    
-    **Security:**
-    - Limit LoadBalancer source ranges
-    - Use appropriate service types
-    - Consider network policies
-    
-    **Performance:**
-    - Use session affinity when needed
-    - Monitor service endpoints
-    - Consider headless services for StatefulSets
+### 1. **Use Appropriate Service Types**
+```python
+# ✅ Good: Use ClusterIP for internal services
+internal_service = Service("api-internal").type("ClusterIP")
 
-## Common Patterns
+# ✅ Good: Use LoadBalancer for external services
+external_service = Service("api-external").type("LoadBalancer")
 
-### Blue-Green Deployment
+# ❌ Bad: Don't use LoadBalancer for internal-only services
+internal_service = Service("api-internal").type("LoadBalancer")  # Unnecessary cost
+```
+
+### 2. **Use Descriptive Port Names**
+```python
+# ✅ Good: Use descriptive port names
+service = Service("api-service").add_port("https", 443, 8443)
+
+# ❌ Bad: Use generic port names
+service = Service("api-service").add_port("port", 443, 8443)
+```
+
+### 3. **Use Specific Selectors**
+```python
+# ✅ Good: Use specific selectors
+service = Service("api-service").selector({
+    "app": "api",
+    "tier": "backend",
+    "environment": "production"
+})
+
+# ❌ Bad: Use overly broad selectors
+service = Service("api-service").selector({"app": "api"})  # Too broad
+```
+
+### 4. **Add Meaningful Labels and Annotations**
+```python
+# ✅ Good: Add meaningful metadata
+service = (Service("api-service")
+    .add_label("environment", "production")
+    .add_label("team", "platform")
+    .add_annotation("description", "Production API service"))
+
+# ❌ Bad: No metadata
+service = Service("api-service")  # No labels or annotations
+```
+
+### 5. **Use Namespaces Appropriately**
+```python
+# ✅ Good: Use namespaces for organization
+service = Service("api-service").namespace("production")
+
+# ❌ Bad: Always use default namespace
+service = Service("api-service")  # Default namespace
+```
+
+## Generated Kubernetes Resources
+
+The Service class generates the following Kubernetes resources:
+
+- **Service** - Kubernetes Service with the specified type, ports, and selectors
+
+## Usage Patterns
+
+### Microservices Pattern
 
 ```python
-# Blue environment
-blue_service = (Service("app-blue")
-    .selector({"app": "myapp", "version": "blue"})
-    .add_port("http", 80, 8080))
+# API service
+api_service = (Service("api-service")
+    .type("LoadBalancer")
+    .add_port("http", 80, 8080)
+    .selector({"app": "api"}))
 
-# Green environment
-green_service = (Service("app-green")
-    .selector({"app": "myapp", "version": "green"})
-    .add_port("http", 80, 8080))
-
-# Production service (switch between blue/green)
-prod_service = (Service("app-production")
-    .selector({"app": "myapp", "version": "blue"})  # Currently blue
-    .add_port("http", 80, 8080))
+# Database service
+db_service = (Service("database-service")
+    .type("ClusterIP")
+    .add_port("postgres", 5432, 5432)
+    .selector({"app": "database"}))
 ```
 
-### Canary Deployment
+### Multi-Tier Pattern
 
 ```python
-# Stable version (90% traffic)
-stable_service = (Service("app-stable")
-    .selector({"app": "myapp", "version": "stable"})
-    .add_port("http", 80, 8080))
+# Frontend service
+frontend_service = (Service("frontend-service")
+    .type("LoadBalancer")
+    .add_port("http", 80, 3000)
+    .selector({"tier": "frontend"}))
 
-# Canary version (10% traffic)
-canary_service = (Service("app-canary")
-    .selector({"app": "myapp", "version": "canary"})
-    .add_port("http", 80, 8080))
+# Backend service
+backend_service = (Service("backend-service")
+    .type("ClusterIP")
+    .add_port("http", 80, 8080)
+    .selector({"tier": "backend"}))
 ```
 
-## Troubleshooting
+### External Service Pattern
 
-### Common Service Issues
-
-!!! warning "Service Not Accessible"
-    ```bash
-    # Check service endpoints
-    kubectl get endpoints my-service
-    
-    # Verify pod labels match service selector
-    kubectl get pods --show-labels
-    kubectl describe service my-service
-    
-    # Test service connectivity
-    kubectl run test-pod --image=busybox --rm -it -- nslookup my-service
-    ```
-
-!!! warning "LoadBalancer Pending"
-    ```bash
-    # Check cloud provider integration
-    kubectl describe service my-lb-service
-    
-    # Verify cloud provider permissions
-    kubectl get events --field-selector involvedObject.name=my-lb-service
-    ```
-
-### Debug Commands
-
-```bash
-# Check service status
-kubectl get services
-kubectl describe service <service-name>
-
-# Test service resolution
-kubectl run debug --image=busybox --rm -it -- sh
-# Inside pod:
-nslookup service-name
-wget -qO- http://service-name:port/
-
-# Check endpoints
-kubectl get endpoints <service-name>
-
-# View service events
-kubectl get events --field-selector involvedObject.name=<service-name>
+```python
+# External API service
+external_api = (Service("external-api")
+    .type("ExternalName")
+    .add_annotation("description", "External API service"))
 ```
-
-## API Reference
-
-::: src.celestra.networking.service.Service
-    options:
-      show_source: false
-      heading_level: 3
 
 ## Related Components
 
-- **[App](../core/app.md)** - Applications that services expose
-- **[Ingress](ingress.md)** - HTTP/HTTPS routing to services
-- **[NetworkPolicy](network-policy.md)** - Network security
-- **[StatefulApp](../core/stateful-app.md)** - Services for stateful apps
+- **[App](app.md)** - For stateless applications
+- **[StatefulApp](stateful-app.md)** - For stateful applications
+- **[Ingress](ingress.md)** - For HTTP/HTTPS routing
+- **[NetworkPolicy](network-policy.md)** - For network security policies
+- **[Health](health.md)** - For health check configuration
 
----
+## Next Steps
 
-**Next:** Learn about [Ingress](ingress.md) for HTTP/HTTPS routing and external access. 
+- **[App](app.md)** - Learn about stateless applications
+- **[StatefulApp](stateful-app.md)** - Learn about stateful applications
+- **[Components Overview](index.md)** - Explore all available components
+- **[Examples](../examples/index.md)** - See real-world examples
+- **[Tutorials](../tutorials/index.md)** - Step-by-step guides 
