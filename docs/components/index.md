@@ -257,4 +257,4 @@ db = App("postgres")  # No persistent storage
 
 - **Documentation**: Browse the [complete documentation](../index.md)
 - **Examples**: Check out [example applications](../examples/index.md)
-- **Issues**: Report problems on [GitHub Issues](https://github.com/your-username/Celestra/issues) 
+- **Issues**: Report problems on [GitHub Issues](https://github.com/sps014/Celestra/issues) 

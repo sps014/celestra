@@ -41,7 +41,7 @@ For development or to get the latest features:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/celestra.git
+git clone https://github.com/sps014/celestra.git
 cd celestra
 
 # Install in development mode
@@ -421,8 +421,8 @@ newgrp docker
 ### Getting Help
 
 - **Documentation**: Check the [complete documentation](../index.md)
-- **GitHub Issues**: Report bugs at [github.com/your-username/Celestra/issues](https://github.com/your-username/Celestra/issues)
-- **Discussions**: Ask questions at [github.com/your-username/Celestra/discussions](https://github.com/your-username/Celestra/discussions)
+- **GitHub Issues**: Report bugs at [github.com/sps014/Celestra/issues](https://github.com/sps014/Celestra/issues)
+- **Discussions**: Ask questions at [github.com/sps014/Celestra/discussions](https://github.com/sps014/Celestra/discussions)
 
 ## Next Steps
 

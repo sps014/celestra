@@ -22,7 +22,7 @@ pip install celestra
 ### Option 2: Install from Source
 
 ```bash
-git clone https://github.com/your-username/celestra.git
+git clone https://github.com/sps014/celestra.git
 cd celestra
 pip install -e src/
 ```
@@ -266,7 +266,7 @@ Error from server (Forbidden)
 
 - **Documentation**: Browse the [complete documentation](../index.md)
 - **Examples**: Check out [example applications](../examples/index.md)
-- **Issues**: Report problems on [GitHub Issues](https://github.com/your-username/Celestra/issues)
+- **Issues**: Report problems on [GitHub Issues](https://github.com/sps014/Celestra/issues)
 
 ## What's Next?
 

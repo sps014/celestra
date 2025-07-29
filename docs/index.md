@@ -1,4 +1,4 @@
-# Celestra DSL
+# Celestra
 
 <div align="center">
 

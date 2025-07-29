@@ -3,17 +3,14 @@ site_description: Complete guide for Celestra - Kubernetes DSL
 site_author: Celestra Team
 site_url: https://celestra.dev
 
-repo_name: your-username/Celestra
-repo_url: https://github.com/your-username/Celestra
+repo_name: sps014/Celestra
+repo_url: https://github.com/sps014/Celestra
 edit_uri: edit/main/docs/
 
 theme:
   name: material
-  language: en
   features:
-    - navigation.indexes
     - navigation.tracking
-    - navigation.prune
     - content.action.edit
     - content.action.view
     - header.autohide
@@ -43,28 +40,12 @@ theme:
       toggle:
         icon: material/weather-sunny
         name: Switch to light mode
-  font:
-    text: Roboto
-    code: Roboto Mono
-  logo: null
-  favicon: null
-
-extra:
-  social:
-    - icon: fontawesome/brands/github
-      link: https://github.com/your-username/Celestra
-    - icon: fontawesome/brands/twitter
-      link: https://twitter.com/celestra_dsl
-    - icon: fontawesome/brands/discord
-      link: https://discord.gg/celestra
 
 extra_css:
   - stylesheets/extra.css
 
 extra_javascript:
-  - javascripts/mathjax.js
-  - https://polyfill.io/v3/polyfill.min.js?features=es6
-  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+  - javascripts/copy-code.js
 
 markdown_extensions:
   - admonition

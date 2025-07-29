@@ -130,7 +130,7 @@ Each example follows a consistent structure:
 
 ```bash
 # Clone the examples repository
-git clone https://github.com/your-username/celestra-examples.git
+git clone https://github.com/sps014/celestra-examples.git
 cd celestra-examples
 
 # Run a simple example
