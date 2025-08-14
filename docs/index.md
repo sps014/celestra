@@ -24,6 +24,7 @@ Celestra is a **Domain-Specific Language (DSL)** for Kubernetes that lets you de
 
 - **🎯 Simple Python API** - Write Kubernetes manifests in Python
 - **🏗️ Multi-Format Output** - Generate YAML, Helm charts, Docker Compose
+- **🚀 Direct Execution** - Run Docker Compose and kubectl commands directly
 - **🔧 Comprehensive Components** - Apps, Services, Secrets, ConfigMaps, and more
 - **🛡️ Built-in Security** - RBAC, Network Policies, Security Contexts
 - **📊 Observability Ready** - Prometheus, Grafana, ELK stack integration
@@ -102,6 +103,9 @@ graph TB
 - **[Cost Optimization](components/advanced/cost-optimization.md)** - Resource optimization
 - **[Plugin System](components/advanced/plugin-system.md)** - Custom extensions
 - **[Advanced Features](components/advanced/advanced-features.md)** - Production features
+
+### Output & Execution
+- **[Output Execution](components/output-execution.md)** - Execute configurations directly
 
 ## 📚 Documentation
 

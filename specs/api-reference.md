@@ -695,4 +695,100 @@ if security_scan.has_vulnerabilities:
 # Best practices check
 best_practices = app.check_best_practices()
 print(best_practices.recommendations)
+```
+
+## Output Execution API
+
+### Docker Compose Execution
+
+Execute Docker Compose commands directly after generation.
+
+```python
+from celestra import DockerComposeOutput
+
+output = DockerComposeOutput()
+
+# Generate and execute in one workflow
+(output
+    .generate(app, "docker-compose.yml")
+    .up(detached=True)
+    .logs()
+    .ps())
+```
+
+#### Available Methods
+
+| Method | Description | Returns |
+|--------|-------------|---------|
+| `up(**options)` | Start services | Self (for chaining) |
+| `down(**options)` | Stop services | Self (for chaining) |
+| `start(service, **options)` | Start specific service | Self (for chaining) |
+| `stop(service, **options)` | Stop specific service | Self (for chaining) |
+| `restart(service, **options)` | Restart service | Self (for chaining) |
+| `logs(service, **options)` | Show service logs | Self (for chaining) |
+| `ps(**options)` | Show service status | Self (for chaining) |
+| `build(**options)` | Build service images | Self (for chaining) |
+| `pull(**options)` | Pull service images | Self (for chaining) |
+| `exec(service, command, **options)` | Execute command in container | Self (for chaining) |
+| `scale(services, **options)` | Scale services | Self (for chaining) |
+| `config(**options)` | Validate configuration | Self (for chaining) |
+| `validate(**options)` | Validate and show config | Self (for chaining) |
+
+### Kubernetes Execution
+
+Execute kubectl commands directly after generation.
+
+```python
+from celestra import KubernetesOutput
+
+output = KubernetesOutput()
+
+# Generate and deploy in one workflow
+(output
+    .generate(app, "./manifests/")
+    .validate()
+    .apply(wait=True)
+    .get("pods")
+    .health())
+```
+
+#### Available Methods
+
+| Method | Description | Returns |
+|--------|-------------|---------|
+| `apply(**options)` | Apply manifests | Self (for chaining) |
+| `delete(**options)` | Delete resources | Self (for chaining) |
+| `replace(**options)` | Replace resources | Self (for chaining) |
+| `patch(**options)` | Patch resources | Self (for chaining) |
+| `get(resource_type, **options)` | Get resources | Self (for chaining) |
+| `describe(resource_type, **options)` | Describe resources | Self (for chaining) |
+| `edit(resource_type, **options)` | Edit resources | Self (for chaining) |
+| `logs(pod, **options)` | Show pod logs | Self (for chaining) |
+| `exec(pod, command, **options)` | Execute command in pod | Self (for chaining) |
+| `port_forward(service, local_port, target_port, **options)` | Port forward service | Self (for chaining) |
+| `scale(deployment, replicas, **options)` | Scale deployment | Self (for chaining) |
+| `rollout(action, deployment, **options)` | Manage rollouts | Self (for chaining) |
+| `status(**options)` | Show cluster status | Self (for chaining) |
+| `health(**options)` | Check resource health | Self (for chaining) |
+| `events(**options)` | Show cluster events | Self (for chaining) |
+| `validate(**options)` | Validate manifests | Self (for chaining) |
+| `diff(**options)` | Show differences | Self (for chaining) |
+
+### Method Chaining
+
+All execution methods support method chaining for fluent workflows:
+
+```python
+# Complete workflow in one chain
+output.generate(app, "compose.yml").up().logs().ps().down()
+```
+
+### File Tracking
+
+The execution API automatically tracks the last generated files:
+
+```python
+output.generate(app, "docker-compose.yml")
+output.up()      # Uses the tracked file automatically
+output.logs()    # No need to specify file path again
 ``` 

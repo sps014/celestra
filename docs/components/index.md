@@ -245,6 +245,30 @@ db = StatefulApp("postgres").storage("10Gi")
 db = App("postgres")  # No persistent storage
 ```
 
+## Output & Execution
+
+### [Output Execution](output-execution.md)
+Execute generated configurations directly with Docker Compose and Kubernetes commands.
+
+```python
+from celestra import App, DockerComposeOutput, KubernetesOutput
+
+# Docker Compose execution
+docker_output = DockerComposeOutput()
+docker_output.generate(app, "compose.yml").up(detached=True).logs()
+
+# Kubernetes execution
+k8s_output = KubernetesOutput()
+k8s_output.generate(app, "./manifests/").apply(wait=True).health()
+```
+
+**Key Features:**
+- Direct execution of generated configurations
+- Method chaining for fluent workflows
+- Automatic file tracking
+- Comprehensive error handling
+- CI/CD pipeline integration
+
 ## Next Steps
 
 - **Explore [App](core/app.md)** - Learn about stateless applications
@@ -252,6 +276,7 @@ db = App("postgres")  # No persistent storage
 - **Review [Secret](security/secrets.md)** - Manage sensitive data
 - **Study [ConfigMap](storage/config-map.md)** - Handle configuration
 - **Examine [Job](workloads/job.md)** - Create batch processing workloads
+- **Try [Output Execution](output-execution.md)** - Execute configurations directly
 
 ## Getting Help
 
