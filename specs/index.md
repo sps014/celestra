@@ -1,99 +1,62 @@
-# Celestra Overview
+# Celestra Specifications
 
-A Python-based Domain-Specific Language for generating Kubernetes manifests with minimal complexity.
+This directory contains the complete specifications for the Celestra platform, organized into two main areas:
 
-## Design Principles
+## 📚 [Celestra Core](./celestra/)
 
-### 1. Simplicity Over Configuration
-- **No YAML Required**: Write infrastructure as Python code
-- **Business Language**: Use terms like `App`, `Database`, `Cache` instead of `Deployment`, `StatefulSet`, `Service`
-- **Smart Defaults**: Sensible defaults with easy customization
+Core specifications for the Celestra DSL, CLI, and execution engine:
 
-### 2. Progressive Disclosure
-- **Start Simple**: `App("api").image("myapp:latest").port(8080)`
-- **Add Complexity When Needed**: Scale, security, monitoring, etc.
-- **Environment Aware**: Same code, different configs for dev/staging/prod
+- **[API Reference](./celestra/api-reference.md)** - Complete API documentation
+- **[CLI Specification](./celestra/cli.md)** - Command-line interface design
+- **[Output Examples](./celestra/output-examples.md)** - Generated output formats
+- **[Extensions](./celestra/extensions.md)** - Plugin and extension system
+- **[Advanced Features](./celestra/advanced-features.md)** - Enterprise capabilities
+- **[Implementation](./celestra/implementation.md)** - Technical implementation details
+- **[Core Concepts](./celestra/index.md)** - Fundamental concepts and architecture
 
-### 3. Multi-Format Output
-- **Kubernetes YAML**: Production deployments
-- **Docker Compose**: Local development
-- **Helm Charts**: Package management
-- **Terraform**: Infrastructure as Code
+## 🎨 [Celestra UI](./celestra-ui/)
 
-## Core Concepts
+Specifications for the visual scripting IDE and user interface:
 
-### Applications vs. Stateful Services
+- **Visual Builder** - Drag & drop interface design
+- **Component Library** - Visual node definitions
+- **Workflow Engine** - Visual workflow builder
+- **Code Generation** - Real-time DSL generation
+- **User Experience** - UI/UX design principles
+- **Integration** - Backend integration specifications
+- **[Implementation Roadmap](./celestra-ui/implementation-roadmap.md)** - Complete development plan
 
-```python
-# Stateless application (scales horizontally)
-api = App("api-service").image("myorg/api:v1.0").port(8080)
+## 🚀 Getting Started
 
-# Stateful service (requires persistent storage)
-database = StatefulApp("database").image("database-server:latest").storage("20Gi")
-cache = StatefulApp("cache").image("cache-server:latest").storage("5Gi")
+1. **For DSL Development**: Start with [Core Concepts](./celestra/index.md)
+2. **For UI Development**: Start with [Visual Builder](./celestra-ui/visual-builder.md)
+3. **For API Integration**: See [API Reference](./celestra/api-reference.md)
+
+## 📖 Documentation Structure
+
+```
+specs/
+├── index.md              # This file - main navigation
+├── celestra/             # Core DSL and engine specs
+│   ├── index.md         # Core concepts
+│   ├── api-reference.md # API documentation
+│   ├── cli.md          # CLI specification
+│   ├── output-examples.md # Output formats
+│   ├── extensions.md    # Extension system
+│   ├── advanced-features.md # Enterprise features
+│   └── implementation.md # Technical details
+└── celestra-ui/         # Visual IDE specifications
+    ├── visual-builder.md # Main UI specification
+    ├── component-library.md # Visual components
+    ├── workflow-engine.md # Workflow builder
+    ├── code-generation.md # Code generation engine
+    ├── user-experience.md # UX design
+    └── integration.md    # Backend integration
 ```
 
-### Service Discovery and Dependencies
+## 🔗 Quick Links
 
-```python
-# Automatic service discovery
-api.connect_to([database, cache])
-
-# Dependency management
-frontend.depends_on([api, auth_service])
-```
-
-## Quick Start Example
-
-```python
-from celestra import App, StatefulApp, AppGroup
-
-# Database service
-database = StatefulApp("database").image("database-server:latest").storage("20Gi")
-
-# Web application
-app = (App("web-app")
-    .image("web-server:latest")
-    .port(8080)
-    .connect_to([database])
-    .scale(replicas=3, auto_scale_on_cpu=70)
-    .expose(external_access=True))
-
-# Generate all outputs
-app.generate().to_yaml("./k8s/")
-app.generate().to_docker_compose("./docker-compose.yml")
-```
-
-This generates complete Kubernetes manifests, Docker Compose files, and more with just a few lines of Python code.
-
-## Key Benefits
-
-### For Developers
-- **Familiar Syntax**: If you know Python, you know Celestra
-- **No YAML Debugging**: Catch errors at "compile time"
-- **Local Development**: Start with Docker Compose, deploy to Kubernetes
-- **Type Safety**: IDE completion and error detection
-
-### For DevOps Teams
-- **Standardization**: Consistent patterns across teams
-- **Security by Default**: RBAC, secrets, network policies
-- **Multi-Environment**: Same code, different configurations
-- **Observability Ready**: Built-in monitoring and logging
-
-### For Organizations
-- **Reduced Learning Curve**: Abstract Kubernetes complexity
-- **Faster Onboarding**: Developers focus on business logic
-- **Cost Optimization**: Built-in resource management
-- **Compliance**: Security and governance built-in
-
-## Simple Example
-
-```python
-# The simplest possible application
-app = App("hello-world").image("web-server:latest").port(8080)
-
-# Generate Kubernetes YAML
-app.generate().to_yaml("./k8s/")
-```
-
-This creates a complete Kubernetes `Deployment`, `Service`, and optional `Ingress` with production-ready defaults. 
+- **[Core DSL Specs](./celestra/)**
+- **[Visual IDE Specs](./celestra-ui/)**
+- **[GitHub Repository](https://github.com/your-org/celestra)**
+- **[Documentation Site](https://docs.celestra.dev)** 
