@@ -133,6 +133,8 @@ k8s/
 rbac-demo/
 output/
 manifests/
+# Don't ignore source code output modules
+!src/celestra/output/
 # Don't ignore GitHub Actions workflows
 !.github/workflows/*.yml
 !.github/workflows/*.yaml
