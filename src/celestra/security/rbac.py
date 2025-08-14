@@ -7,6 +7,7 @@ RoleBindings, and ClusterRoleBindings.
 
 from typing import Dict, List, Any, Optional, Union
 from ..core.base_builder import BaseBuilder
+from ..utils.decorators import kubernetes_only
 
 
 class ServiceAccount(BaseBuilder):
@@ -78,6 +79,7 @@ class ServiceAccount(BaseBuilder):
         self._automount_service_account_token = enabled
         return self
     
+    @kubernetes_only
     def generate_kubernetes_resources(self) -> List[Dict[str, Any]]:
         """
         Generate Kubernetes ServiceAccount resource.
@@ -328,6 +330,7 @@ class Role(BaseBuilder):
         return (cls(name)
             .allow_read_only("configmaps", "secrets"))
     
+    @kubernetes_only
     def generate_kubernetes_resources(self) -> List[Dict[str, Any]]:
         """
         Generate Kubernetes Role resource.
@@ -408,6 +411,7 @@ class ClusterRole(Role):
         return (cls(name)
             .allow_all("namespaces"))
     
+    @kubernetes_only
     def generate_kubernetes_resources(self) -> List[Dict[str, Any]]:
         """
         Generate Kubernetes ClusterRole resource.
@@ -545,6 +549,7 @@ class RoleBinding(BaseBuilder):
         self._subjects.append(subject)
         return self
     
+    @kubernetes_only
     def generate_kubernetes_resources(self) -> List[Dict[str, Any]]:
         """
         Generate Kubernetes RoleBinding resource.
@@ -590,6 +595,7 @@ class ClusterRoleBinding(RoleBinding):
         ```
     """
     
+    @kubernetes_only
     def generate_kubernetes_resources(self) -> List[Dict[str, Any]]:
         """
         Generate Kubernetes ClusterRoleBinding resource.

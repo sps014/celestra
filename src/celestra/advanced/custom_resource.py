@@ -8,6 +8,7 @@ and Custom Resources with validation, status management, and controller integrat
 from typing import Dict, List, Any, Optional, Union
 from enum import Enum
 from ..core.base_builder import BaseBuilder
+from ..utils.decorators import kubernetes_only
 
 
 class CRDScope(Enum):
@@ -495,6 +496,7 @@ class CustomResource(BaseBuilder):
             .add_printer_column("Storage", ".spec.storage")
             .add_printer_column("Status", ".status.phase"))
     
+    @kubernetes_only
     def generate_kubernetes_resources(self) -> List[Dict[str, Any]]:
         """
         Generate Kubernetes resources for the custom resource.

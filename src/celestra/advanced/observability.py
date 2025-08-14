@@ -7,6 +7,7 @@ logging, tracing, and alerting configurations.
 
 from typing import Dict, List, Any, Optional, Union
 from ..core.base_builder import BaseBuilder
+from ..utils.decorators import kubernetes_only
 
 
 class Observability(BaseBuilder):
@@ -277,6 +278,7 @@ class Observability(BaseBuilder):
             .add_alert_rule("high_memory", "memory_usage_bytes / memory_limit_bytes > 0.9")
             .add_alert_rule("pod_restarts", "increase(kube_pod_container_status_restarts_total[1h]) > 0"))
     
+    @kubernetes_only
     def generate_kubernetes_resources(self) -> List[Dict[str, Any]]:
         """
         Generate Kubernetes resources for observability.

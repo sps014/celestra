@@ -13,6 +13,7 @@ from pathlib import Path
 
 from ..core.base_builder import BaseBuilder
 from ..utils.helpers import validate_name, sanitize_env_var_name
+from ..utils.decorators import docker_compose_only, kubernetes_only
 
 
 class Secret(BaseBuilder):
@@ -273,6 +274,7 @@ class Secret(BaseBuilder):
         self._secret_type = secret_type
         return self
     
+    @kubernetes_only
     def mount_path(self, path: str) -> "Secret":
         """
         Set the mount path for the secret as a volume.
@@ -286,6 +288,7 @@ class Secret(BaseBuilder):
         self._mount_path = path
         return self
     
+    @kubernetes_only
     def mount_as_env_vars(self, prefix: str = "") -> "Secret":
         """
         Mount secret data as environment variables.
@@ -300,6 +303,7 @@ class Secret(BaseBuilder):
         self._env_prefix = prefix
         return self
     
+    @kubernetes_only
     def generate_kubernetes_resources(self) -> List[Dict[str, Any]]:
         """
         Generate Kubernetes Secret resource.

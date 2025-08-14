@@ -7,6 +7,7 @@ configurations including RBAC, pod security policies, network policies, and secu
 
 from typing import Dict, List, Any, Optional
 from ..core.base_builder import BaseBuilder
+from ..utils.decorators import kubernetes_only
 
 
 class SecurityPolicy(BaseBuilder):
@@ -285,6 +286,7 @@ class SecurityPolicy(BaseBuilder):
         """
         return self._pod_security_standards
     
+    @kubernetes_only
     def generate_kubernetes_resources(self) -> List[Dict[str, Any]]:
         """
         Generate Kubernetes resources for the security policy.

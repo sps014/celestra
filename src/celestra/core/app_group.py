@@ -7,6 +7,7 @@ and provides cross-service configuration capabilities.
 
 from typing import Dict, List, Any, Optional, Union
 from .base_builder import BaseBuilder
+from ..utils.decorators import docker_compose_only, kubernetes_only
 
 
 class AppGroup(BaseBuilder):
@@ -296,6 +297,7 @@ class AppGroup(BaseBuilder):
         
         return cloned
     
+    @kubernetes_only
     def set_resource_quotas(
         self,
         cpu_limit: Optional[str] = None,
@@ -333,6 +335,7 @@ class AppGroup(BaseBuilder):
         
         return self
     
+    @kubernetes_only
     def configure_namespace(
         self,
         create_namespace: bool = True,

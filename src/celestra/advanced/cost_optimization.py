@@ -8,6 +8,7 @@ vertical/horizontal scaling, spot instances, and resource scheduling.
 from typing import Dict, List, Any, Optional, Union
 from enum import Enum
 from ..core.base_builder import BaseBuilder
+from ..utils.decorators import kubernetes_only
 
 
 class OptimizationStrategy(Enum):
@@ -422,6 +423,7 @@ class CostOptimization(BaseBuilder):
             .add_priority_class("prod-high", 1000)
             .add_priority_class("prod-critical", 2000))
     
+    @kubernetes_only
     def generate_kubernetes_resources(self) -> List[Dict[str, Any]]:
         """
         Generate Kubernetes resources for cost optimization.

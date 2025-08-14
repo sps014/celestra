@@ -7,6 +7,7 @@ that require persistent storage and stable network identities.
 
 from typing import Dict, List, Any, Optional, Union
 from .base_builder import BaseBuilder
+from ..utils.decorators import docker_compose_only, kubernetes_only
 
 
 class StatefulApp(BaseBuilder):
@@ -345,6 +346,7 @@ class StatefulApp(BaseBuilder):
         self._replicas = count
         return self
     
+    @kubernetes_only
     def storage(
         self, 
         size: str,
@@ -373,6 +375,7 @@ class StatefulApp(BaseBuilder):
         
         return self
     
+    @kubernetes_only
     def backup_schedule(self, schedule: str, retention: int = 7) -> "StatefulApp":
         """
         Configure backup schedule.
@@ -388,6 +391,7 @@ class StatefulApp(BaseBuilder):
         self._backup_retention = retention
         return self
     
+    @kubernetes_only
     def cluster_mode(self, enabled: bool = True) -> "StatefulApp":
         """
         Enable cluster mode for the application.
@@ -401,6 +405,7 @@ class StatefulApp(BaseBuilder):
         self._cluster_mode = enabled
         return self
     
+    @kubernetes_only
     def persistence(self, **config) -> "StatefulApp":
         """
         Configure persistence settings.
@@ -414,6 +419,7 @@ class StatefulApp(BaseBuilder):
         self._persistence.update(config)
         return self
     
+    @kubernetes_only
     def topics(self, topic_list: List[str]) -> "StatefulApp":
         """
         Configure topics for message queue applications.
@@ -427,6 +433,7 @@ class StatefulApp(BaseBuilder):
         self._topics = topic_list
         return self
     
+    @kubernetes_only
     def retention_hours(self, hours: int) -> "StatefulApp":
         """
         Set data retention period in hours.
@@ -557,6 +564,7 @@ class StatefulApp(BaseBuilder):
         self._service_type = service_type
         return self
     
+    @kubernetes_only
     def headless_service(self, enabled: bool = True) -> "StatefulApp":
         """
         Configure headless service.
@@ -570,6 +578,7 @@ class StatefulApp(BaseBuilder):
         self._headless_service = enabled
         return self
     
+    @kubernetes_only
     def update_strategy(self, strategy: str, partition: Optional[int] = None) -> "StatefulApp":
         """
         Set update strategy.

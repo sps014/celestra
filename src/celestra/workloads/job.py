@@ -7,6 +7,7 @@ that run to completion.
 
 from typing import Dict, List, Any, Optional, Union
 from ..core.base_builder import BaseBuilder
+from ..utils.decorators import kubernetes_only
 
 
 class Job(BaseBuilder):
@@ -471,6 +472,7 @@ class Job(BaseBuilder):
             # Assume seconds if no unit
             return int(duration)
     
+    @kubernetes_only
     def generate_kubernetes_resources(self) -> List[Dict[str, Any]]:
         """
         Generate Kubernetes Job resource.

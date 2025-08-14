@@ -11,7 +11,7 @@ import subprocess
 import os
 
 from .base_output import FileOutputFormat
-from ..utils.decorators import show_format_warnings
+from ..utils.decorators import show_format_warnings, kubernetes_only
 
 
 class KubernetesOutput(FileOutputFormat):
@@ -376,6 +376,7 @@ class KubernetesOutput(FileOutputFormat):
 
     # ===== EXECUTION METHODS =====
     
+    @kubernetes_only
     def run(self, command: str, resources_dir: Optional[str] = None, **options) -> "KubernetesOutput":
         """
         Run kubectl command with the specified options.
@@ -404,6 +405,7 @@ class KubernetesOutput(FileOutputFormat):
         
         return self
     
+    @kubernetes_only
     def apply(self, resources_dir: Optional[str] = None, **options) -> "KubernetesOutput":
         """
         Apply Kubernetes resources.
@@ -417,6 +419,7 @@ class KubernetesOutput(FileOutputFormat):
         """
         return self.run("apply", resources_dir, **options)
     
+    @kubernetes_only
     def delete(self, resources_dir: Optional[str] = None, **options) -> "KubernetesOutput":
         """
         Delete Kubernetes resources.
@@ -430,6 +433,7 @@ class KubernetesOutput(FileOutputFormat):
         """
         return self.run("delete", resources_dir, **options)
     
+    @kubernetes_only
     def replace(self, resources_dir: Optional[str] = None, **options) -> "KubernetesOutput":
         """
         Replace Kubernetes resources.
@@ -443,6 +447,7 @@ class KubernetesOutput(FileOutputFormat):
         """
         return self.run("replace", resources_dir, **options)
     
+    @kubernetes_only
     def patch(self, resources_dir: Optional[str] = None, **options) -> "KubernetesOutput":
         """
         Patch Kubernetes resources.
@@ -456,6 +461,7 @@ class KubernetesOutput(FileOutputFormat):
         """
         return self.run("patch", resources_dir, **options)
     
+    @kubernetes_only
     def get(self, resource_type: Optional[str] = None, resources_dir: Optional[str] = None, **options) -> "KubernetesOutput":
         """
         Get Kubernetes resources.
@@ -472,6 +478,7 @@ class KubernetesOutput(FileOutputFormat):
             return self.run("get", resources_dir, resource_type=resource_type, **options)
         return self.run("get", resources_dir, **options)
     
+    @kubernetes_only
     def describe(self, resource_type: Optional[str] = None, resources_dir: Optional[str] = None, **options) -> "KubernetesOutput":
         """
         Describe Kubernetes resources.
@@ -488,6 +495,7 @@ class KubernetesOutput(FileOutputFormat):
             return self.run("describe", resources_dir, resource_type=resource_type, **options)
         return self.run("describe", resources_dir, **options)
     
+    @kubernetes_only
     def edit(self, resource_type: Optional[str] = None, resources_dir: Optional[str] = None, **options) -> "KubernetesOutput":
         """
         Edit Kubernetes resources.
@@ -504,6 +512,7 @@ class KubernetesOutput(FileOutputFormat):
             return self.run("edit", resources_dir, resource_type=resource_type, **options)
         return self.run("edit", resources_dir, **options)
     
+    @kubernetes_only
     def logs(self, pod: Optional[str] = None, resources_dir: Optional[str] = None, **options) -> "KubernetesOutput":
         """
         Show Kubernetes logs.
@@ -520,6 +529,7 @@ class KubernetesOutput(FileOutputFormat):
             return self.run("logs", resources_dir, pod=pod, **options)
         return self.run("logs", resources_dir, **options)
     
+    @kubernetes_only
     def port_forward(self, service: str, local_port: int, target_port: int, resources_dir: Optional[str] = None, **options) -> "KubernetesOutput":
         """
         Port forward Kubernetes services.
@@ -536,6 +546,7 @@ class KubernetesOutput(FileOutputFormat):
         """
         return self.run("port-forward", resources_dir, service=service, local_port=local_port, target_port=target_port, **options)
     
+    @kubernetes_only
     def exec(self, pod: str, command: str, resources_dir: Optional[str] = None, **options) -> "KubernetesOutput":
         """
         Execute command in Kubernetes pod.
@@ -551,6 +562,7 @@ class KubernetesOutput(FileOutputFormat):
         """
         return self.run("exec", resources_dir, pod=pod, exec_command=command, **options)
     
+    @kubernetes_only
     def scale(self, deployment: str, replicas: int, resources_dir: Optional[str] = None, **options) -> "KubernetesOutput":
         """
         Scale Kubernetes deployments.
@@ -566,6 +578,7 @@ class KubernetesOutput(FileOutputFormat):
         """
         return self.run("scale", resources_dir, deployment=deployment, replicas=replicas, **options)
     
+    @kubernetes_only
     def rollout(self, action: str, deployment: str, resources_dir: Optional[str] = None, **options) -> "KubernetesOutput":
         """
         Manage Kubernetes rollouts.
@@ -581,6 +594,7 @@ class KubernetesOutput(FileOutputFormat):
         """
         return self.run("rollout", resources_dir, action=action, deployment=deployment, **options)
     
+    @kubernetes_only
     def status(self, resources_dir: Optional[str] = None, **options) -> "KubernetesOutput":
         """
         Show Kubernetes status.
@@ -594,6 +608,7 @@ class KubernetesOutput(FileOutputFormat):
         """
         return self.run("get", resources_dir, output="wide", **options)
     
+    @kubernetes_only
     def health(self, resources_dir: Optional[str] = None, **options) -> "KubernetesOutput":
         """
         Check Kubernetes resource health.
@@ -607,6 +622,7 @@ class KubernetesOutput(FileOutputFormat):
         """
         return self.run("get", resources_dir, output="wide", **options)
     
+    @kubernetes_only
     def events(self, resources_dir: Optional[str] = None, **options) -> "KubernetesOutput":
         """
         Show Kubernetes events.
@@ -620,6 +636,7 @@ class KubernetesOutput(FileOutputFormat):
         """
         return self.run("get", resources_dir, resource_type="events", **options)
     
+    @kubernetes_only
     def validate(self, resources_dir: Optional[str] = None, **options) -> "KubernetesOutput":
         """
         Validate Kubernetes resources.
@@ -633,6 +650,7 @@ class KubernetesOutput(FileOutputFormat):
         """
         return self.run("apply", resources_dir, dry_run="client", **options)
     
+    @kubernetes_only
     def diff(self, resources_dir: Optional[str] = None, **options) -> "KubernetesOutput":
         """
         Show differences between local and cluster resources.

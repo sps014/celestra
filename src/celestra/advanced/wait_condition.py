@@ -8,6 +8,7 @@ including resource readiness, custom conditions, and complex dependencies.
 from typing import Dict, List, Any, Optional, Union
 from enum import Enum
 from ..core.base_builder import BaseBuilder
+from ..utils.decorators import kubernetes_only
 
 
 class WaitType(Enum):
@@ -456,6 +457,7 @@ class WaitCondition(BaseBuilder):
         
         return wait_condition
     
+    @kubernetes_only
     def generate_kubernetes_resources(self) -> List[Dict[str, Any]]:
         """
         Generate Kubernetes resources for wait conditions.

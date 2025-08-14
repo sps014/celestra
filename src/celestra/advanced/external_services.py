@@ -7,6 +7,7 @@ message queues, storage services, and other managed services.
 
 from typing import Dict, List, Any, Optional, Union
 from ..core.base_builder import BaseBuilder
+from ..utils.decorators import kubernetes_only
 
 
 class ExternalServices(BaseBuilder):
@@ -305,6 +306,7 @@ class ExternalServices(BaseBuilder):
             .add_monitoring_service("datadog", type="datadog")
             .enable_service_mesh())
     
+    @kubernetes_only
     def generate_kubernetes_resources(self) -> List[Dict[str, Any]]:
         """
         Generate Kubernetes resources for external services.

@@ -4,6 +4,7 @@ Ingress class for Kubernetes Ingress in Celestraa DSL.
 
 from typing import Dict, List, Any, Optional
 from ..core.base_builder import BaseBuilder
+from ..utils.decorators import kubernetes_only
 
 
 class Ingress(BaseBuilder):
@@ -18,6 +19,7 @@ class Ingress(BaseBuilder):
         self._tls: List[Dict[str, Any]] = []
         self._ingress_class: Optional[str] = None
     
+    @kubernetes_only
     def host(self, hostname: str) -> "Ingress":
         """Set the hostname."""
         if not any(rule.get('host') == hostname for rule in self._rules):
@@ -27,6 +29,7 @@ class Ingress(BaseBuilder):
             })
         return self
     
+    @kubernetes_only
     def path(self, path: str, service_name: str, service_port: int, path_type: str = "Prefix") -> "Ingress":
         """Add a path to the ingress."""
         # Add to the last rule or create a new one
@@ -47,6 +50,7 @@ class Ingress(BaseBuilder):
         self._rules[-1]["http"]["paths"].append(path_config)
         return self
     
+    @kubernetes_only
     def tls(self, secret_name: str, hosts: List[str]) -> "Ingress":
         """Add TLS configuration."""
         self._tls.append({
@@ -55,11 +59,13 @@ class Ingress(BaseBuilder):
         })
         return self
     
+    @kubernetes_only
     def ingress_class(self, class_name: str) -> "Ingress":
         """Set the ingress class."""
         self._ingress_class = class_name
         return self
     
+    @kubernetes_only
     def generate_kubernetes_resources(self) -> List[Dict[str, Any]]:
         """Generate Kubernetes Ingress resource."""
         ingress = {

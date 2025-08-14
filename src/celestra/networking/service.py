@@ -4,6 +4,7 @@ Service class for Kubernetes Services in Celestraa DSL.
 
 from typing import Dict, List, Any, Optional
 from ..core.base_builder import BaseBuilder
+from ..utils.decorators import kubernetes_only
 
 
 class Service(BaseBuilder):
@@ -19,6 +20,7 @@ class Service(BaseBuilder):
         self._selector: Dict[str, str] = {}
         self._target_app: Optional[str] = None
     
+    @kubernetes_only
     def add_port(self, name: str, port: int, target_port: int, protocol: str = "TCP") -> "Service":
         """Add a port to the service."""
         self._ports.append({
@@ -29,16 +31,19 @@ class Service(BaseBuilder):
         })
         return self
     
+    @kubernetes_only
     def type(self, service_type: str) -> "Service":
         """Set the service type."""
         self._service_type = service_type
         return self
     
+    @kubernetes_only
     def selector(self, selector: Dict[str, str]) -> "Service":
         """Set the selector."""
         self._selector = selector
         return self
     
+    @kubernetes_only
     def generate_kubernetes_resources(self) -> List[Dict[str, Any]]:
         """Generate Kubernetes Service resource."""
         service = {

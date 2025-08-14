@@ -11,6 +11,7 @@ import subprocess
 import os
 
 from .base_output import OutputFormat
+from ..utils.decorators import docker_compose_only
 
 
 class DockerComposeOutput(OutputFormat):
@@ -537,6 +538,7 @@ class DockerComposeOutput(OutputFormat):
 
     # ===== EXECUTION METHODS =====
     
+    @docker_compose_only
     def run(self, compose_file: Optional[str] = None, **options) -> "DockerComposeOutput":
         """
         Run docker-compose command with the specified options.
@@ -564,6 +566,7 @@ class DockerComposeOutput(OutputFormat):
         
         return self
     
+    @docker_compose_only
     def up(self, compose_file: Optional[str] = None, **options) -> "DockerComposeOutput":
         """
         Run docker-compose up.
@@ -577,6 +580,7 @@ class DockerComposeOutput(OutputFormat):
         """
         return self.run(compose_file, command="up", **options)
     
+    @docker_compose_only
     def down(self, compose_file: Optional[str] = None, **options) -> "DockerComposeOutput":
         """
         Run docker-compose down.
@@ -590,6 +594,7 @@ class DockerComposeOutput(OutputFormat):
         """
         return self.run(compose_file, command="down", **options)
     
+    @docker_compose_only
     def start(self, service: Optional[str] = None, compose_file: Optional[str] = None, **options) -> "DockerComposeOutput":
         """
         Run docker-compose start.
@@ -606,6 +611,7 @@ class DockerComposeOutput(OutputFormat):
             return self.run(compose_file, command="start", service=service, **options)
         return self.run(compose_file, command="start", **options)
     
+    @docker_compose_only
     def stop(self, service: Optional[str] = None, compose_file: Optional[str] = None, **options) -> "DockerComposeOutput":
         """
         Run docker-compose stop.
@@ -622,6 +628,7 @@ class DockerComposeOutput(OutputFormat):
             return self.run(compose_file, command="stop", service=service, **options)
         return self.run(compose_file, command="stop", **options)
     
+    @docker_compose_only
     def restart(self, service: Optional[str] = None, compose_file: Optional[str] = None, **options) -> "DockerComposeOutput":
         """
         Run docker-compose restart.
@@ -638,6 +645,7 @@ class DockerComposeOutput(OutputFormat):
             return self.run(compose_file, command="restart", service=service, **options)
         return self.run(compose_file, command="restart", **options)
     
+    @docker_compose_only
     def logs(self, service: Optional[str] = None, compose_file: Optional[str] = None, **options) -> "DockerComposeOutput":
         """
         Run docker-compose logs.
@@ -654,6 +662,7 @@ class DockerComposeOutput(OutputFormat):
             return self.run(compose_file, command="logs", service=service, **options)
         return self.run(compose_file, command="logs", **options)
     
+    @docker_compose_only
     def ps(self, compose_file: Optional[str] = None, **options) -> "DockerComposeOutput":
         """
         Run docker-compose ps.
@@ -667,6 +676,7 @@ class DockerComposeOutput(OutputFormat):
         """
         return self.run(compose_file, command="ps", **options)
     
+    @docker_compose_only
     def build(self, compose_file: Optional[str] = None, **options) -> "DockerComposeOutput":
         """
         Run docker-compose build.
@@ -680,6 +690,7 @@ class DockerComposeOutput(OutputFormat):
         """
         return self.run(compose_file, command="build", **options)
     
+    @docker_compose_only
     def pull(self, compose_file: Optional[str] = None, **options) -> "DockerComposeOutput":
         """
         Run docker-compose pull.
@@ -693,6 +704,7 @@ class DockerComposeOutput(OutputFormat):
         """
         return self.run(compose_file, command="pull", **options)
     
+    @docker_compose_only
     def exec(self, service: str, command: str, compose_file: Optional[str] = None, **options) -> "DockerComposeOutput":
         """
         Run docker-compose exec.
@@ -708,6 +720,7 @@ class DockerComposeOutput(OutputFormat):
         """
         return self.run(compose_file, command="exec", service=service, exec_command=command, **options)
     
+    @docker_compose_only
     def scale(self, services: Dict[str, int], compose_file: Optional[str] = None, **options) -> "DockerComposeOutput":
         """
         Run docker-compose scale.
@@ -726,6 +739,7 @@ class DockerComposeOutput(OutputFormat):
         
         return self.run(compose_file, command="scale", scale_services=scale_args, **options)
     
+    @docker_compose_only
     def config(self, compose_file: Optional[str] = None, **options) -> "DockerComposeOutput":
         """
         Run docker-compose config.
@@ -739,6 +753,7 @@ class DockerComposeOutput(OutputFormat):
         """
         return self.run(compose_file, command="config", **options)
     
+    @docker_compose_only
     def validate(self, compose_file: Optional[str] = None, **options) -> "DockerComposeOutput":
         """
         Validate docker-compose configuration.

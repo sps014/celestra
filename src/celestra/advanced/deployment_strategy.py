@@ -7,6 +7,7 @@ and rolling updates with advanced configuration options.
 
 from typing import Dict, List, Any, Optional, Union
 from ..core.base_builder import BaseBuilder
+from ..utils.decorators import kubernetes_only
 
 
 class DeploymentStrategy(BaseBuilder):
@@ -268,6 +269,7 @@ class DeploymentStrategy(BaseBuilder):
             .analysis(success_rate=99.5, duration="10m")
             .promotion_gate(approval_required=True))
     
+    @kubernetes_only
     def generate_kubernetes_resources(self) -> List[Dict[str, Any]]:
         """
         Generate Kubernetes resources for deployment strategy.

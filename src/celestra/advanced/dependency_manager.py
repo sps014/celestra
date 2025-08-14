@@ -8,6 +8,7 @@ health checks, readiness gates, and conditional dependencies.
 from typing import Dict, List, Any, Optional, Union
 from enum import Enum
 from ..core.base_builder import BaseBuilder
+from ..utils.decorators import kubernetes_only
 
 
 class DependencyType(Enum):
@@ -426,6 +427,7 @@ class DependencyManager(BaseBuilder):
             .enable_circuit_breaker()
             .set_timeout("5m"))
     
+    @kubernetes_only
     def generate_kubernetes_resources(self) -> List[Dict[str, Any]]:
         """
         Generate Kubernetes resources for dependency management.

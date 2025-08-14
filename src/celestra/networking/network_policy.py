@@ -7,6 +7,7 @@ security policies to control traffic between pods.
 
 from typing import Dict, List, Any, Optional, Union
 from ..core.base_builder import BaseBuilder
+from ..utils.decorators import kubernetes_only
 
 
 class NetworkPolicy(BaseBuilder):
@@ -536,6 +537,7 @@ class NetworkPolicy(BaseBuilder):
             .allow_database_access(app_labels, port)
             .deny_all_egress())  # Databases typically don't need outbound access
     
+    @kubernetes_only
     def generate_kubernetes_resources(self) -> List[Dict[str, Any]]:
         """
         Generate Kubernetes NetworkPolicy resource.

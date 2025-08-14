@@ -7,6 +7,7 @@ that run on a time-based schedule.
 
 from typing import Dict, List, Any, Optional, Union
 from ..core.base_builder import BaseBuilder
+from ..utils.decorators import kubernetes_only
 
 
 class CronJob(BaseBuilder):
@@ -61,6 +62,7 @@ class CronJob(BaseBuilder):
         self._tolerations: List[Dict[str, Any]] = []
         self._affinity: Optional[Dict[str, Any]] = None
     
+    @kubernetes_only
     def schedule(self, cron_schedule: str) -> "CronJob":
         """
         Set the cron schedule.
@@ -251,6 +253,7 @@ class CronJob(BaseBuilder):
         
         return self
     
+    @kubernetes_only
     def concurrency_policy(self, policy: str) -> "CronJob":
         """
         Set the concurrency policy.
@@ -266,6 +269,7 @@ class CronJob(BaseBuilder):
         self._concurrency_policy = policy
         return self
     
+    @kubernetes_only
     def suspend(self, suspended: bool = True) -> "CronJob":
         """
         Suspend or resume the cron job.
@@ -507,6 +511,7 @@ class CronJob(BaseBuilder):
             # Assume seconds if no unit
             return int(duration)
     
+    @kubernetes_only
     def generate_kubernetes_resources(self) -> List[Dict[str, Any]]:
         """
         Generate Kubernetes CronJob resource.

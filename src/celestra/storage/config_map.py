@@ -12,6 +12,7 @@ from pathlib import Path
 
 from ..core.base_builder import BaseBuilder
 from ..utils.helpers import format_yaml, format_json, read_file
+from ..utils.decorators import docker_compose_only, kubernetes_only
 
 
 class ConfigMap(BaseBuilder):
@@ -243,6 +244,7 @@ class ConfigMap(BaseBuilder):
         })
         return self
     
+    @kubernetes_only
     def mount_path(self, path: str) -> "ConfigMap":
         """
         Set the mount path for the ConfigMap as a volume.
@@ -256,6 +258,7 @@ class ConfigMap(BaseBuilder):
         self._mount_path = path
         return self
     
+    @kubernetes_only
     def mount_as_env_vars(self, prefix: str = "") -> "ConfigMap":
         """
         Mount ConfigMap data as environment variables.
@@ -283,6 +286,7 @@ class ConfigMap(BaseBuilder):
         self._file_permissions = mode
         return self
     
+    @kubernetes_only
     def hot_reload(
         self, 
         enabled: bool = True,
@@ -307,6 +311,7 @@ class ConfigMap(BaseBuilder):
         }
         return self
     
+    @kubernetes_only
     def generate_kubernetes_resources(self) -> List[Dict[str, Any]]:
         """
         Generate Kubernetes ConfigMap resource.
