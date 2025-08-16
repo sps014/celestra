@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>🐳 Celestra DSL - Dockerfile Generator</title>
+    <link rel="stylesheet" href="https://pyscript.net/releases/2025.8.1/core.css">
+    <script type="module" src="https://pyscript.net/releases/2025.8.1/core.js"></script>
+</head>
+<body>
+    <h1>🐳 Celestra DSL - Dockerfile Generator</h1>
+    
+    <label for="app-name">App Name:</label>
+    <input type="text" id="app-name" value="my-app">
+    <br><br>
+    
+    <label for="base-image">Base Image:</label>
+    <input type="text" id="base-image" value="python:3.11-slim">
+    <br><br>
+    
+    <label for="app-port">Port:</label>
+    <input type="number" id="app-port" value="8080">
+    <br><br>
+    
+    <button py-click="generate_dockerfile">🚀 Generate Dockerfile</button>
+    
+    <pre id="output"></pre>
+
+    <script type="py" src="./main.py" config="./pyscript.json"></script>
+</body>
+</html>
