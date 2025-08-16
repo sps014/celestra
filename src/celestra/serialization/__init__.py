@@ -27,7 +27,6 @@ def _discover_classes() -> Dict[str, Type[BaseBuilder]]:
     if _CLASS_MAP is not None:
         return _CLASS_MAP
     
-    print("🔍 Discovering Celestra classes...")  # Debug info
     
     class_map = {}
     
@@ -46,7 +45,6 @@ def _discover_classes() -> Dict[str, Type[BaseBuilder]]:
                 
                 class_name = attr.__name__
                 class_map[class_name] = attr
-                print(f"  ✓ Found: {class_name}")  # Debug info
             
             # Check if it's a submodule
             elif (inspect.ismodule(attr) and 
@@ -57,8 +55,6 @@ def _discover_classes() -> Dict[str, Type[BaseBuilder]]:
                 scan_module(attr, prefix + attr_name + ".")
     
     scan_module(celestra_module)
-    
-    print(f"🎯 Total classes discovered: {len(class_map)}")  # Debug info
     
     # Cache the result globally
     _CLASS_MAP = class_map
