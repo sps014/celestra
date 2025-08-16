@@ -60,6 +60,8 @@ from .validation.cost_estimator import CostEstimator, CloudProvider
 # Format decorators
 from .utils.decorators import docker_compose_only, kubernetes_only, output_formats
 
+from .serialization import serialize, deserialize, list_available_classes
+
 # Main exports for convenient imports
 __all__ = [
     # Core components
@@ -94,7 +96,10 @@ __all__ = [
     "Validator", "ValidationLevel", "SecurityScanner", "SecurityLevel", "CostEstimator", "CloudProvider",
     
     # Format decorators
-    "docker_compose_only", "kubernetes_only", "output_formats"
+    "docker_compose_only", "kubernetes_only", "output_formats",
+    "serialize",
+    "deserialize",
+    "list_available_classes"
 ]
 
 # Version info
