@@ -58,7 +58,8 @@ docs = [
     "mkdocs-mermaid2-plugin>=1.1.0",
 ]
 all = [
-    "celestra[dev,docs]",
+    "celestra[dev]",
+    "celestra[docs]",
 ]
 
 [project.urls]

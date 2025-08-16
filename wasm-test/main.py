@@ -2,7 +2,7 @@ from pyscript import document
 from celestra.core.app import App
 import os
 
-def generate_dockerfile(event):
+def generate_k8s_manifests(event):
     """Generate Dockerfile using your actual Celestra App class"""
     
     # Get values from form
